@@ -11,17 +11,24 @@ export interface DestinationsQuery {
   limit?: number;
 }
 
-export const fetchRealDestinations = async (query: DestinationsQuery = {}): Promise<Destination[] | null> => {
+// In-memory cache for static public destinations dataset
+let staticDestinationsCache: any[] | null = null;
+
+export const fetchRealDestinations = async (query: DestinationsQuery = {}): Promise<Destination[]> => {
+  const page = query.page || 1;
+  const limit = query.limit || 60;
+
+  // 1. Try NestJS Backend API
   try {
     const response = await axios.get(`${API_BASE_URL}/destinations`, {
       params: {
         category: query.category && query.category !== 'Semua' ? query.category : undefined,
         city_or_regency: query.city_or_regency && query.city_or_regency !== 'Semua' ? query.city_or_regency : undefined,
         search: query.search || undefined,
-        page: query.page || 1,
-        limit: query.limit || 60,
+        page,
+        limit,
       },
-      timeout: 4000,
+      timeout: 2500,
     });
 
     const data = response.data;
@@ -29,20 +36,20 @@ export const fetchRealDestinations = async (query: DestinationsQuery = {}): Prom
       return data.destinations.map((item: any) => mapApiToDestination(item));
     }
   } catch (error) {
-    console.warn('[API Client] Backend API unreachable, falling back to local dataset proxy', error);
+    // Silent fallback
   }
 
-  // Direct FastAPI Fallback if NestJS proxy is not running
+  // 2. Try FastAPI ML Engine directly
   try {
     const fastApiRes = await axios.get('http://localhost:8000/api/v1/destinations', {
       params: {
         category: query.category && query.category !== 'Semua' ? query.category : undefined,
         city_or_regency: query.city_or_regency && query.city_or_regency !== 'Semua' ? query.city_or_regency : undefined,
         search: query.search || undefined,
-        page: query.page || 1,
-        limit: query.limit || 60,
+        page,
+        limit,
       },
-      timeout: 4000,
+      timeout: 2500,
     });
 
     const data = fastApiRes.data;
@@ -50,13 +57,58 @@ export const fetchRealDestinations = async (query: DestinationsQuery = {}): Prom
       return data.destinations.map((item: any) => mapApiToDestination(item));
     }
   } catch (err) {
-    console.warn('[API Client] Direct FastAPI unreachable', err);
+    // Silent fallback
   }
 
-  return null;
+  // 3. Guaranteed Fallback: Fetch 3,130 real scraped destinations from /data/destinations.json
+  try {
+    if (!staticDestinationsCache) {
+      const publicRes = await axios.get('/data/destinations.json', { timeout: 3000 });
+      if (publicRes.data && Array.isArray(publicRes.data)) {
+        staticDestinationsCache = publicRes.data;
+      }
+    }
+
+    if (staticDestinationsCache && staticDestinationsCache.length > 0) {
+      let filtered = staticDestinationsCache;
+
+      if (query.category && query.category !== 'Semua') {
+        const catSearch = query.category.toLowerCase().trim();
+        filtered = filtered.filter((item: any) => {
+          const itemCat = mapCategoryName(item.primary_category);
+          return itemCat.toLowerCase() === catSearch || String(item.primary_category).toLowerCase().includes(catSearch);
+        });
+      }
+
+      if (query.city_or_regency && query.city_or_regency !== 'Semua') {
+        const regSearch = query.city_or_regency.toLowerCase();
+        filtered = filtered.filter((item: any) =>
+          String(item.city_or_regency).toLowerCase().includes(regSearch)
+        );
+      }
+
+      if (query.search) {
+        const kw = query.search.toLowerCase();
+        filtered = filtered.filter(
+          (item: any) =>
+            String(item.name).toLowerCase().includes(kw) ||
+            String(item.city_or_regency).toLowerCase().includes(kw) ||
+            String(item.address).toLowerCase().includes(kw)
+        );
+      }
+
+      const startIdx = (page - 1) * limit;
+      const paginated = filtered.slice(startIdx, startIdx + limit);
+      return paginated.map((item: any) => mapApiToDestination(item));
+    }
+  } catch (e) {
+    console.error('Failed to load static destinations.json', e);
+  }
+
+  return [];
 };
 
-export const mapApiToDestination = (item: any): Destination => {
+const mapCategoryName = (raw: string): string => {
   const catMap: Record<string, 'Pantai' | 'Alam' | 'Budaya' | 'Kuliner' | 'Adventure'> = {
     beach: 'Pantai',
     pantai: 'Pantai',
@@ -72,9 +124,11 @@ export const mapApiToDestination = (item: any): Destination => {
     kuliner: 'Kuliner',
     adventure: 'Adventure',
   };
+  return catMap[String(raw).toLowerCase()] || 'Alam';
+};
 
-  const catRaw = String(item.primary_category || '').toLowerCase();
-  const primaryCategory = catMap[catRaw] || 'Alam';
+export const mapApiToDestination = (item: any): Destination => {
+  const primaryCategory = mapCategoryName(item.primary_category);
 
   const priceText = item.price_min_idr && item.price_min_idr > 0
     ? `Rp ${Number(item.price_min_idr).toLocaleString('id-ID')} / orang`
@@ -85,7 +139,7 @@ export const mapApiToDestination = (item: any): Destination => {
     name: item.name,
     location: item.address || item.city_or_regency || 'Lampung',
     regency: item.city_or_regency || 'Lampung',
-    category: primaryCategory,
+    category: primaryCategory as any,
     rating: item.rating || 4.6,
     reviews: item.reviews_count || 120,
     price: priceText,

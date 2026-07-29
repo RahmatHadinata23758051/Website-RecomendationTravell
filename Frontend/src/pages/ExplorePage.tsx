@@ -210,8 +210,8 @@ export const ExplorePage: React.FC = () => {
   const [hoveredDestinationId, setHoveredDestinationId] = useState<string | null>(null);
   const [favorites, setFavorites] = useState<string[]>([]);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
-  const [realDestinations, setRealDestinations] = useState<Destination[]>(mockDestinations);
-  const [isLoadingRealData, setIsLoadingRealData] = useState<boolean>(false);
+  const [realDestinations, setRealDestinations] = useState<Destination[]>([]);
+  const [isLoadingRealData, setIsLoadingRealData] = useState<boolean>(true);
 
   const mapRef = useRef<HTMLDivElement | null>(null);
   const leafletInstanceRef = useRef<L.Map | null>(null);
@@ -242,7 +242,7 @@ export const ExplorePage: React.FC = () => {
     }
   }, [searchParams]);
 
-  // Fetch Live Real Data from Backend / FastAPI
+  // Fetch Live Real Data from Backend / FastAPI / Public Data JSON
   useEffect(() => {
     let isMounted = true;
     setIsLoadingRealData(true);
@@ -254,13 +254,7 @@ export const ExplorePage: React.FC = () => {
       limit: 100,
     }).then((data) => {
       if (isMounted) {
-        if (data && data.length > 0) {
-          setRealDestinations(data);
-        } else if (selectedCategory === 'Semua' && selectedRegency === 'Semua' && !searchKeyword) {
-          setRealDestinations(mockDestinations);
-        } else {
-          setRealDestinations([]);
-        }
+        setRealDestinations(data || []);
         setIsLoadingRealData(false);
       }
     });
