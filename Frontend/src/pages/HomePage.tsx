@@ -123,7 +123,7 @@ export const HomePage: React.FC = () => {
           src="/assets/images/patterns/lampung-tapis-pattern.png"
           alt=""
           aria-hidden="true"
-          className="absolute top-0 left-0 w-[700px] h-auto opacity-90 pointer-events-none select-none z-[2]"
+          className="absolute top-0 left-0 w-[700px] h-auto opacity-70 pointer-events-none select-none z-[2] mix-blend-multiply"
         />
 
         {/* Hero Content — centered within max-width, padded from top for fixed navbar */}
