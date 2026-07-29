@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
+import { MapPin, Layers, Compass, Maximize2 } from 'lucide-react';
 
 export interface RouteSlot {
   time: string;
@@ -101,7 +102,7 @@ export const RouteMap3D: React.FC<RouteMap3DProps> = ({
       const latLngs: [number, number][] = validSlots.map((s) => s.coords);
       const bounds = L.latLngBounds(latLngs);
 
-      // Draw Polyline Route Line
+      // Draw Polyline Route Line using Theme Teal (#0D9488)
       const routeLine = L.polyline(latLngs, {
         color: '#0D9488',
         weight: 5,
@@ -113,7 +114,7 @@ export const RouteMap3D: React.FC<RouteMap3DProps> = ({
 
       polylineRef.current = routeLine;
 
-      // Add Clean Numbered Teardrop Pins (1, 2, 3, 4...)
+      // Add Clean Numbered Teardrop Pins strictly matching Theme Teal & Slate Palette
       validSlots.forEach((slot, index) => {
         const isSelected = selectedSlotIndex === index;
         const waypointNumber = index + 1;
@@ -131,15 +132,15 @@ export const RouteMap3D: React.FC<RouteMap3DProps> = ({
               transition: all 0.25s ease;
               z-index: ${isSelected ? '9999' : '100'};
             ">
-              <!-- Numbered Pin Head Circle -->
+              <!-- Numbered Pin Head Circle (Signature Theme Teal Palette) -->
               <div style="
                 width: 32px;
                 height: 32px;
                 border-radius: 50%;
-                background: ${isSelected ? '#0D9488' : '#0F172A'};
+                background: ${isSelected ? '#0D9488' : '#0F2937'};
                 color: #FFFFFF;
-                border: 3px solid ${isSelected ? '#F59E0B' : '#0D9488'};
-                box-shadow: 0 4px 12px rgba(15, 23, 42, 0.3);
+                border: 3px solid ${isSelected ? '#2DD4BF' : '#0D9488'};
+                box-shadow: 0 4px 14px ${isSelected ? 'rgba(13, 148, 136, 0.45)' : 'rgba(15, 41, 55, 0.3)'};
                 display: flex;
                 align-items: center;
                 justify-content: center;
@@ -150,13 +151,13 @@ export const RouteMap3D: React.FC<RouteMap3DProps> = ({
                 ${waypointNumber}
               </div>
 
-              <!-- Teardrop Pointer -->
+              <!-- Teardrop Pointer (Matching Theme Teal Accent) -->
               <div style="
                 width: 0;
                 height: 0;
                 border-left: 5px solid transparent;
                 border-right: 5px solid transparent;
-                border-top: 7px solid ${isSelected ? '#F59E0B' : '#0D9488'};
+                border-top: 7px solid ${isSelected ? '#2DD4BF' : '#0D9488'};
                 margin-top: -2px;
               "></div>
             </div>
@@ -198,42 +199,51 @@ export const RouteMap3D: React.FC<RouteMap3DProps> = ({
 
   return (
     <div className="relative w-full h-[520px] sm:h-[580px] rounded-[28px] overflow-hidden shadow-lg border border-slate-200/90 bg-[#F8FAFC]">
-      {/* Floating Header Badge */}
-      <div className="absolute top-4 left-4 z-20 flex items-center gap-2 bg-white/95 backdrop-blur-md px-3.5 py-1.5 rounded-full shadow-md border border-slate-200 text-xs font-bold text-slate-800">
-        <span className="w-2.5 h-2.5 rounded-full bg-[#0D9488]" />
-        <span>Peta Spasial Rute &bull; {regencyName}</span>
-      </div>
+      
+      {/* Sleek Non-Overlapping Header Controls Row */}
+      <div className="absolute top-3 left-3 right-3 z-20 flex items-center justify-between gap-2 pointer-events-none">
+        
+        {/* Left Regency Title Badge */}
+        <div className="pointer-events-auto flex items-center gap-1.5 bg-white/95 backdrop-blur-md px-3 py-1.5 rounded-full shadow-md border border-slate-200/80 text-xs font-bold text-slate-800 truncate max-w-[180px] sm:max-w-none">
+          <MapPin className="w-3.5 h-3.5 text-[#0D9488] shrink-0" />
+          <span className="truncate">{regencyName}</span>
+        </div>
 
-      {/* Top 3D / 2D Perspective Mode Switcher & Fit Bounds */}
-      <div className="absolute top-4 right-4 z-20 flex items-center gap-2">
-        <div className="flex items-center gap-1 bg-white/95 backdrop-blur-md p-1 rounded-full shadow-md border border-slate-200">
+        {/* Right Action Controls (Using Lucide React Icons, 0% Overlap) */}
+        <div className="pointer-events-auto flex items-center gap-1.5">
+          <div className="flex items-center gap-1 bg-white/95 backdrop-blur-md p-1 rounded-full shadow-md border border-slate-200">
+            <button
+              type="button"
+              onClick={() => setIs3D(true)}
+              className={`px-2.5 py-1 rounded-full text-xs font-bold transition-all flex items-center gap-1 ${
+                is3D ? 'bg-[#0D9488] text-white shadow-sm' : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              <Layers className="w-3.5 h-3.5" />
+              <span>3D</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setIs3D(false)}
+              className={`px-2.5 py-1 rounded-full text-xs font-bold transition-all flex items-center gap-1 ${
+                !is3D ? 'bg-[#0D9488] text-white shadow-sm' : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              <Compass className="w-3.5 h-3.5" />
+              <span>2D</span>
+            </button>
+          </div>
+
           <button
             type="button"
-            onClick={() => setIs3D(true)}
-            className={`px-3 py-1 rounded-full text-xs font-bold transition-all ${
-              is3D ? 'bg-[#0D9488] text-white shadow-sm' : 'text-slate-600 hover:text-slate-900'
-            }`}
+            onClick={fitBoundsToSlots}
+            className="bg-white/95 backdrop-blur-md p-2 rounded-full shadow-md border border-slate-200 text-slate-700 hover:text-[#0D9488] transition-all active:scale-95 flex items-center justify-center"
+            title="Fit Rute"
           >
-            📐 3D Miring
-          </button>
-          <button
-            type="button"
-            onClick={() => setIs3D(false)}
-            className={`px-3 py-1 rounded-full text-xs font-bold transition-all ${
-              !is3D ? 'bg-[#0D9488] text-white shadow-sm' : 'text-slate-600 hover:text-slate-900'
-            }`}
-          >
-            🗺️ 2D Datar
+            <Maximize2 className="w-3.5 h-3.5" />
           </button>
         </div>
 
-        <button
-          type="button"
-          onClick={fitBoundsToSlots}
-          className="bg-white/95 backdrop-blur-md px-3 py-1.5 rounded-full shadow-md border border-slate-200 text-xs font-bold text-slate-700 hover:text-[#0D9488] transition-all active:scale-95"
-        >
-          🔍 Fit
-        </button>
       </div>
 
       {/* Oversized Inner Container for smooth tilt without black gaps or cutoff corners */}
