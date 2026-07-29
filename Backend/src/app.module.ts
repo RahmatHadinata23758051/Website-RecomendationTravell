@@ -10,6 +10,7 @@ import { RedisModule } from './redis/redis.module';
 import { DestinationsModule } from './destinations/destinations.module';
 import { SpatialModule } from './spatial/spatial.module';
 import { FavoritesModule } from './favorites/favorites.module';
+import { PlannerModule } from './planner/planner.module';
 
 @Module({
   imports: [
@@ -28,6 +29,7 @@ import { FavoritesModule } from './favorites/favorites.module';
     DestinationsModule,
     SpatialModule,
     FavoritesModule,
+    PlannerModule,
   ],
   controllers: [AppController],
   providers: [
