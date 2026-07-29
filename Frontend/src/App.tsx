@@ -1,28 +1,78 @@
-export function App() {
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { AuthProvider } from './context/AuthContext';
+import { Navbar } from './components/Navbar';
+import { Footer } from './components/Footer';
+import { AuthModal } from './components/AuthModal';
+
+// Placeholder views for subsequent backlogs
+function HomePage() {
   return (
-    <div className="min-h-[100dvh] bg-clean-light flex flex-col items-center justify-center p-6 text-center">
-      <div className="glass-panel p-8 rounded-3xl max-w-lg shadow-glass border border-slate-200/80">
-        <div className="flex justify-center mb-4">
-          <img
-            src="/assets/images/logos/siger-gold-icon.png"
-            alt="Siger Gold Logo"
-            className="h-16 w-auto object-contain"
-          />
-        </div>
-        <h1 className="text-3xl font-display font-bold text-slate-900 tracking-tight mb-2">
-          KelanaLampung
-        </h1>
-        <p className="text-sm font-sans text-primary-600 font-semibold mb-4">
-          Jelajah Surga Pariwisata Lampung Berbasis AI
+    <main className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-16 text-center">
+      <div className="glass-panel p-12 rounded-3xl max-w-2xl mx-auto shadow-glass border border-slate-200/80">
+        <h2 className="text-3xl font-display font-extrabold text-slate-900 mb-3">
+          KelanaLampung Portal Utama
+        </h2>
+        <p className="text-xs text-slate-600 mb-6">
+          Komponen Base Layout & Traveloka-Style Auth Modal Popup (Frontend Fase 2 Completed)
         </p>
-        <div className="bg-slate-100 p-4 rounded-2xl text-xs text-slate-600 font-mono mb-4 text-left">
-          Status: Frontend Foundation & Design System Ready (Fase 1 Completed)
-        </div>
-        <span className="inline-flex items-center px-4 py-2 rounded-full text-xs font-semibold bg-primary-50 text-primary-700 border border-primary-100">
-          React 18 + Vite + TypeScript + Tailwind CSS v3
+        <span className="inline-flex items-center px-4 py-2 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+          Base Layout, Navbar, Auth Modal & Footer Operational
         </span>
       </div>
-    </div>
+    </main>
+  );
+}
+
+function ExplorePage() {
+  return (
+    <main className="flex-1 max-w-7xl mx-auto w-full px-4 py-16 text-center">
+      <h2 className="text-2xl font-display font-bold">Halaman Jelajah & Map Spasial (Fase 4 Placeholder)</h2>
+    </main>
+  );
+}
+
+function PlannerPage() {
+  return (
+    <main className="flex-1 max-w-7xl mx-auto w-full px-4 py-16 text-center">
+      <h2 className="text-2xl font-display font-bold">Halaman AI Planner (Fase 5 Placeholder)</h2>
+    </main>
+  );
+}
+
+function FavoritesPage() {
+  return (
+    <main className="flex-1 max-w-7xl mx-auto w-full px-4 py-16 text-center">
+      <h2 className="text-2xl font-display font-bold">Halaman Favorit Pengguna (Fase 6 Placeholder)</h2>
+    </main>
+  );
+}
+
+function PublicSharePage() {
+  return (
+    <main className="flex-1 max-w-7xl mx-auto w-full px-4 py-16 text-center">
+      <h2 className="text-2xl font-display font-bold">Public Shared Itinerary View (Fase 7 Placeholder)</h2>
+    </main>
+  );
+}
+
+export function App() {
+  return (
+    <AuthProvider>
+      <Router>
+        <div className="min-h-[100dvh] flex flex-col bg-clean-light">
+          <Navbar />
+          <Routes>
+            <Route path="/" element={<HomePage />} />
+            <Route path="/explore" element={<ExplorePage />} />
+            <Route path="/planner" element={<PlannerPage />} />
+            <Route path="/favorites" element={<FavoritesPage />} />
+            <Route path="/share/:shareToken" element={<PublicSharePage />} />
+          </Routes>
+          <Footer />
+          <AuthModal />
+        </div>
+      </Router>
+    </AuthProvider>
   );
 }
 
