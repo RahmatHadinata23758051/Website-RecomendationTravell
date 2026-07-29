@@ -294,11 +294,10 @@ export const HomePage: React.FC = () => {
                     <button
                       key={key}
                       onClick={() => setSelectedCategory(key)}
-                      className={`flex flex-col items-center gap-1 p-2 rounded-2xl transition-all ${
-                        selectedCategory === key
+                      className={`flex flex-col items-center gap-1 p-2 rounded-2xl transition-all ${selectedCategory === key
                           ? 'bg-[#0D9488] text-white shadow-md'
                           : 'hover:bg-slate-100/80 text-slate-600'
-                      }`}
+                        }`}
                     >
                       <Icon className="w-4 h-4" />
                       <span className="text-[9px] font-semibold">{label}</span>
@@ -391,20 +390,20 @@ export const HomePage: React.FC = () => {
             </div>
           </section>
 
-          {/* FEATURE HIGHLIGHTS BAR — Mockup-matched style with Siger ornaments on left & right */}
+          {/* FEATURE HIGHLIGHTS BAR — Mockup-matched style with Tapis pattern on left & right */}
           <section className="relative glass-card-container rounded-[24px] px-8 sm:px-12 py-4 sm:py-5 overflow-hidden">
-            {/* Left & Right Siger Crown Ornaments matching card height */}
+            {/* Left & Right Tapis Gold Pattern Motifs matching card height */}
             <img
-              src="/assets/images/logos/siger-gold-icon.png"
+              src="/assets/images/patterns/lampung-tapis-pattern-transparent.png"
               alt=""
               aria-hidden="true"
-              className="absolute left-1 top-1/2 -translate-y-1/2 h-[85%] w-auto opacity-30 pointer-events-none select-none"
+              className="absolute left-0 top-0 h-full w-24 object-cover object-left opacity-50 pointer-events-none select-none"
             />
             <img
-              src="/assets/images/logos/siger-gold-icon.png"
+              src="/assets/images/patterns/lampung-tapis-pattern-transparent.png"
               alt=""
               aria-hidden="true"
-              className="absolute right-1 top-1/2 -translate-y-1/2 h-[85%] w-auto opacity-30 scale-x-[-1] pointer-events-none select-none"
+              className="absolute right-0 top-0 h-full w-24 object-cover object-left opacity-50 scale-x-[-1] pointer-events-none select-none"
             />
 
             <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-siger-400/40 to-transparent" />
