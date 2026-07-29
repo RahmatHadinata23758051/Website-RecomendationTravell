@@ -120,10 +120,10 @@ export const HomePage: React.FC = () => {
             Using the actual image which has the pattern concentrated on its left side.
             The image itself is already very subtle/faint, so we use high opacity. */}
         <img
-          src="/assets/images/patterns/lampung-tapis-pattern.png"
+          src="/assets/images/patterns/lampung-tapis-pattern-transparent.png"
           alt=""
           aria-hidden="true"
-          className="absolute top-0 left-0 w-[700px] h-auto opacity-70 pointer-events-none select-none z-[2] mix-blend-multiply"
+          className="absolute top-0 left-0 w-[650px] h-auto opacity-85 pointer-events-none select-none z-[2]"
         />
 
         {/* Hero Content — centered within max-width, padded from top for fixed navbar */}

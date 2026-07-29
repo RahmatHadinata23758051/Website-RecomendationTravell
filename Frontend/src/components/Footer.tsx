@@ -6,10 +6,10 @@ export const Footer: React.FC = () => {
     <footer className="relative bg-[#0F2937] text-white overflow-hidden">
       {/* Tapis pattern watermark overlay */}
       <img
-        src="/assets/images/patterns/lampung-tapis-pattern.png"
+        src="/assets/images/patterns/lampung-tapis-pattern-transparent.png"
         alt=""
         aria-hidden="true"
-        className="absolute top-0 left-0 w-[500px] h-auto opacity-10 pointer-events-none select-none mix-blend-overlay"
+        className="absolute top-0 left-0 w-[500px] h-auto opacity-20 pointer-events-none select-none"
       />
 
       {/* Siger gold accent line at top */}
