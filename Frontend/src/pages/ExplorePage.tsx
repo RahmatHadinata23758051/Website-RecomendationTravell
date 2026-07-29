@@ -198,6 +198,8 @@ export const mockDestinations: Destination[] = [
   },
 ];
 
+import { fetchRealDestinations } from '../services/destinationsApi';
+
 export const ExplorePage: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const [searchKeyword, setSearchKeyword] = useState<string>(searchParams.get('search') || '');
@@ -208,6 +210,8 @@ export const ExplorePage: React.FC = () => {
   const [hoveredDestinationId, setHoveredDestinationId] = useState<string | null>(null);
   const [favorites, setFavorites] = useState<string[]>([]);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [realDestinations, setRealDestinations] = useState<Destination[]>(mockDestinations);
+  const [isLoadingRealData, setIsLoadingRealData] = useState<boolean>(false);
 
   const mapRef = useRef<HTMLDivElement | null>(null);
   const leafletInstanceRef = useRef<L.Map | null>(null);
@@ -222,6 +226,12 @@ export const ExplorePage: React.FC = () => {
     'Lampung Timur',
     'Way Kanan',
     'Pesisir Barat',
+    'Lampung Barat',
+    'Lampung Tengah',
+    'Lampung Utara',
+    'Metro',
+    'Pringsewu',
+    'Tulang Bawang',
   ];
 
   // Sync search input with URL params
@@ -232,23 +242,40 @@ export const ExplorePage: React.FC = () => {
     }
   }, [searchParams]);
 
-  // Filtered Destinations logic
-  const filteredDestinations = mockDestinations
-    .filter((item) => {
-      const matchKeyword =
-        item.name.toLowerCase().includes(searchKeyword.toLowerCase()) ||
-        item.location.toLowerCase().includes(searchKeyword.toLowerCase()) ||
-        item.regency.toLowerCase().includes(searchKeyword.toLowerCase()) ||
-        item.category.toLowerCase().includes(searchKeyword.toLowerCase());
-      const matchCategory = selectedCategory === 'Semua' || item.category === selectedCategory;
-      const matchRegency = selectedRegency === 'Semua' || item.regency === selectedRegency;
-      return matchKeyword && matchCategory && matchRegency;
-    })
-    .sort((a, b) => {
-      if (sortBy === 'rating') return b.rating - a.rating;
-      if (sortBy === 'price') return a.numericPrice - b.numericPrice;
-      return b.reviews - a.reviews; // Default: popular
+  // Fetch Live Real Data from Backend / FastAPI
+  useEffect(() => {
+    let isMounted = true;
+    setIsLoadingRealData(true);
+
+    fetchRealDestinations({
+      category: selectedCategory,
+      city_or_regency: selectedRegency,
+      search: searchKeyword,
+      limit: 100,
+    }).then((data) => {
+      if (isMounted) {
+        if (data && data.length > 0) {
+          setRealDestinations(data);
+        } else if (selectedCategory === 'Semua' && selectedRegency === 'Semua' && !searchKeyword) {
+          setRealDestinations(mockDestinations);
+        } else {
+          setRealDestinations([]);
+        }
+        setIsLoadingRealData(false);
+      }
     });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [selectedCategory, selectedRegency, searchKeyword]);
+
+  // Sort Filtered Destinations logic
+  const filteredDestinations = [...realDestinations].sort((a, b) => {
+    if (sortBy === 'rating') return b.rating - a.rating;
+    if (sortBy === 'price') return a.numericPrice - b.numericPrice;
+    return b.reviews - a.reviews; // Default: popular
+  });
 
   // Initialize Leaflet Map
   useEffect(() => {
@@ -377,8 +404,11 @@ export const ExplorePage: React.FC = () => {
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-teal-50 border border-teal-200">
                 <Compass className="w-3.5 h-3.5 text-[#0D9488]" />
                 <span className="text-[11px] font-semibold text-[#0D9488]">
-                  Eksplorasi Wisata Lampung
+                  Eksplorasi Wisata Lampung (3.130+ Data Real)
                 </span>
+                {isLoadingRealData && (
+                  <span className="w-2 h-2 rounded-full bg-[#0D9488] animate-ping" />
+                )}
               </div>
               <h1 className="text-2xl sm:text-3xl font-display font-extrabold text-slate-900 tracking-tight">
                 Jelajah Destinasi & Peta Spasial
