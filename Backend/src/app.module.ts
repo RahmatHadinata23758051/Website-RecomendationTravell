@@ -8,6 +8,7 @@ import { PrismaModule } from './prisma/prisma.module';
 import { AuthModule } from './auth/auth.module';
 import { RedisModule } from './redis/redis.module';
 import { DestinationsModule } from './destinations/destinations.module';
+import { SpatialModule } from './spatial/spatial.module';
 
 @Module({
   imports: [
@@ -24,6 +25,7 @@ import { DestinationsModule } from './destinations/destinations.module';
     AuthModule,
     RedisModule,
     DestinationsModule,
+    SpatialModule,
   ],
   controllers: [AppController],
   providers: [
