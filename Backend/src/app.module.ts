@@ -12,6 +12,7 @@ import { SpatialModule } from './spatial/spatial.module';
 import { FavoritesModule } from './favorites/favorites.module';
 import { PlannerModule } from './planner/planner.module';
 import { ReviewsModule } from './reviews/reviews.module';
+import { ChatbotModule } from './chatbot/chatbot.module';
 
 @Module({
   imports: [
@@ -32,6 +33,7 @@ import { ReviewsModule } from './reviews/reviews.module';
     FavoritesModule,
     PlannerModule,
     ReviewsModule,
+    ChatbotModule,
   ],
   controllers: [AppController],
   providers: [
