@@ -298,51 +298,53 @@ export const ExplorePage: React.FC = () => {
     Object.values(markersRef.current).forEach((marker) => marker.remove());
     markersRef.current = {};
 
-    // Add markers for filtered destinations
-    if (filteredDestinations.length > 0) {
+    // Limit map pin markers to top 20 destinations to avoid map pin overlap clutter
+    const mapDestinations = filteredDestinations.slice(0, 20);
+
+    if (mapDestinations.length > 0) {
       const bounds = L.latLngBounds([]);
 
-      filteredDestinations.forEach((dest) => {
+      mapDestinations.forEach((dest) => {
         bounds.extend(dest.coords);
         const isSelected = selectedDestination?.id === dest.id;
         const isHovered = hoveredDestinationId === dest.id;
 
-        // Clean Custom Map Pin
+        // Sleek Compact Custom Map Pin
         const customIcon = L.divIcon({
           className: 'custom-map-clean-pin',
           html: `
             <div style="
               display: inline-flex;
               align-items: center;
-              gap: 6px;
+              gap: 5px;
               background: ${isSelected ? '#0D9488' : isHovered ? '#115E59' : '#FFFFFF'};
               color: ${isSelected || isHovered ? '#FFFFFF' : '#0F172A'};
-              padding: 5px 11px;
+              padding: 4px 10px;
               border-radius: 9999px;
               border: 2px solid ${isSelected ? '#F59E0B' : '#0D9488'};
-              box-shadow: 0 6px 16px -2px rgba(15, 23, 42, 0.25);
+              box-shadow: 0 4px 12px -2px rgba(15, 23, 42, 0.2);
               font-family: sans-serif;
               font-size: 11px;
               font-weight: 700;
               cursor: pointer;
               white-space: nowrap;
               transition: all 0.2s ease;
-              transform: ${isSelected || isHovered ? 'scale(1.1)' : 'scale(1.0)'};
+              transform: ${isSelected || isHovered ? 'scale(1.15) translateY(-2px)' : 'scale(1.0)'};
+              z-index: ${isSelected ? '9999' : '100'};
             ">
-              <span style="width: 8px; height: 8px; border-radius: 50%; background: #F59E0B; display: inline-block;"></span>
-              <span>${dest.name}</span>
+              <span style="width: 7px; height: 7px; border-radius: 50%; background: #F59E0B; display: inline-block;"></span>
+              <span>${dest.name.length > 22 ? dest.name.slice(0, 22) + '...' : dest.name}</span>
               <span style="
                 background: ${isSelected ? '#F59E0B' : '#0D9488'};
                 color: #FFFFFF;
                 font-size: 9px;
                 padding: 1px 5px;
                 border-radius: 999px;
-                margin-left: 2px;
               ">&#9733; ${dest.rating}</span>
             </div>
           `,
-          iconSize: [130, 34],
-          iconAnchor: [65, 17],
+          iconSize: [120, 30],
+          iconAnchor: [60, 15],
         });
 
         const marker = L.marker(dest.coords, { icon: customIcon }).addTo(map);
@@ -355,8 +357,8 @@ export const ExplorePage: React.FC = () => {
         markersRef.current[dest.id] = marker;
       });
 
-      // Automatically fit bounds smoothly
-      map.fitBounds(bounds, { padding: [40, 40], maxZoom: 10 });
+      // Fit bounds with comfortable padding
+      map.fitBounds(bounds, { padding: [50, 50], maxZoom: 12 });
     }
   }, [filteredDestinations, selectedDestination, hoveredDestinationId]);
 
@@ -550,6 +552,9 @@ export const ExplorePage: React.FC = () => {
                       <img
                         src={item.image}
                         alt={item.name}
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).src = '/assets/images/heroes/hero-pahawang-bg.png';
+                        }}
                         className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-slate-950/60 via-transparent to-transparent" />
