@@ -1,0 +1,67 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum UserRole {
+  USER
+  ADMIN
+}
+
+model User {
+  id            String         @id @default(uuid())
+  email         String         @unique
+  passwordHash  String
+  fullName      String
+  role          UserRole       @default(USER)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  favorites     UserFavorite[]
+  itineraries   Itinerary[]
+  reviews       Review[]
+
+  @@map("users")
+}
+
+model UserFavorite {
+  id          String   @id @default(uuid())
+  userId      String
+  canonicalId String
+  createdAt   DateTime @default(now())
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, canonicalId])
+  @@map("user_favorites")
+}
+
+model Itinerary {
+  id          String   @id @default(uuid())
+  userId      String
+  title       String
+  shareToken  String   @unique @default(uuid())
+  daysJson    Json
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("itineraries")
+}
+
+model Review {
+  id             String   @id @default(uuid())
+  userId         String
+  canonicalId    String
+  rating         Int
+  reviewText     String
+  sentimentLabel String
+  sentimentScore Float
+  createdAt      DateTime @default(now())
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([canonicalId])
+  @@map("reviews")
+}
