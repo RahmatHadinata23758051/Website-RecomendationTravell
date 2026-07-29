@@ -17,6 +17,7 @@ import {
   Compass,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { fetchRealDestinations } from '../services/destinationsApi';
 import {
   WiDaySunny,
   WiNightClear,
@@ -96,6 +97,25 @@ export const HomePage: React.FC = () => {
   const navigate = useNavigate();
   const [searchKeyword, setSearchKeyword] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('Pantai');
+  const [recommendations, setRecommendations] = useState<DestinationCard[]>(mockRecommendations);
+
+  useEffect(() => {
+    fetchRealDestinations({ limit: 12 }).then((data) => {
+      if (data && data.length > 0) {
+        const mapped: DestinationCard[] = data.map((d) => ({
+          id: d.id,
+          name: d.name,
+          location: d.regency || d.location,
+          category: d.category,
+          rating: d.rating,
+          reviews: d.reviews,
+          duration: d.duration,
+          image: d.image,
+        }));
+        setRecommendations(mapped);
+      }
+    });
+  }, []);
 
   // OpenWeather API Integration for Provinsi Lampung with key 84071adb3c0d5f4d42ec9ab6b245e2df
   const [weatherData, setWeatherData] = useState<{
@@ -389,7 +409,7 @@ export const HomePage: React.FC = () => {
 
             <div className="relative">
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-                {mockRecommendations.map((item) => (
+                {recommendations.map((item) => (
                   <div
                     key={item.id}
                     onClick={() => navigate('/explore')}
