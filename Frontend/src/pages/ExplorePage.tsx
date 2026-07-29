@@ -10,6 +10,7 @@ import {
   Star,
   Clock,
   Tag,
+  ChevronRight,
   ExternalLink,
   Palmtree,
   Mountain,
@@ -19,8 +20,6 @@ import {
   SlidersHorizontal,
   Compass,
   CheckCircle2,
-  Map as MapIcon,
-  LayoutGrid,
 } from 'lucide-react';
 import L from 'leaflet';
 
@@ -205,7 +204,6 @@ export const ExplorePage: React.FC = () => {
   const [selectedCategory, setSelectedCategory] = useState<string>('Semua');
   const [selectedRegency, setSelectedRegency] = useState<string>('Semua');
   const [sortBy, setSortBy] = useState<'popular' | 'rating' | 'price'>('popular');
-  const [viewMode, setViewMode] = useState<'split' | 'map' | 'list'>('split');
   const [selectedDestination, setSelectedDestination] = useState<Destination | null>(null);
   const [hoveredDestinationId, setHoveredDestinationId] = useState<string | null>(null);
   const [favorites, setFavorites] = useState<string[]>([]);
@@ -252,89 +250,94 @@ export const ExplorePage: React.FC = () => {
       return b.reviews - a.reviews; // Default: popular
     });
 
-  // Initialize Leaflet Map with CartoDB Voyage Tiles (Sleek Modern White Map Style)
+  // Initialize Leaflet Map
   useEffect(() => {
     if (!mapRef.current) return;
 
     if (!leafletInstanceRef.current) {
       const map = L.map(mapRef.current, {
-        center: [-5.35, 105.1], // Balanced center over Lampung
+        center: [-5.35, 105.1], // Center of Lampung
         zoom: 9,
         zoomControl: false,
       });
 
-      // CartoDB Voyage Tiles — Modern, ultra-clean, minimal clutter
-      L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyage/{z}/{x}/{y}{r}.png', {
-        attribution: '&copy; <a href="https://carto.com/">CARTO</a> &copy; OpenStreetMap',
-        maxZoom: 19,
-        subdomains: 'abcd',
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; OpenStreetMap contributors',
+        maxZoom: 18,
       }).addTo(map);
 
-      L.control.zoom({ position: 'bottomright' }).addTo(map);
+      L.control.zoom({ position: 'topright' }).addTo(map);
       leafletInstanceRef.current = map;
     }
 
     const map = leafletInstanceRef.current;
-    setTimeout(() => map.invalidateSize(), 200);
+    setTimeout(() => map.invalidateSize(), 150);
 
     // Clear existing markers
     Object.values(markersRef.current).forEach((marker) => marker.remove());
     markersRef.current = {};
 
-    // Add custom Siger Pins for filtered destinations
-    filteredDestinations.forEach((dest) => {
-      const isSelected = selectedDestination?.id === dest.id;
-      const isHovered = hoveredDestinationId === dest.id;
+    // Add markers for filtered destinations
+    if (filteredDestinations.length > 0) {
+      const bounds = L.latLngBounds([]);
 
-      // Premium Custom Siger Pin HTML Marker
-      const customIcon = L.divIcon({
-        className: 'custom-map-siger-pin',
-        html: `
-          <div style="
-            display: inline-flex;
-            align-items: center;
-            gap: 7px;
-            background: ${isSelected ? '#0D9488' : isHovered ? '#115E59' : '#FFFFFF'};
-            color: ${isSelected || isHovered ? '#FFFFFF' : '#0F172A'};
-            padding: 6px 12px;
-            border-radius: 9999px;
-            border: 2px solid ${isSelected ? '#F59E0B' : isHovered ? '#F59E0B' : '#0D9488'};
-            box-shadow: 0 8px 24px -4px rgba(15, 23, 42, 0.25);
-            font-family: 'Plus Jakarta Sans', sans-serif;
-            font-size: 11.5px;
-            font-weight: 800;
-            cursor: pointer;
-            white-space: nowrap;
-            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-            transform: ${isSelected || isHovered ? 'scale(1.12) translateY(-4px)' : 'scale(1.0)'};
-            z-index: ${isSelected ? '9999' : '100'};
-          ">
-            <img src="/assets/images/logos/siger-gold-icon.png" style="height: 16px; width: auto; object-contain: fit;" alt="" />
-            <span>${dest.name}</span>
-            <span style="
-              background: ${isSelected ? '#F59E0B' : '#0D9488'};
-              color: #FFFFFF;
-              font-size: 9.5px;
-              padding: 2px 6px;
-              border-radius: 999px;
-              margin-left: 2px;
-            ">&#9733; ${dest.rating}</span>
-          </div>
-        `,
-        iconSize: [140, 40],
-        iconAnchor: [70, 20],
+      filteredDestinations.forEach((dest) => {
+        bounds.extend(dest.coords);
+        const isSelected = selectedDestination?.id === dest.id;
+        const isHovered = hoveredDestinationId === dest.id;
+
+        // Clean Custom Map Pin
+        const customIcon = L.divIcon({
+          className: 'custom-map-clean-pin',
+          html: `
+            <div style="
+              display: inline-flex;
+              align-items: center;
+              gap: 6px;
+              background: ${isSelected ? '#0D9488' : isHovered ? '#115E59' : '#FFFFFF'};
+              color: ${isSelected || isHovered ? '#FFFFFF' : '#0F172A'};
+              padding: 5px 11px;
+              border-radius: 9999px;
+              border: 2px solid ${isSelected ? '#F59E0B' : '#0D9488'};
+              box-shadow: 0 6px 16px -2px rgba(15, 23, 42, 0.25);
+              font-family: sans-serif;
+              font-size: 11px;
+              font-weight: 700;
+              cursor: pointer;
+              white-space: nowrap;
+              transition: all 0.2s ease;
+              transform: ${isSelected || isHovered ? 'scale(1.1)' : 'scale(1.0)'};
+            ">
+              <span style="width: 8px; height: 8px; border-radius: 50%; background: #F59E0B; display: inline-block;"></span>
+              <span>${dest.name}</span>
+              <span style="
+                background: ${isSelected ? '#F59E0B' : '#0D9488'};
+                color: #FFFFFF;
+                font-size: 9px;
+                padding: 1px 5px;
+                border-radius: 999px;
+                margin-left: 2px;
+              ">&#9733; ${dest.rating}</span>
+            </div>
+          `,
+          iconSize: [130, 34],
+          iconAnchor: [65, 17],
+        });
+
+        const marker = L.marker(dest.coords, { icon: customIcon }).addTo(map);
+
+        marker.on('click', () => {
+          setSelectedDestination(dest);
+          map.panTo(dest.coords, { animate: true });
+        });
+
+        markersRef.current[dest.id] = marker;
       });
 
-      const marker = L.marker(dest.coords, { icon: customIcon }).addTo(map);
-
-      marker.on('click', () => {
-        setSelectedDestination(dest);
-        map.panTo(dest.coords, { animate: true });
-      });
-
-      markersRef.current[dest.id] = marker;
-    });
-  }, [filteredDestinations, selectedDestination, hoveredDestinationId, viewMode]);
+      // Automatically fit bounds smoothly
+      map.fitBounds(bounds, { padding: [40, 40], maxZoom: 10 });
+    }
+  }, [filteredDestinations, selectedDestination, hoveredDestinationId]);
 
   // Handle Toast
   const triggerToast = (msg: string) => {
@@ -354,7 +357,7 @@ export const ExplorePage: React.FC = () => {
   };
 
   return (
-    <div className="flex flex-col min-h-[100dvh] pt-20 bg-[#F4F8FA]">
+    <div className="flex flex-col min-h-[100dvh] pt-24 pb-12">
       {/* Toast Notification */}
       {toastMessage && (
         <div className="fixed bottom-6 right-6 z-50 bg-[#0F2937] text-white px-5 py-3 rounded-2xl shadow-2xl border border-siger-400/30 flex items-center gap-3 transition-all animate-bounce">
@@ -363,25 +366,28 @@ export const ExplorePage: React.FC = () => {
         </div>
       )}
 
-      {/* FULL-WIDTH TOP FILTER & HEADER BAR (Edge-to-Edge) */}
-      <div className="w-full px-4 sm:px-6 lg:px-8 py-3 bg-white/90 backdrop-blur-md border-b border-slate-200/80 sticky top-16 z-30 shadow-sm">
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
-          
-          {/* Left: Title + Search input */}
-          <div className="flex items-center gap-4 flex-1 min-w-0">
-            <div className="flex items-center gap-2 shrink-0">
-              <Compass className="w-5 h-5 text-[#0D9488]" />
-              <h1 className="text-lg font-display font-extrabold text-slate-900 tracking-tight">
-                Peta Spasial Lampung
+      {/* FULL-WIDTH CONTAINER (Extends beyond Navbar limits to edge of screen) */}
+      <div className="w-full max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-10 space-y-6">
+
+        {/* HEADER & FILTER BAR SECTION */}
+        <div className="glass-card-container rounded-[28px] p-5 sm:p-6 space-y-5">
+          {/* Top Title & Search Bar */}
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div className="space-y-1">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-teal-50 border border-teal-200">
+                <Compass className="w-3.5 h-3.5 text-[#0D9488]" />
+                <span className="text-[11px] font-semibold text-[#0D9488]">
+                  Eksplorasi Wisata Lampung
+                </span>
+              </div>
+              <h1 className="text-2xl sm:text-3xl font-display font-extrabold text-slate-900 tracking-tight">
+                Jelajah Destinasi & Peta Spasial
               </h1>
-              <span className="hidden sm:inline-block px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-amber-100 text-amber-700 border border-amber-300">
-                {filteredDestinations.length} Destinasi
-              </span>
             </div>
 
-            {/* Compact Search Bar */}
-            <div className="relative flex-1 max-w-sm">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
+            {/* Search Bar Input */}
+            <div className="relative w-full md:w-96">
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
               <input
                 type="text"
                 value={searchKeyword}
@@ -389,8 +395,8 @@ export const ExplorePage: React.FC = () => {
                   setSearchKeyword(e.target.value);
                   setSearchParams(e.target.value ? { search: e.target.value } : {});
                 }}
-                placeholder="Cari destinasi, pantai, museum..."
-                className="w-full bg-slate-100/90 border border-slate-200 rounded-full pl-8 pr-8 py-1.5 text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#0D9488]/40 focus:bg-white"
+                placeholder="Cari pantai, air terjun, museum..."
+                className="w-full bg-slate-50 border border-slate-200 rounded-full pl-10 pr-9 py-2 text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#0D9488]/40 focus:border-[#0D9488]"
               />
               {searchKeyword && (
                 <button
@@ -398,7 +404,7 @@ export const ExplorePage: React.FC = () => {
                     setSearchKeyword('');
                     setSearchParams({});
                   }}
-                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
                 >
                   <X className="w-3.5 h-3.5" />
                 </button>
@@ -406,10 +412,10 @@ export const ExplorePage: React.FC = () => {
             </div>
           </div>
 
-          {/* Right: Filters & View Mode Toggles */}
-          <div className="flex flex-wrap items-center gap-2.5 shrink-0">
-            {/* Category Pills */}
-            <div className="hidden xl:flex items-center gap-1.5">
+          {/* Filter Pills & Dropdown Row */}
+          <div className="flex flex-wrap items-center justify-between gap-4 pt-2 border-t border-slate-200/60">
+            {/* Category Filter Pills */}
+            <div className="flex flex-wrap items-center gap-2">
               {[
                 { label: 'Semua', icon: Sparkles },
                 { label: 'Pantai', icon: Palmtree },
@@ -421,192 +427,195 @@ export const ExplorePage: React.FC = () => {
                 <button
                   key={label}
                   onClick={() => setSelectedCategory(label)}
-                  className={`flex items-center gap-1 px-3 py-1 rounded-full text-[11px] font-bold transition-all ${
+                  className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold transition-all ${
                     selectedCategory === label
-                      ? 'bg-[#0D9488] text-white shadow-sm'
+                      ? 'bg-[#0D9488] text-white shadow-md shadow-[#0D9488]/20'
                       : 'bg-slate-100 hover:bg-slate-200 text-slate-600'
                   }`}
                 >
-                  <Icon className="w-3 h-3" />
+                  <Icon className="w-3.5 h-3.5" />
                   <span>{label}</span>
                 </button>
               ))}
             </div>
 
-            {/* Regency Dropdown */}
-            <div className="flex items-center gap-1 text-xs text-slate-600 font-semibold bg-slate-100 px-2.5 py-1 rounded-full border border-slate-200">
-              <MapPin className="w-3.5 h-3.5 text-[#0D9488]" />
-              <select
-                value={selectedRegency}
-                onChange={(e) => setSelectedRegency(e.target.value)}
-                className="bg-transparent focus:outline-none text-xs text-slate-900 font-bold"
-              >
-                {regencies.map((reg) => (
-                  <option key={reg} value={reg}>
-                    {reg}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {/* Sort Dropdown */}
-            <div className="flex items-center gap-1 text-xs text-slate-600 font-semibold bg-slate-100 px-2.5 py-1 rounded-full border border-slate-200">
-              <SlidersHorizontal className="w-3.5 h-3.5 text-siger-500" />
-              <select
-                value={sortBy}
-                onChange={(e) => setSortBy(e.target.value as any)}
-                className="bg-transparent focus:outline-none text-xs text-slate-900 font-bold"
-              >
-                <option value="popular">Populer</option>
-                <option value="rating">Rating</option>
-                <option value="price">Termurah</option>
-              </select>
-            </div>
-
-            {/* View Mode Toggle Buttons */}
-            <div className="flex items-center bg-slate-200/80 p-0.5 rounded-full border border-slate-300">
-              <button
-                onClick={() => setViewMode('split')}
-                title="Tampilan Split Map & List"
-                className={`p-1.5 rounded-full transition-all ${
-                  viewMode === 'split' ? 'bg-white text-[#0D9488] shadow-sm font-bold' : 'text-slate-600 hover:text-slate-900'
-                }`}
-              >
-                <LayoutGrid className="w-4 h-4" />
-              </button>
-              <button
-                onClick={() => setViewMode('map')}
-                title="Tampilan Peta Full Screen"
-                className={`p-1.5 rounded-full transition-all ${
-                  viewMode === 'map' ? 'bg-white text-[#0D9488] shadow-sm font-bold' : 'text-slate-600 hover:text-slate-900'
-                }`}
-              >
-                <MapIcon className="w-4 h-4" />
-              </button>
-            </div>
-
-          </div>
-        </div>
-      </div>
-
-      {/* FULL VIEWPORT WIDTH CONTENT CONTAINER */}
-      <div className="w-full flex-1 px-2 sm:px-4 lg:px-6 py-4">
-        <div className="w-full h-[calc(100vh-8.5rem)] flex flex-col lg:flex-row gap-4">
-
-          {/* LEFT: DESTINATION CARDS PANEL (Flexible 45%-50% Width) */}
-          {(viewMode === 'split' || viewMode === 'list') && (
-            <div
-              className={`${
-                viewMode === 'list' ? 'w-full max-w-7xl mx-auto' : 'w-full lg:w-5/12 xl:w-4/12'
-              } h-full overflow-y-auto pr-1 space-y-3 custom-scrollbar`}
-            >
-              {filteredDestinations.length === 0 ? (
-                <div className="bg-white rounded-3xl p-12 text-center space-y-3 border border-slate-200">
-                  <Filter className="w-10 h-10 text-slate-300 mx-auto" />
-                  <h3 className="text-base font-bold text-slate-800">Tidak ada destinasi ditemukan</h3>
-                  <p className="text-xs text-slate-500">Coba ubah kata kunci pencarian atau filter wilayah kamu.</p>
-                  <button
-                    onClick={() => {
-                      setSearchKeyword('');
-                      setSelectedCategory('Semua');
-                      setSelectedRegency('Semua');
-                      setSearchParams({});
-                    }}
-                    className="px-4 py-2 bg-[#0D9488] text-white text-xs font-bold rounded-full hover:bg-[#0F766E] transition-colors"
-                  >
-                    Reset Filter
-                  </button>
-                </div>
-              ) : (
-                <div className={`grid ${viewMode === 'list' ? 'grid-cols-1 md:grid-cols-3 xl:grid-cols-4' : 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-1'} gap-3.5`}>
-                  {filteredDestinations.map((item) => (
-                    <div
-                      key={item.id}
-                      onMouseEnter={() => setHoveredDestinationId(item.id)}
-                      onMouseLeave={() => setHoveredDestinationId(null)}
-                      onClick={() => {
-                        setSelectedDestination(item);
-                        if (leafletInstanceRef.current) {
-                          leafletInstanceRef.current.panTo(item.coords, { animate: true });
-                        }
-                      }}
-                      className={`group bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 cursor-pointer border flex flex-col justify-between ${
-                        selectedDestination?.id === item.id || hoveredDestinationId === item.id
-                          ? 'border-[#0D9488] ring-2 ring-[#0D9488]/30 shadow-md'
-                          : 'border-slate-200/90 hover:border-slate-300'
-                      }`}
-                    >
-                      <div className="flex flex-row lg:flex-row items-center p-3 gap-3">
-                        {/* Image Thumbnail */}
-                        <div className="relative w-28 sm:w-32 h-24 rounded-xl overflow-hidden bg-slate-900 shrink-0">
-                          <img
-                            src={item.image}
-                            alt={item.name}
-                            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                          />
-                          <span className="absolute top-1.5 left-1.5 px-2 py-0.5 rounded-full text-[9px] font-extrabold bg-[#0D9488] text-white shadow">
-                            {item.category}
-                          </span>
-                        </div>
-
-                        {/* Card Info */}
-                        <div className="flex-1 min-w-0 space-y-1">
-                          <div className="flex items-start justify-between gap-1">
-                            <h3 className="text-xs sm:text-sm font-bold font-display text-slate-900 group-hover:text-[#0D9488] transition-colors leading-snug line-clamp-1">
-                              {item.name}
-                            </h3>
-                            <button
-                              onClick={(e) => toggleFavorite(item.id, e)}
-                              className={`p-1 rounded-full text-xs shrink-0 ${
-                                favorites.includes(item.id) ? 'text-red-500' : 'text-slate-300 hover:text-red-400'
-                              }`}
-                            >
-                              <Heart className={`w-3.5 h-3.5 ${favorites.includes(item.id) ? 'fill-current' : ''}`} />
-                            </button>
-                          </div>
-
-                          <p className="text-[11px] text-slate-500 font-sans flex items-center gap-1 truncate">
-                            <MapPin className="w-3 h-3 text-[#0D9488] shrink-0" />
-                            <span>{item.location}</span>
-                          </p>
-
-                          <div className="flex items-center gap-2 pt-1">
-                            <div className="flex items-center gap-1 text-siger-500 font-bold text-xs">
-                              <Star className="w-3.5 h-3.5 fill-current" />
-                              <span>{item.rating}</span>
-                              <span className="text-slate-400 text-[10px] font-normal">({item.reviews})</span>
-                            </div>
-                            <span className="text-[10px] text-slate-400">&bull;</span>
-                            <span className="text-[10px] font-extrabold text-[#0D9488]">{item.price}</span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
+            {/* Region Select & Sort Dropdowns */}
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-1.5 text-xs text-slate-500 font-medium">
+                <MapPin className="w-3.5 h-3.5 text-[#0D9488]" />
+                <span>Kabupaten/Kota:</span>
+                <select
+                  value={selectedRegency}
+                  onChange={(e) => setSelectedRegency(e.target.value)}
+                  className="bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1 text-xs text-slate-900 font-semibold focus:outline-none focus:border-[#0D9488]"
+                >
+                  {regencies.map((reg) => (
+                    <option key={reg} value={reg}>
+                      {reg}
+                    </option>
                   ))}
-                </div>
-              )}
-            </div>
-          )}
+                </select>
+              </div>
 
-          {/* RIGHT: FULL VIEWPORT INTERACTIVE SPATIAL MAP (Flexible 50%-55% or 100% Width) */}
-          {(viewMode === 'split' || viewMode === 'map') && (
-            <div className={`${viewMode === 'map' ? 'w-full' : 'w-full lg:w-7/12 xl:w-8/12'} h-full relative rounded-3xl overflow-hidden shadow-lg border border-slate-200`}>
-              {/* Map Canvas */}
-              <div ref={mapRef} className="w-full h-full z-10" />
-
-              {/* Map Floating Legend */}
-              <div className="absolute top-4 left-4 z-20 bg-white/90 backdrop-blur-md px-3.5 py-2 rounded-2xl border border-slate-200 shadow-md flex items-center gap-3 text-xs font-semibold text-slate-800">
-                <div className="flex items-center gap-1.5">
-                  <img src="/assets/images/logos/siger-gold-icon.png" alt="" className="h-4 w-auto" />
-                  <span>Pin Siger Lampung</span>
-                </div>
-                <span className="text-slate-300">|</span>
-                <span className="text-[11px] text-slate-500">{filteredDestinations.length} Lokasi Terdaftar</span>
+              <div className="flex items-center gap-1.5 text-xs text-slate-500 font-medium">
+                <SlidersHorizontal className="w-3.5 h-3.5 text-siger-500" />
+                <span>Urutkan:</span>
+                <select
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value as any)}
+                  className="bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1 text-xs text-slate-900 font-semibold focus:outline-none focus:border-[#0D9488]"
+                >
+                  <option value="popular">Populer</option>
+                  <option value="rating">Rating Tertinggi</option>
+                  <option value="price">Harga Termurah</option>
+                </select>
               </div>
             </div>
-          )}
+          </div>
+        </div>
+
+        {/* CONTENT SPLIT VIEW GRID (DESTINATION LIST & INTERACTIVE MAP) */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+
+          {/* LEFT: DESTINATIONS CARDS LIST (7 Cols - 2 Cards Per Row) */}
+          <div className="lg:col-span-7 space-y-4">
+            <div className="flex items-center justify-between px-1">
+              <p className="text-xs text-slate-500 font-medium">
+                Menampilkan <span className="font-bold text-slate-900">{filteredDestinations.length}</span> destinasi di Lampung
+              </p>
+            </div>
+
+            {filteredDestinations.length === 0 ? (
+              <div className="glass-card-container rounded-3xl p-12 text-center space-y-3">
+                <Filter className="w-10 h-10 text-slate-300 mx-auto" />
+                <h3 className="text-base font-bold text-slate-800">Tidak ada destinasi ditemukan</h3>
+                <p className="text-xs text-slate-500">Coba atur ulang kata kunci pencarian atau filter kategori kamu.</p>
+                <button
+                  onClick={() => {
+                    setSearchKeyword('');
+                    setSelectedCategory('Semua');
+                    setSelectedRegency('Semua');
+                    setSearchParams({});
+                  }}
+                  className="px-4 py-2 bg-[#0D9488] text-white text-xs font-bold rounded-full hover:bg-[#0F766E] transition-colors"
+                >
+                  Reset Semua Filter
+                </button>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {filteredDestinations.map((item) => (
+                  <div
+                    key={item.id}
+                    onMouseEnter={() => setHoveredDestinationId(item.id)}
+                    onMouseLeave={() => setHoveredDestinationId(null)}
+                    onClick={() => {
+                      setSelectedDestination(item);
+                      if (leafletInstanceRef.current) {
+                        leafletInstanceRef.current.panTo(item.coords, { animate: true });
+                      }
+                    }}
+                    className={`group glass-card-container rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 cursor-pointer border flex flex-col justify-between ${
+                      selectedDestination?.id === item.id || hoveredDestinationId === item.id
+                        ? 'border-[#0D9488] ring-2 ring-[#0D9488]/20 bg-white'
+                        : 'border-slate-200/80 hover:border-slate-300'
+                    }`}
+                  >
+                    {/* Card Image Header */}
+                    <div className="relative aspect-[16/10] overflow-hidden bg-slate-100">
+                      <img
+                        src={item.image}
+                        alt={item.name}
+                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-slate-950/60 via-transparent to-transparent" />
+
+                      {/* Top Category Badge & Heart button */}
+                      <div className="absolute top-3 left-3 right-3 flex items-center justify-between">
+                        <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-[#0D9488] text-white shadow-md">
+                          {item.category}
+                        </span>
+                        <button
+                          onClick={(e) => toggleFavorite(item.id, e)}
+                          className={`w-7 h-7 rounded-full flex items-center justify-center backdrop-blur-md transition-colors ${
+                            favorites.includes(item.id)
+                              ? 'bg-red-500 text-white'
+                              : 'bg-slate-900/40 text-white hover:bg-slate-900/70'
+                          }`}
+                        >
+                          <Heart className={`w-3.5 h-3.5 ${favorites.includes(item.id) ? 'fill-current' : ''}`} />
+                        </button>
+                      </div>
+
+                      {/* Bottom Info on Image */}
+                      <div className="absolute bottom-2.5 left-3 right-3 text-white flex items-center justify-between">
+                        <div className="flex items-center gap-1 text-siger-400 font-bold text-xs">
+                          <Star className="w-3.5 h-3.5 fill-current" />
+                          <span>{item.rating}</span>
+                          <span className="text-slate-300 text-[10px] font-normal">({item.reviews})</span>
+                        </div>
+                        <span className="text-[10px] bg-slate-900/60 px-2 py-0.5 rounded-md backdrop-blur-sm text-slate-200">
+                          {item.regency}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Card Content Body */}
+                    <div className="p-4 space-y-2 flex-1 flex flex-col justify-between">
+                      <div className="space-y-1">
+                        <h3 className="text-sm font-bold font-display text-slate-900 group-hover:text-[#0D9488] transition-colors leading-snug">
+                          {item.name}
+                        </h3>
+                        <p className="text-[11px] text-slate-500 font-sans flex items-center gap-1 line-clamp-1">
+                          <MapPin className="w-3 h-3 text-[#0D9488] shrink-0" />
+                          <span>{item.location}</span>
+                        </p>
+                      </div>
+
+                      <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-xs">
+                        <div>
+                          <p className="text-[10px] text-slate-400">Estimasi Tiket</p>
+                          <p className="text-xs font-extrabold text-[#0D9488]">{item.price}</p>
+                        </div>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedDestination(item);
+                          }}
+                          className="px-3 py-1.5 rounded-xl bg-teal-50 hover:bg-[#0D9488] text-[#0D9488] hover:text-white text-[11px] font-bold transition-all flex items-center gap-1"
+                        >
+                          <span>Detail</span>
+                          <ChevronRight className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* RIGHT: INTERACTIVE SPATIAL MAP (5 Cols - Sticky Container) */}
+          <div className="lg:col-span-5 sticky top-24">
+            <div className="glass-card-container rounded-[28px] overflow-hidden shadow-lg border border-slate-200/80 flex flex-col h-[600px]">
+              {/* Map Header */}
+              <div className="px-5 py-3.5 bg-white border-b border-slate-200/80 flex items-center justify-between shrink-0">
+                <div className="flex items-center gap-2">
+                  <div className="w-2.5 h-2.5 rounded-full bg-siger-500 animate-pulse" />
+                  <span className="text-xs font-bold text-slate-900">Map Spasial Interaktif Lampung</span>
+                </div>
+                <span className="text-[10px] text-slate-500 font-medium bg-slate-100 px-2 py-0.5 rounded-md">
+                  {filteredDestinations.length} Pin Aktif
+                </span>
+              </div>
+
+              {/* Leaflet Map Canvas */}
+              <div ref={mapRef} className="flex-1 w-full h-full z-10 bg-slate-100" />
+            </div>
+          </div>
 
         </div>
+
       </div>
 
       {/* QUICK DETAIL DRAWER / MODAL */}
