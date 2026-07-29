@@ -6,14 +6,7 @@ import { AuthModal } from './components/AuthModal';
 import { HomePage } from './pages/HomePage';
 import { ExplorePage } from './pages/ExplorePage';
 import { PlannerPage } from './pages/PlannerPage';
-
-function FavoritesPage() {
-  return (
-    <main className="flex-1 max-w-7xl mx-auto w-full px-4 py-16 text-center">
-      <h2 className="text-2xl font-display font-bold">Halaman Favorit Pengguna (Fase 6 Placeholder)</h2>
-    </main>
-  );
-}
+import { FavoritesPage } from './pages/FavoritesPage';
 
 function PublicSharePage() {
   return (
