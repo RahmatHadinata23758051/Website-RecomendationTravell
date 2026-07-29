@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
@@ -32,7 +32,21 @@ export const RouteMap3D: React.FC<RouteMap3DProps> = ({
   const markersRef = useRef<L.Marker[]>([]);
   const polylineRef = useRef<L.Polyline | null>(null);
 
-  const [is3D, setIs3D] = useState<boolean>(true);
+  const fitBoundsToSlots = () => {
+    const map = leafletMapRef.current;
+    if (!map) return;
+
+    const validSlots = slots.filter(
+      (s) => s.coords && Array.isArray(s.coords) && s.coords.length === 2 && !isNaN(s.coords[0]) && !isNaN(s.coords[1])
+    );
+
+    if (validSlots.length > 0) {
+      const bounds = L.latLngBounds(validSlots.map((s) => s.coords));
+      if (bounds.isValid()) {
+        map.fitBounds(bounds, { padding: [50, 50], maxZoom: 14 });
+      }
+    }
+  };
 
   useEffect(() => {
     if (!mapRef.current) return;
@@ -53,9 +67,9 @@ export const RouteMap3D: React.FC<RouteMap3DProps> = ({
         zoomControl: false,
       });
 
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '&copy; OpenStreetMap contributors',
-        maxZoom: 18,
+      L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+        attribution: '&copy; OpenStreetMap &copy; CARTO',
+        maxZoom: 19,
       }).addTo(map);
 
       L.control.zoom({ position: 'topright' }).addTo(map);
@@ -85,12 +99,12 @@ export const RouteMap3D: React.FC<RouteMap3DProps> = ({
       const latLngs: [number, number][] = validSlots.map((s) => s.coords);
       const bounds = L.latLngBounds(latLngs);
 
-      // Draw Route Polyline
+      // Draw Polyline Route Line
       const routeLine = L.polyline(latLngs, {
         color: '#0D9488',
         weight: 5,
-        opacity: 0.85,
-        dashArray: '10, 10',
+        opacity: 0.9,
+        dashArray: '8, 8',
         lineCap: 'round',
         lineJoin: 'round',
       }).addTo(map);
@@ -114,14 +128,14 @@ export const RouteMap3D: React.FC<RouteMap3DProps> = ({
               padding: 5px 12px;
               border-radius: 9999px;
               border: 2px solid ${isSelected ? '#F59E0B' : '#0D9488'};
-              box-shadow: 0 8px 20px -3px rgba(15, 23, 42, 0.4);
+              box-shadow: 0 8px 20px -3px rgba(15, 23, 42, 0.3);
               font-family: system-ui, sans-serif;
               font-size: 11px;
               font-weight: 800;
               cursor: pointer;
               white-space: nowrap;
-              transition: all 0.25s ease;
-              transform: ${isSelected ? 'scale(1.2) translateY(-4px)' : 'scale(1.0)'};
+              transition: all 0.2s ease;
+              transform: ${isSelected ? 'scale(1.15) translateY(-2px)' : 'scale(1.0)'};
               z-index: ${isSelected ? '9999' : '100'};
             ">
               <span style="
@@ -135,7 +149,6 @@ export const RouteMap3D: React.FC<RouteMap3DProps> = ({
                 justify-content: center;
                 font-size: 10px;
                 font-weight: 900;
-                box-shadow: 0 2px 4px rgba(0,0,0,0.2);
               ">${waypointNumber}</span>
               <span>${slot.activityTitle.length > 20 ? slot.activityTitle.slice(0, 20) + '...' : slot.activityTitle}</span>
             </div>
@@ -155,63 +168,36 @@ export const RouteMap3D: React.FC<RouteMap3DProps> = ({
       });
 
       if (bounds.isValid()) {
-        map.fitBounds(bounds, { padding: [60, 60], maxZoom: 13 });
+        map.fitBounds(bounds, { padding: [50, 50], maxZoom: 13 });
       }
     }
   }, [slots, selectedSlotIndex, onSelectSlot]);
 
   return (
-    <div className="relative w-full h-[540px] sm:h-[620px] rounded-[32px] overflow-hidden shadow-[0_20px_60px_-15px_rgba(13,148,136,0.25)] border border-slate-200/80 bg-slate-900 group">
-      {/* Top Floating Info Badge */}
-      <div className="absolute top-4 left-4 z-20 flex items-center gap-2 bg-white/90 backdrop-blur-md px-4 py-2 rounded-full shadow-lg border border-slate-200/80 text-xs font-bold text-slate-900">
+    <div className="relative w-full h-[500px] sm:h-[580px] rounded-[32px] overflow-hidden shadow-2xl border border-slate-200/80 bg-white">
+      {/* Floating Header Badge */}
+      <div className="absolute top-4 left-4 z-20 flex items-center gap-2 bg-white/95 backdrop-blur-md px-4 py-2 rounded-full shadow-lg border border-slate-200 text-xs font-bold text-slate-900">
         <span className="w-2.5 h-2.5 rounded-full bg-[#0D9488] animate-ping" />
-        <span>Rute Spasial AI &bull; {regencyName}</span>
+        <span>Rute Spasial Interaktif &bull; {regencyName}</span>
       </div>
 
-      {/* Top 3D / 2D Perspective Mode Switcher */}
-      <div className="absolute top-4 right-4 z-20 flex items-center gap-1 bg-white/90 backdrop-blur-md p-1 rounded-full shadow-lg border border-slate-200/80">
-        <button
-          type="button"
-          onClick={() => setIs3D(true)}
-          className={`px-3.5 py-1.5 rounded-full text-xs font-extrabold transition-all flex items-center gap-1.5 ${
-            is3D
-              ? 'bg-[#0D9488] text-white shadow-md'
-              : 'text-slate-600 hover:text-slate-900'
-          }`}
-        >
-          <span>📐 3D Miring</span>
-        </button>
-        <button
-          type="button"
-          onClick={() => setIs3D(false)}
-          className={`px-3.5 py-1.5 rounded-full text-xs font-extrabold transition-all flex items-center gap-1.5 ${
-            !is3D
-              ? 'bg-[#0D9488] text-white shadow-md'
-              : 'text-slate-600 hover:text-slate-900'
-          }`}
-        >
-          <span>🗺️ 2D Datar</span>
-        </button>
-      </div>
-
-      {/* 3D Tilted Perspective Canvas Wrapper */}
-      <div
-        className={`w-full h-full transition-all duration-700 ease-out origin-center ${
-          is3D
-            ? 'scale-105 [transform:perspective(1100px)_rotateX(26deg)_rotateZ(-2deg)] shadow-[0_35px_60px_-15px_rgba(0,0,0,0.5)]'
-            : 'scale-100 [transform:none]'
-        }`}
+      {/* Reset Fit Bounds Button */}
+      <button
+        type="button"
+        onClick={fitBoundsToSlots}
+        className="absolute top-4 right-4 z-20 bg-white/95 backdrop-blur-md px-3.5 py-2 rounded-full shadow-lg border border-slate-200 text-xs font-extrabold text-slate-700 hover:text-[#0D9488] transition-all flex items-center gap-1.5 active:scale-95"
       >
-        <div ref={mapRef} className="w-full h-full rounded-2xl overflow-hidden" />
-      </div>
+        <span>🔍 Fit Rute</span>
+      </button>
+
+      {/* Map Canvas Container */}
+      <div ref={mapRef} className="w-full h-full" />
 
       {/* Bottom Route Legend Helper */}
-      <div className="absolute bottom-4 left-4 right-4 z-20 bg-slate-900/85 backdrop-blur-md border border-slate-700/60 p-3 rounded-2xl text-white text-xs flex items-center justify-between shadow-xl">
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-1.5 font-semibold">
-            <span className="w-3 h-1 bg-[#0D9488] rounded-full inline-block" />
-            <span className="text-[11px] text-slate-300">Garis Rute Perjalanan (1 → 2 → 3)</span>
-          </div>
+      <div className="absolute bottom-4 left-4 right-4 z-20 bg-slate-900/90 backdrop-blur-md border border-slate-700/60 p-3 rounded-2xl text-white text-xs flex items-center justify-between shadow-xl">
+        <div className="flex items-center gap-2 font-semibold">
+          <span className="w-3 h-1 bg-[#0D9488] rounded-full inline-block" />
+          <span className="text-[11px] text-slate-200">Garis Rute Perjalanan (1 → 2 → 3)</span>
         </div>
         <span className="text-[10px] text-slate-400 font-mono">Klik Pin Rute untuk Fokus Slot</span>
       </div>
