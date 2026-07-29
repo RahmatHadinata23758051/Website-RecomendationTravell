@@ -4,14 +4,7 @@ import { Navbar } from './components/Navbar';
 import { Footer } from './components/Footer';
 import { AuthModal } from './components/AuthModal';
 import { HomePage } from './pages/HomePage';
-
-function ExplorePage() {
-  return (
-    <main className="flex-1 max-w-7xl mx-auto w-full px-4 py-16 text-center">
-      <h2 className="text-2xl font-display font-bold">Halaman Jelajah & Map Spasial (Fase 4 Placeholder)</h2>
-    </main>
-  );
-}
+import { ExplorePage } from './pages/ExplorePage';
 
 function PlannerPage() {
   return (
