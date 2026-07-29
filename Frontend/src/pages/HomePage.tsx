@@ -99,40 +99,40 @@ export const HomePage: React.FC = () => {
     <div className="flex flex-col min-h-[100dvh]">
 
       {/* ================================================================
-          HERO SECTION — FULL WIDTH BEACH BACKGROUND (MOCKUP 1:1)
+          HERO SECTION
+          - Beach image: FULL VIEWPORT WIDTH, starts from very TOP (behind navbar)
+          - Tapis pattern: full height from top-left edge
+          - No gaps, no breaks, no max-width on background
           ================================================================ */}
-      <section className="relative w-full overflow-hidden">
-        {/* Full-bleed Beach Background Image */}
-        <div className="absolute inset-0 z-0">
-          <img
-            src="/assets/images/heroes/hero-pahawang-bg.png"
-            alt="Panorama Pantai Pahawang Lampung"
-            className="w-full h-full object-cover object-center"
-          />
-          {/* Left side white fade for text readability */}
-          <div className="absolute inset-0 bg-gradient-to-r from-white/[0.92] via-white/60 to-white/5 lg:to-transparent" />
-          {/* Bottom fade to content area */}
-          <div className="absolute inset-0 bg-gradient-to-b from-white/30 via-transparent to-[#F4F8FA]" />
-        </div>
+      <section className="relative w-screen overflow-hidden" style={{ marginLeft: 'calc(-50vw + 50%)', width: '100vw' }}>
+        {/* FULL-BLEED Beach Background — edge-to-edge, top-to-bottom */}
+        <img
+          src="/assets/images/heroes/hero-pahawang-bg.png"
+          alt="Panorama Pantai Pahawang Lampung"
+          className="absolute inset-0 w-full h-full object-cover object-center z-0"
+        />
+        {/* Left white gradient for text readability */}
+        <div className="absolute inset-0 bg-gradient-to-r from-white/[0.93] via-white/60 to-transparent z-[1]" />
+        {/* Bottom fade to content below */}
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-[#F4F8FA] z-[1]" />
 
-        {/* Tapis Gold Ornamental Pattern — Top Left Corner
-            The image is wide (1560xH) with the pattern concentrated on the left edge.
-            We use the FULL image width so the left-edge pattern shows properly. 
-            Opacity set high because the image itself is already very subtle. */}
+        {/* Tapis Gold Ornamental Pattern — FULL from top-left edge
+            Using the actual image which has the pattern concentrated on its left side.
+            The image itself is already very subtle/faint, so we use high opacity. */}
         <img
           src="/assets/images/patterns/lampung-tapis-pattern.png"
           alt=""
           aria-hidden="true"
-          className="absolute top-0 left-0 w-[800px] h-auto opacity-80 pointer-events-none select-none z-[1]"
+          className="absolute top-0 left-0 w-[700px] h-auto opacity-90 pointer-events-none select-none z-[2]"
         />
 
-        {/* Hero Content Grid */}
-        <div className="relative z-10 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 pt-6 pb-16">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start min-h-[480px]">
+        {/* Hero Content — centered within max-width, padded from top for fixed navbar */}
+        <div className="relative z-10 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 pt-28 pb-20">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start min-h-[420px]">
 
-            {/* LEFT COLUMN — Text, Search, Buttons */}
-            <div className="lg:col-span-7 flex flex-col justify-center space-y-7 py-4">
-              {/* AI Badge Pill */}
+            {/* LEFT: Text, Search, Buttons */}
+            <div className="lg:col-span-7 flex flex-col justify-center space-y-7">
+              {/* AI Badge */}
               <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/80 border border-siger-400/60 shadow-sm backdrop-blur-sm self-start">
                 <Sparkles className="w-3.5 h-3.5 text-siger-500" />
                 <span className="text-[11px] font-semibold text-slate-700">
@@ -140,7 +140,7 @@ export const HomePage: React.FC = () => {
                 </span>
               </div>
 
-              {/* Main Heading */}
+              {/* Heading */}
               <div className="space-y-3">
                 <h1 className="text-4xl sm:text-5xl lg:text-[3.5rem] font-display font-extrabold text-slate-900 tracking-tight leading-[1.1]">
                   Selamat Datang di{' '}
@@ -210,8 +210,8 @@ export const HomePage: React.FC = () => {
               </div>
             </div>
 
-            {/* RIGHT COLUMN — Weather Widget */}
-            <div className="lg:col-span-5 flex items-end justify-center lg:justify-end lg:items-end pb-4 lg:pb-8">
+            {/* RIGHT: Weather Widget */}
+            <div className="lg:col-span-5 flex items-end justify-center lg:justify-end lg:items-end pb-4">
               <div className="glass-weather-card rounded-3xl p-5 w-full max-w-[340px] border border-white/90 shadow-2xl">
                 <div className="flex items-center justify-between border-b border-slate-200/50 pb-3 mb-3">
                   <div className="flex items-center gap-2.5">
@@ -261,7 +261,7 @@ export const HomePage: React.FC = () => {
       </section>
 
       {/* ================================================================
-          CONTENT SECTIONS — Below Hero
+          CONTENT SECTIONS BELOW HERO
           ================================================================ */}
       <div className="bg-[#F4F8FA] flex-1">
         <div className="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8 space-y-8">
@@ -339,11 +339,9 @@ export const HomePage: React.FC = () => {
             </div>
           </section>
 
-          {/* FEATURE HIGHLIGHTS BAR — With Siger-Polished Icon Containers */}
+          {/* FEATURE HIGHLIGHTS BAR — With Siger Polish */}
           <section className="relative glass-card-container rounded-[24px] p-5 sm:p-6 overflow-hidden">
-            {/* Subtle siger gold accent line at top */}
             <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-siger-400/50 to-transparent" />
-
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
               {[
                 {
@@ -368,7 +366,6 @@ export const HomePage: React.FC = () => {
                 },
               ].map(({ icon: Icon, title, desc }) => (
                 <div key={title} className="flex items-center gap-3.5">
-                  {/* Siger-polished icon container: teal bg with subtle gold inner ring */}
                   <div className="relative w-11 h-11 rounded-2xl bg-gradient-to-br from-[#CCFBF1] to-[#B2F5EA] flex items-center justify-center shrink-0 shadow-sm">
                     <div className="absolute inset-[2px] rounded-[14px] border border-siger-400/30" />
                     <Icon className="w-5 h-5 text-[#0D9488] relative z-10" />

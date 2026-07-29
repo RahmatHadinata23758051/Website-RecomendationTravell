@@ -12,7 +12,7 @@ export const Navbar: React.FC = () => {
   const isActive = (path: string) => location.pathname === path;
 
   return (
-    <header className="sticky top-0 z-40 w-full px-4 sm:px-6 lg:px-8">
+    <header className="fixed top-0 left-0 right-0 z-40 px-4 sm:px-6 lg:px-8">
       {/* Floating Pill Navbar Container Matching Mockup */}
       <div className="max-w-7xl mx-auto glass-pill-nav rounded-full px-6 sm:px-8 py-3.5 my-4 flex items-center justify-between transition-all">
         {/* Brand Logo */}
