@@ -3,7 +3,6 @@ import {
   Search,
   MapPin,
   Sparkles,
-  Sun,
   Heart,
   ChevronRight,
   ShieldCheck,
@@ -18,6 +17,16 @@ import {
   Compass,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import {
+  WiDaySunny,
+  WiNightClear,
+  WiDayCloudy,
+  WiNightAltCloudy,
+  WiCloudy,
+  WiDayRain,
+  WiThunderstorm,
+  WiDayHaze,
+} from 'react-icons/wi';
 
 interface DestinationCard {
   id: string;
@@ -88,10 +97,17 @@ export const HomePage: React.FC = () => {
   const [searchKeyword, setSearchKeyword] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('Pantai');
 
-  // OpenWeather API Integration for Provinsi Lampung (Bandar Lampung coords)
-  const [weatherData, setWeatherData] = useState({
+  // OpenWeather API Integration for Provinsi Lampung with key 84071adb3c0d5f4d42ec9ab6b245e2df
+  const [weatherData, setWeatherData] = useState<{
+    temp: number;
+    condition: string;
+    iconCode: string;
+    location: string;
+    province: string;
+  }>({
     temp: 28,
     condition: 'Cerah',
+    iconCode: '01d',
     location: 'Lampung',
     province: 'Provinsi Lampung',
   });
@@ -99,25 +115,24 @@ export const HomePage: React.FC = () => {
   useEffect(() => {
     const fetchLampungWeather = async () => {
       try {
-        const apiKey = import.meta.env.VITE_OPENWEATHER_API_KEY;
-        if (apiKey) {
-          const response = await fetch(
-            `https://api.openweathermap.org/data/2.5/weather?q=Bandar%20Lampung,ID&units=metric&appid=${apiKey}&lang=id`
-          );
-          if (response.ok) {
-            const data = await response.json();
-            setWeatherData({
-              temp: Math.round(data.main.temp),
-              condition: data.weather[0]?.description
-                ? data.weather[0].description.charAt(0).toUpperCase() + data.weather[0].description.slice(1)
-                : 'Cerah',
-              location: 'Lampung',
-              province: 'Provinsi Lampung',
-            });
-            return;
-          }
+        const apiKey = import.meta.env.VITE_OPENWEATHER_API_KEY || '84071adb3c0d5f4d42ec9ab6b245e2df';
+        const response = await fetch(
+          `https://api.openweathermap.org/data/2.5/weather?q=Bandar%20Lampung,ID&units=metric&appid=${apiKey}&lang=id`
+        );
+        if (response.ok) {
+          const data = await response.json();
+          setWeatherData({
+            temp: Math.round(data.main.temp),
+            condition: data.weather[0]?.description
+              ? data.weather[0].description.charAt(0).toUpperCase() + data.weather[0].description.slice(1)
+              : 'Cerah',
+            iconCode: data.weather[0]?.icon || '01d',
+            location: 'Lampung',
+            province: 'Provinsi Lampung',
+          });
+          return;
         }
-        // Fallback to free Open-Meteo API for real-time Lampung weather (Lat: -5.45, Lon: 105.26)
+        // Fallback to free Open-Meteo API if needed
         const freeRes = await fetch(
           'https://api.open-meteo.com/v1/forecast?latitude=-5.45&longitude=105.26&current_weather=true'
         );
@@ -128,6 +143,7 @@ export const HomePage: React.FC = () => {
           setWeatherData({
             temp: Math.round(freeData.current_weather?.temperature ?? 28),
             condition: isClear ? 'Cerah' : 'Berawan',
+            iconCode: isClear ? '01d' : '03d',
             location: 'Lampung',
             province: 'Provinsi Lampung',
           });
@@ -139,6 +155,37 @@ export const HomePage: React.FC = () => {
 
     fetchLampungWeather();
   }, []);
+
+  const renderWeatherIcon = (iconCode: string) => {
+    switch (iconCode) {
+      case '01d':
+        return <WiDaySunny className="w-8 h-8 text-amber-500" />;
+      case '01n':
+        return <WiNightClear className="w-8 h-8 text-indigo-400" />;
+      case '02d':
+        return <WiDayCloudy className="w-8 h-8 text-amber-500" />;
+      case '02n':
+        return <WiNightAltCloudy className="w-8 h-8 text-indigo-400" />;
+      case '03d':
+      case '03n':
+      case '04d':
+      case '04n':
+        return <WiCloudy className="w-8 h-8 text-slate-500" />;
+      case '09d':
+      case '09n':
+      case '10d':
+      case '10n':
+        return <WiDayRain className="w-8 h-8 text-cyan-500" />;
+      case '11d':
+      case '11n':
+        return <WiThunderstorm className="w-8 h-8 text-purple-600" />;
+      case '50d':
+      case '50n':
+        return <WiDayHaze className="w-8 h-8 text-amber-600" />;
+      default:
+        return <WiDaySunny className="w-8 h-8 text-amber-500" />;
+    }
+  };
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -267,8 +314,8 @@ export const HomePage: React.FC = () => {
               <div className="glass-weather-card rounded-3xl p-5 w-full max-w-[340px] border border-white/90 shadow-2xl">
                 <div className="flex items-center justify-between border-b border-slate-200/50 pb-3 mb-3">
                   <div className="flex items-center gap-2.5">
-                    <div className="w-10 h-10 rounded-2xl bg-amber-100/80 text-amber-500 flex items-center justify-center">
-                      <Sun className="w-5 h-5" />
+                    <div className="w-10 h-10 rounded-2xl bg-amber-500/10 text-amber-500 flex items-center justify-center shrink-0">
+                      {renderWeatherIcon(weatherData.iconCode)}
                     </div>
                     <div>
                       <p className="text-sm font-bold text-slate-900">{weatherData.temp}°C</p>
