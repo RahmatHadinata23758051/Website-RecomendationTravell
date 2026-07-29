@@ -22,17 +22,10 @@ import {
   Info,
   Car,
 } from 'lucide-react';
+import { RouteMap3D, RouteSlot } from '../components/RouteMap3D';
 
-interface ItinerarySlot {
-  time: string;
-  activityTitle: string;
-  category: 'Pantai' | 'Alam' | 'Budaya' | 'Kuliner' | 'Adventure';
-  location: string;
-  estimatedCost: string;
+interface ItinerarySlot extends RouteSlot {
   numericCost: number;
-  image: string;
-  aiTip: string;
-  travelTime?: string;
 }
 
 interface DaySchedule {
@@ -43,6 +36,7 @@ interface DaySchedule {
 
 export const PlannerPage: React.FC = () => {
   // Wizard Input State
+  const [selectedRegency, setSelectedRegency] = useState<string>('Kota Bandar Lampung');
   const [durationDays, setDurationDays] = useState<number>(3);
   const [budgetTier, setBudgetTier] = useState<'Ekonomis' | 'Standar' | 'Mewah'>('Standar');
   const [selectedPreferences, setSelectedPreferences] = useState<string[]>([
@@ -55,11 +49,31 @@ export const PlannerPage: React.FC = () => {
   const [isGenerating, setIsGenerating] = useState<boolean>(false);
   const [generatedItinerary, setGeneratedItinerary] = useState<DaySchedule[] | null>(null);
   const [activeDayTab, setActiveDayTab] = useState<number>(1);
+  const [selectedSlotIndex, setSelectedSlotIndex] = useState<number | null>(null);
 
   // Modals & Notifications
   const [isShareModalOpen, setIsShareModalOpen] = useState<boolean>(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [copiedLink, setCopiedLink] = useState<boolean>(false);
+
+  const regenciesList = [
+    'Kota Bandar Lampung',
+    'Pesawaran',
+    'Lampung Selatan',
+    'Pesisir Barat',
+    'Tanggamus',
+    'Lampung Timur',
+    'Lampung Barat',
+    'Way Kanan',
+    'Kota Metro',
+    'Pringsewu',
+    'Tulang Bawang Barat',
+    'Lampung Utara',
+    'Lampung Tengah',
+    'Tulang Bawang',
+    'Mesuji',
+    'Semua Kabupaten',
+  ];
 
   const preferencesList = [
     { id: 'Pantai & Bahari', icon: Palmtree },
@@ -84,125 +98,283 @@ export const PlannerPage: React.FC = () => {
     }
   };
 
-  // Mock AI Generator Handler
+  // AI Generator Handler with Real Regency Data & Coordinates
   const handleGenerateItinerary = (e: React.FormEvent) => {
     e.preventDefault();
     setIsGenerating(true);
     setGeneratedItinerary(null);
+    setSelectedSlotIndex(null);
 
-    // Simulate AI Processing
     setTimeout(() => {
-      const mockResult: DaySchedule[] = [
-        {
-          dayNumber: 1,
-          title: 'Eksplorasi Kota & Wisata Budaya Bandar Lampung',
-          slots: [
-            {
-              time: '08:00 - 10:30 WIB',
-              activityTitle: 'Museum Lampung (Ruwa Jurai)',
-              category: 'Budaya',
-              location: 'Rajabasa, Bandar Lampung',
-              estimatedCost: 'Rp 5.000 / orang',
-              numericCost: 5000,
-              image: 'https://images.unsplash.com/photo-1566127444979-b3d2b654e3d7?auto=format&fit=crop&w=800&q=80',
-              aiTip: 'Datang pagi hari untuk tur pemandu gratis mengenai sejarah kain Tapis kuno Lampung.',
-              travelTime: '20 menit perjalanan ke restoran',
-            },
-            {
-              time: '11:30 - 13:00 WIB',
-              activityTitle: 'Makan Siang Seruit Khas Lampung',
-              category: 'Kuliner',
-              location: 'Pusat Kota Bandar Lampung',
-              estimatedCost: 'Rp 45.000 / orang',
-              numericCost: 45000,
-              image: 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=800&q=80',
-              aiTip: 'Nikmati olahan ikan segar dengan sambal tempoyak durian khas Lampung yang menggugah selera.',
-              travelTime: '35 menit perjalanan ke dermaga',
-            },
-            {
-              time: '15:00 - 18:00 WIB',
-              activityTitle: 'Sunset di Puncak Mas Lampung',
-              category: 'Alam',
-              location: 'Sukadanaham, Bandar Lampung',
-              estimatedCost: 'Rp 20.000 / orang',
-              numericCost: 20000,
-              image: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=800&q=80',
-              aiTip: 'Lokasi terbaik untuk menikmati lanskap pemandangan Teluk Lampung dari ketinggian.',
-            },
-          ],
-        },
-        {
-          dayNumber: 2,
-          title: 'Petualangan Bahari & Snorkeling Pulau Pahawang',
-          slots: [
-            {
-              time: '07:30 - 08:30 WIB',
-              activityTitle: 'Perjalanan ke Dermaga Ketapang Pesawaran',
-              category: 'Adventure',
-              location: 'Pesawaran, Lampung',
-              estimatedCost: 'Rp 15.000 (Sewa Motor/Bensin)',
-              numericCost: 15000,
-              image: '/assets/images/heroes/hero-pahawang-bg.png',
-              aiTip: 'Pastikan membawa sunscreen dan sarung waterproof pelindung HP.',
-              travelTime: '45 menit menyeberang dengan perahu',
-            },
-            {
-              time: '09:00 - 14:00 WIB',
-              activityTitle: 'Island Hopping & Snorkeling Pulau Pahawang Besar',
-              category: 'Pantai',
-              location: 'Pesawaran',
-              estimatedCost: 'Rp 150.000 / orang (Tur Perahu & Alat)',
-              numericCost: 150000,
-              image: '/assets/images/heroes/hero-pahawang-bg.png',
-              aiTip: 'Spot foto bawah laut bersama Ikan Nemo alami yang ramah dengan wisatawan.',
-              travelTime: '30 menit kembali ke daratan',
-            },
-            {
-              time: '16:00 - 18:30 WIB',
-              activityTitle: 'Santai Sore di Pantai Mutun',
-              category: 'Pantai',
-              location: 'Pesawaran',
-              estimatedCost: 'Rp 10.000 / orang',
-              numericCost: 10000,
-              image: 'https://images.unsplash.com/photo-1502680390469-be75c86b636f?auto=format&fit=crop&w=800&q=80',
-              aiTip: 'Suasana pantai tenang dengan angin sepoi-sepoi dan wahana banana boat.',
-            },
-          ],
-        },
-        {
-          dayNumber: 3,
-          title: 'Eksplorasi Konservasi & Sentra Tapis Lampung',
-          slots: [
-            {
-              time: '08:30 - 12:00 WIB',
-              activityTitle: 'Wisata Edukasi Taman Nasional Way Kambas',
-              category: 'Alam',
-              location: 'Lampung Timur',
-              estimatedCost: 'Rp 25.000 / orang',
-              numericCost: 25000,
-              image: 'https://images.unsplash.com/photo-1534567153574-2b12153a87f0?auto=format&fit=crop&w=800&q=80',
-              aiTip: 'Interaksi langsung dengan Gajah Sumatera yang dilindungi di pusat pelatihan.',
-              travelTime: '1 jam perjalanan kembali ke pusat kota',
-            },
-            {
-              time: '13:30 - 16:00 WIB',
-              activityTitle: 'Belanja Oleh-Oleh Kerajinan Tapis & Kopi Lampung',
-              category: 'Budaya',
-              location: 'Pusat Oleh-Oleh Yen Yen, Bandar Lampung',
-              estimatedCost: 'Rp 100.000 (Estimasi Souvenir)',
-              numericCost: 100000,
-              image: 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=800&q=80',
-              aiTip: 'Dapatkan Kopi Robusta Lampung murni dan camilan Kripik Pisang Cokelat khas Lampung.',
-            },
-          ],
-        },
-      ];
+      // Build dynamic days based on selected Regency
+      let mockResult: DaySchedule[] = [];
+
+      if (selectedRegency === 'Pesawaran') {
+        mockResult = [
+          {
+            dayNumber: 1,
+            title: 'Eksplorasi Pulau Pahawang & Snorkeling Bahari Pesawaran',
+            slots: [
+              {
+                time: '08:00 - 09:00 WIB',
+                activityTitle: 'Dermaga Ketapang Pesawaran',
+                category: 'Adventure',
+                location: 'Ketapang, Teluk Pandan, Pesawaran',
+                estimatedCost: 'Rp 15.000 / motor',
+                numericCost: 15000,
+                coords: [-5.5782, 105.2341],
+                image: '/assets/images/regencies/pesawaran.jpg',
+                aiTip: 'Dermaga utama penyeberangan perahu jelajah ke kepulauan Pahawang & Kelagian.',
+                travelTime: '30 menit perahu ke Pulau Pahawang',
+              },
+              {
+                time: '09:30 - 13:00 WIB',
+                activityTitle: 'Snorkeling Taman Laut & Pulau Pahawang Besar',
+                category: 'Pantai',
+                location: 'Pulau Pahawang Besar, Pesawaran',
+                estimatedCost: 'Rp 150.000 / orang',
+                numericCost: 150000,
+                coords: [-5.6743, 105.2198],
+                image: '/assets/images/regencies/pesawaran.jpg',
+                aiTip: 'Spot foto ikonik bersama Ikan Nemo bawah laut dan terumbu karang alami.',
+                travelTime: '20 menit perahu ke Pasir Timbul',
+              },
+              {
+                time: '13:30 - 15:30 WIB',
+                activityTitle: 'Pasir Timbul Pulau Pahawang Kecil',
+                category: 'Pantai',
+                location: 'Pulau Pahawang Kecil, Pesawaran',
+                estimatedCost: 'Gratis (Sudah termasuk tur)',
+                numericCost: 0,
+                coords: [-5.6821, 105.2289],
+                image: '/assets/images/regencies/pesawaran.jpg',
+                aiTip: 'Hamparan pasir putih melingkar di tengah laut yang hanya muncul saat air surut.',
+                travelTime: '35 menit kembali ke daratan',
+              },
+              {
+                time: '16:30 - 18:30 WIB',
+                activityTitle: 'Sunset & Kuliner Seafood Pantai Mutun',
+                category: 'Kuliner',
+                location: 'Pantai Mutun, Pesawaran',
+                estimatedCost: 'Rp 45.000 / orang',
+                numericCost: 45000,
+                coords: [-5.5231, 105.2512],
+                image: '/assets/images/regencies/pesawaran.jpg',
+                aiTip: 'Bersantai menikmati es kelapa muda dan kelapa bakar manis saat matahari terbenam.',
+              },
+            ],
+          },
+          {
+            dayNumber: 2,
+            title: 'Petualangan Air Terjun & Hutan Tropis Pesawaran',
+            slots: [
+              {
+                time: '08:30 - 11:30 WIB',
+                activityTitle: 'Air Terjun Ciupang Pesawaran',
+                category: 'Alam',
+                location: 'Desa Sumberjaya, Way Ratai, Pesawaran',
+                estimatedCost: 'Rp 10.000 / orang',
+                numericCost: 10000,
+                coords: [-5.5412, 105.1234],
+                image: '/assets/images/regencies/pesawaran.jpg',
+                aiTip: 'Air terjun unik berundak-undak batu hitam tebal terlindung pepohonan rimbun.',
+                travelTime: '40 menit berkendara',
+              },
+              {
+                time: '12:30 - 15:00 WIB',
+                activityTitle: 'Pantai Sari Ringgung & Masjid Terapung',
+                category: 'Budaya',
+                location: 'Sidodadi, Teluk Pandan, Pesawaran',
+                estimatedCost: 'Rp 20.000 / orang',
+                numericCost: 20000,
+                coords: [-5.5567, 105.2412],
+                image: '/assets/images/regencies/pesawaran.jpg',
+                aiTip: 'Kunjungi Masjid Terapung Al-Amin di tengah laut Sari Ringgung yang estetik.',
+              },
+            ],
+          },
+        ];
+      } else if (selectedRegency === 'Pesisir Barat') {
+        mockResult = [
+          {
+            dayNumber: 1,
+            title: 'Petualangan Ombak Surfing Krui & Wisata Bahari Pesisir Barat',
+            slots: [
+              {
+                time: '08:00 - 11:00 WIB',
+                activityTitle: 'Surfing & Santai Pantai Tanjung Setia',
+                category: 'Adventure',
+                location: 'Tanjung Setia, Pesisir Selatan, Pesisir Barat',
+                estimatedCost: 'Rp 25.000 / orang',
+                numericCost: 25000,
+                coords: [-5.3087, 103.9927],
+                image: '/assets/images/regencies/pesisir-barat.jpg',
+                aiTip: 'Surga ombak kelas dunia bagi peselancar mancanegara dengan gulungan ombak yang stabil.',
+                travelTime: '20 menit berkendara ke Krui pusat',
+              },
+              {
+                time: '11:30 - 14:00 WIB',
+                activityTitle: 'Pantai Labuhan Jukung Krui',
+                category: 'Pantai',
+                location: 'Pesisir Tengah, Kabupaten Pesisir Barat',
+                estimatedCost: 'Rp 15.000 / orang',
+                numericCost: 15000,
+                coords: [-5.1909, 103.9310],
+                image: '/assets/images/regencies/pesisir-barat.jpg',
+                aiTip: 'Pantai landmark utama Kota Krui dengan fasilitas lengkap & landmark tugu obeliks.',
+                travelTime: '15 menit perjalanan makan siang',
+              },
+              {
+                time: '14:30 - 16:00 WIB',
+                activityTitle: 'Makan Siang Olahan Ikan Tuhuk (Blue Marlin)',
+                category: 'Kuliner',
+                location: 'Pusat Kuliner Krui, Pesisir Barat',
+                estimatedCost: 'Rp 50.000 / orang',
+                numericCost: 50000,
+                coords: [-5.1843, 103.9363],
+                image: '/assets/images/regencies/pesisir-barat.jpg',
+                aiTip: 'Cicipi sate & sup Ikan Tuhuk khas Krui yang teksturnya mirip daging empuk manis.',
+                travelTime: '30 menit penyeberangan perahu ke Pulau Pisang',
+              },
+              {
+                time: '16:30 - 18:30 WIB',
+                activityTitle: 'Sunset Eksotis Pulau Pisang',
+                category: 'Alam',
+                location: 'Kecamatan Pulau Pisang, Pesisir Barat',
+                estimatedCost: 'Rp 30.000 / orang',
+                numericCost: 30000,
+                coords: [-5.1123, 103.8741],
+                image: '/assets/images/regencies/pesisir-barat.jpg',
+                aiTip: 'Pulau terpencil dengan mercusuar tua peninggalan zaman kolonial dan pantai pasir halus.',
+              },
+            ],
+          },
+        ];
+      } else if (selectedRegency === 'Lampung Selatan') {
+        mockResult = [
+          {
+            dayNumber: 1,
+            title: 'Wisata Monumen Ikonik & Pantai Marina Kalianda',
+            slots: [
+              {
+                time: '08:00 - 10:30 WIB',
+                activityTitle: 'Menara Siger Bakauheni',
+                category: 'Budaya',
+                location: 'Bakauheni, Lampung Selatan',
+                estimatedCost: 'Rp 15.000 / orang',
+                numericCost: 15000,
+                coords: [-5.8712, 105.7534],
+                image: '/assets/images/regencies/lampung-selatan.jpg',
+                aiTip: 'Landmark mahkota mahakarya Lampung di titik Nol Sumatera dengan pemandangan Selat Sunda.',
+                travelTime: '30 menit berkendara ke Kalianda',
+              },
+              {
+                time: '11:30 - 15:00 WIB',
+                activityTitle: 'Pantai Marina Kalianda',
+                category: 'Pantai',
+                location: 'Merak Belantung, Kalianda, Lampung Selatan',
+                estimatedCost: 'Rp 30.000 / orang',
+                numericCost: 30000,
+                coords: [-5.6234, 105.5891],
+                image: '/assets/images/regencies/lampung-selatan.jpg',
+                aiTip: 'Pemandangan tebing batu karang eksotis dengan dentuman ombak laut yang dramatis.',
+                travelTime: '20 menit ke Minang Rua',
+              },
+              {
+                time: '15:30 - 18:00 WIB',
+                activityTitle: 'Pantai Minang Rua & Green Canyon',
+                category: 'Alam',
+                location: 'Kawi, Bakauheni, Lampung Selatan',
+                estimatedCost: 'Rp 20.000 / orang',
+                numericCost: 20000,
+                coords: [-5.7912, 105.7123],
+                image: '/assets/images/regencies/lampung-selatan.jpg',
+                aiTip: 'Jelajahi gua penyu alami dan aliran sungai Green Canyon yang sejuk.',
+              },
+            ],
+          },
+        ];
+      } else {
+        // Default Bandar Lampung / General
+        mockResult = [
+          {
+            dayNumber: 1,
+            title: `Eksplorasi Perkotaan & Sunset Puncak ${selectedRegency}`,
+            slots: [
+              {
+                time: '08:30 - 11:00 WIB',
+                activityTitle: 'Museum Lampung (Ruwa Jurai)',
+                category: 'Budaya',
+                location: 'Rajabasa, Bandar Lampung',
+                estimatedCost: 'Rp 5.000 / orang',
+                numericCost: 5000,
+                coords: [-5.3721, 105.2412],
+                image: '/assets/images/regencies/bandar-lampung.jpg',
+                aiTip: 'Datang pagi hari untuk tur pemandu gratis mengenai sejarah kain Tapis kuno Lampung.',
+                travelTime: '20 menit perjalanan ke resto',
+              },
+              {
+                time: '11:30 - 13:30 WIB',
+                activityTitle: 'Makan Siang Khas Seruit Tempoyak',
+                category: 'Kuliner',
+                location: 'Pusat Kota Bandar Lampung',
+                estimatedCost: 'Rp 45.000 / orang',
+                numericCost: 45000,
+                coords: [-5.4212, 105.2612],
+                image: '/assets/images/regencies/bandar-lampung.jpg',
+                aiTip: 'Nikmati olahan ikan segar dengan sambal tempoyak durian khas Lampung yang menggugah selera.',
+                travelTime: '25 menit ke bukit puncak',
+              },
+              {
+                time: '14:30 - 18:00 WIB',
+                activityTitle: 'Puncak Mas & Panorama Teluk Lampung',
+                category: 'Alam',
+                location: 'Sukadanaham, Bandar Lampung',
+                estimatedCost: 'Rp 20.000 / orang',
+                numericCost: 20000,
+                coords: [-5.4312, 105.2212],
+                image: '/assets/images/regencies/bandar-lampung.jpg',
+                aiTip: 'Lokasi terbaik untuk menikmati lanskap pemandangan Teluk Lampung dari ketinggian.',
+              },
+            ],
+          },
+          {
+            dayNumber: 2,
+            title: 'Wisata Edukasi & Pusat Souvenir Khas Lampung',
+            slots: [
+              {
+                time: '09:00 - 12:00 WIB',
+                activityTitle: 'Taman Wisata Lembah Hijau',
+                category: 'Alam',
+                location: 'Tanjung Karang Barat, Bandar Lampung',
+                estimatedCost: 'Rp 35.000 / orang',
+                numericCost: 35000,
+                coords: [-5.4123, 105.2341],
+                image: '/assets/images/regencies/bandar-lampung.jpg',
+                aiTip: 'Taman rekreasi hijau keluarga dengan fasilitas waterboom & taman satwa.',
+                travelTime: '20 menit ke pusat oleh-oleh',
+              },
+              {
+                time: '13:00 - 16:00 WIB',
+                activityTitle: 'Belanja Souvenir Tapis & Kripik Pisang Yen Yen',
+                category: 'Budaya',
+                location: 'Teluk Betung, Bandar Lampung',
+                estimatedCost: 'Rp 100.000 / estimasi',
+                numericCost: 100000,
+                coords: [-5.4412, 105.2567],
+                image: '/assets/images/regencies/bandar-lampung.jpg',
+                aiTip: 'Dapatkan Keripik Pisang Cokelat murni dan kain Tapis sulam asli Lampung.',
+              },
+            ],
+          },
+        ];
+      }
 
       setGeneratedItinerary(mockResult.slice(0, durationDays));
       setIsGenerating(false);
       setActiveDayTab(1);
-      triggerToast('Itinerary AI berhasil dibuat!');
-    }, 1800);
+      triggerToast(`Itinerary AI ${selectedRegency} Berhasil Dibuat!`);
+    }, 1600);
   };
 
   const calculateTotalCost = () => {
@@ -218,6 +390,10 @@ export const PlannerPage: React.FC = () => {
     setTimeout(() => setCopiedLink(false), 2500);
   };
 
+  // Get active day slots
+  const activeDaySlots =
+    generatedItinerary?.find((day) => day.dayNumber === activeDayTab)?.slots || [];
+
   return (
     <div className="flex flex-col min-h-[100dvh] pt-24 pb-16">
       {/* Toast Notification */}
@@ -229,7 +405,7 @@ export const PlannerPage: React.FC = () => {
       )}
 
       {/* Main Container */}
-      <div className="max-w-6xl mx-auto w-full px-4 sm:px-6 lg:px-8 space-y-8">
+      <div className="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 space-y-8">
 
         {/* HERO SECTION BANNER */}
         <div className="glass-card-container rounded-[28px] p-6 sm:p-8 relative overflow-hidden space-y-3">
@@ -245,7 +421,7 @@ export const PlannerPage: React.FC = () => {
             Perencana Liburan Multi-Hari AI
           </h1>
           <p className="text-xs sm:text-sm text-slate-600 font-sans max-w-2xl leading-relaxed">
-            Susun jadwal perjalanan harian otomatis dari jam ke jam yang disesuaikan dengan minat, durasi, budget, dan tipe rombonganmu di Lampung.
+            Pilih Kabupaten/Kota impianmu, lalu biarkan AI menyusun rute peta spasial 3D & jadwal perjalanan harian dari jam ke jam secara akurat!
           </p>
         </div>
 
@@ -259,24 +435,43 @@ export const PlannerPage: React.FC = () => {
               <Compass className="w-5 h-5 text-[#0D9488]" />
               <span>Atur Preferensi Perjalananmu</span>
             </h2>
-            <span className="text-xs text-slate-500 font-medium">100% Otomatis & Akurat</span>
+            <span className="text-xs text-slate-500 font-medium">100% Otomatis & Spasial</span>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-5">
 
-            {/* 1. DURATION DAYS */}
+            {/* 1. SELECT REGENCY */}
+            <div className="space-y-2">
+              <label className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                <MapPin className="w-4 h-4 text-[#0D9488]" />
+                <span>Pilih Kabupaten/Kota</span>
+              </label>
+              <select
+                value={selectedRegency}
+                onChange={(e) => setSelectedRegency(e.target.value)}
+                className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-3 py-2 text-xs font-bold text-slate-900 focus:outline-none focus:border-[#0D9488]"
+              >
+                {regenciesList.map((reg) => (
+                  <option key={reg} value={reg}>
+                    {reg}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* 2. DURATION DAYS */}
             <div className="space-y-2">
               <label className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
                 <Calendar className="w-4 h-4 text-[#0D9488]" />
                 <span>Durasi Perjalanan</span>
               </label>
-              <div className="grid grid-cols-3 gap-2">
+              <div className="grid grid-cols-3 gap-1.5">
                 {[1, 2, 3].map((days) => (
                   <button
                     key={days}
                     type="button"
                     onClick={() => setDurationDays(days)}
-                    className={`py-2 px-3 rounded-2xl text-xs font-bold transition-all border ${
+                    className={`py-2 px-2 rounded-2xl text-xs font-bold transition-all border ${
                       durationDays === days
                         ? 'bg-[#0D9488] text-white border-[#0D9488] shadow-md'
                         : 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100'
@@ -288,19 +483,19 @@ export const PlannerPage: React.FC = () => {
               </div>
             </div>
 
-            {/* 2. BUDGET TIER */}
+            {/* 3. BUDGET TIER */}
             <div className="space-y-2">
               <label className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
                 <DollarSign className="w-4 h-4 text-siger-500" />
                 <span>Estimasi Budget</span>
               </label>
-              <div className="grid grid-cols-3 gap-2">
+              <div className="grid grid-cols-3 gap-1.5">
                 {(['Ekonomis', 'Standar', 'Mewah'] as const).map((tier) => (
                   <button
                     key={tier}
                     type="button"
                     onClick={() => setBudgetTier(tier)}
-                    className={`py-2 px-2 rounded-2xl text-[11px] font-bold transition-all border ${
+                    className={`py-2 px-1 rounded-2xl text-[11px] font-bold transition-all border ${
                       budgetTier === tier
                         ? 'bg-[#0D9488] text-white border-[#0D9488] shadow-md'
                         : 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100'
@@ -312,19 +507,19 @@ export const PlannerPage: React.FC = () => {
               </div>
             </div>
 
-            {/* 3. TRIP TYPE */}
+            {/* 4. TRIP TYPE */}
             <div className="space-y-2">
               <label className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
                 <Users className="w-4 h-4 text-[#0D9488]" />
-                <span>Anggota Rombongan</span>
+                <span>Rombongan</span>
               </label>
-              <div className="grid grid-cols-4 gap-1.5">
+              <div className="grid grid-cols-2 gap-1.5">
                 {(['Solo', 'Pasangan', 'Keluarga', 'Teman'] as const).map((type) => (
                   <button
                     key={type}
                     type="button"
                     onClick={() => setTripType(type)}
-                    className={`py-2 px-1 rounded-2xl text-[10px] font-bold transition-all border text-center ${
+                    className={`py-1.5 px-1 rounded-xl text-[10px] font-bold transition-all border text-center ${
                       tripType === type
                         ? 'bg-[#0D9488] text-white border-[#0D9488] shadow-md'
                         : 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100'
@@ -336,7 +531,7 @@ export const PlannerPage: React.FC = () => {
               </div>
             </div>
 
-            {/* 4. SUBMIT BUTTON */}
+            {/* 5. SUBMIT BUTTON */}
             <div className="flex items-end">
               <button
                 type="submit"
@@ -346,7 +541,7 @@ export const PlannerPage: React.FC = () => {
                 {isGenerating ? (
                   <>
                     <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                    <span>Menyusun Itinerary...</span>
+                    <span>Menyusun Rute...</span>
                   </>
                 ) : (
                   <>
@@ -392,15 +587,17 @@ export const PlannerPage: React.FC = () => {
               <Sparkles className="w-8 h-8 animate-spin" />
             </div>
             <div className="space-y-1">
-              <h3 className="text-base font-bold text-slate-900">AI Raden Gajah Sedang Bekerja...</h3>
+              <h3 className="text-base font-bold text-slate-900">
+                AI Raden Gajah Sedang Menyusun Rute {selectedRegency}...
+              </h3>
               <p className="text-xs text-slate-500 max-w-md mx-auto">
-                Menganalisis rute perjalanan terbaik, estimasi waktu tempuh, dan rekomendasi kuliner di Lampung.
+                Menganalisis koordinat peta 3D, estimasi rute perjalanan, dan tempat wisata paling populer di {selectedRegency}.
               </p>
             </div>
           </div>
         )}
 
-        {/* ITINERARY RESULT DISPLAY */}
+        {/* ITINERARY RESULT DISPLAY (2-COLUMN SPLIT VIEW) */}
         {generatedItinerary && !isGenerating && (
           <div className="space-y-6 animate-in fade-in duration-300">
             
@@ -409,14 +606,14 @@ export const PlannerPage: React.FC = () => {
               <div className="space-y-1">
                 <div className="flex items-center gap-2">
                   <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-[#0D9488] text-white">
-                    {durationDays} Hari Trip
+                    {selectedRegency} &bull; {durationDays} Hari
                   </span>
                   <span className="text-xs font-bold text-slate-600">
                     Budget: <span className="text-[#0D9488]">{budgetTier}</span>
                   </span>
                 </div>
                 <h2 className="text-xl font-display font-extrabold text-slate-900">
-                  Rencana Perjalanan Lampung Terbaik
+                  Rencana Perjalanan & Rute Spasial 3D
                 </h2>
               </div>
 
@@ -451,7 +648,10 @@ export const PlannerPage: React.FC = () => {
               {generatedItinerary.map((day) => (
                 <button
                   key={day.dayNumber}
-                  onClick={() => setActiveDayTab(day.dayNumber)}
+                  onClick={() => {
+                    setActiveDayTab(day.dayNumber);
+                    setSelectedSlotIndex(null);
+                  }}
                   className={`px-5 py-2 rounded-2xl text-xs font-bold transition-all whitespace-nowrap ${
                     activeDayTab === day.dayNumber
                       ? 'bg-[#0D9488] text-white shadow-md'
@@ -463,106 +663,146 @@ export const PlannerPage: React.FC = () => {
               ))}
             </div>
 
-            {/* ACTIVE DAY TIMELINE SCHEDULER */}
-            {generatedItinerary.map(
-              (day) =>
-                day.dayNumber === activeDayTab && (
-                  <div key={day.dayNumber} className="space-y-6">
-                    <div className="bg-white rounded-2xl p-4 border border-slate-200 flex items-center justify-between">
-                      <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
-                        <Calendar className="w-4 h-4 text-siger-500" />
-                        <span>{day.title}</span>
-                      </h3>
-                      <span className="text-xs text-slate-500 font-medium">
-                        {day.slots.length} Aktivitas Terjadwal
-                      </span>
-                    </div>
+            {/* 2-COLUMN LAYOUT: TIMELINE SCHEDULE (LEFT) & 3D ROUTE MAP (RIGHT) */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+              
+              {/* LEFT COLUMN: ACTIVE DAY TIMELINE SCHEDULER (COL-SPAN-7) */}
+              <div className="lg:col-span-7 space-y-6">
+                {generatedItinerary.map(
+                  (day) =>
+                    day.dayNumber === activeDayTab && (
+                      <div key={day.dayNumber} className="space-y-6">
+                        <div className="bg-white rounded-2xl p-4 border border-slate-200 flex items-center justify-between">
+                          <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+                            <Calendar className="w-4 h-4 text-siger-500" />
+                            <span>{day.title}</span>
+                          </h3>
+                          <span className="text-xs text-slate-500 font-medium">
+                            {day.slots.length} Aktivitas Terjadwal
+                          </span>
+                        </div>
 
-                    {/* Timeline Slots */}
-                    <div className="relative pl-6 sm:pl-8 space-y-6 before:absolute before:left-2.5 sm:before:left-3.5 before:top-3 before:bottom-3 before:w-0.5 before:bg-slate-200">
-                      {day.slots.map((slot, index) => (
-                        <div key={index} className="relative group">
-                          {/* Timeline Dot */}
-                          <div className="absolute -left-6 sm:-left-8 top-4 w-5 h-5 rounded-full bg-white border-2 border-[#0D9488] flex items-center justify-center z-10 shadow-sm group-hover:scale-110 transition-transform">
-                            <div className="w-2 h-2 rounded-full bg-[#0D9488]" />
-                          </div>
+                        {/* Timeline Slots */}
+                        <div className="relative pl-6 sm:pl-8 space-y-6 before:absolute before:left-2.5 sm:before:left-3.5 before:top-3 before:bottom-3 before:w-0.5 before:bg-slate-200">
+                          {day.slots.map((slot, index) => {
+                            const isSlotSelected = selectedSlotIndex === index;
 
-                          {/* Time Slot Card */}
-                          <div className="glass-card-container rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-all border border-slate-200 p-4 sm:p-5 space-y-3">
-                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-3">
-                              <div className="flex items-center gap-2">
-                                <span className="px-3 py-1 rounded-full text-xs font-extrabold bg-teal-50 text-[#0D9488] border border-teal-200 flex items-center gap-1">
-                                  <Clock className="w-3.5 h-3.5" />
-                                  <span>{slot.time}</span>
-                                </span>
-                                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-slate-900 text-white">
-                                  {slot.category}
-                                </span>
-                              </div>
-                              <span className="text-xs font-bold text-[#0D9488]">{slot.estimatedCost}</span>
-                            </div>
+                            return (
+                              <div
+                                key={index}
+                                onClick={() => setSelectedSlotIndex(index)}
+                                className="relative group cursor-pointer"
+                              >
+                                {/* Timeline Dot & Waypoint Badge Number */}
+                                <div
+                                  className={`absolute -left-6 sm:-left-8 top-4 w-6 h-6 rounded-full flex items-center justify-center z-10 shadow-md font-mono text-[10px] font-extrabold transition-transform ${
+                                    isSlotSelected
+                                      ? 'bg-[#0D9488] text-white ring-4 ring-[#0D9488]/30 scale-125'
+                                      : 'bg-slate-900 text-white border-2 border-white group-hover:scale-110'
+                                  }`}
+                                >
+                                  {index + 1}
+                                </div>
 
-                            {/* Destination Main Row */}
-                            <div className="flex items-start gap-4">
-                              <img
-                                src={slot.image}
-                                alt={slot.activityTitle}
-                                className="w-20 sm:w-24 h-20 sm:h-24 rounded-xl object-cover shrink-0 shadow-sm"
-                              />
-                              <div className="space-y-1 min-w-0">
-                                <h4 className="text-sm font-bold text-slate-900 font-display">
-                                  {slot.activityTitle}
-                                </h4>
-                                <p className="text-xs text-slate-500 font-sans flex items-center gap-1 truncate">
-                                  <MapPin className="w-3.5 h-3.5 text-[#0D9488] shrink-0" />
-                                  <span>{slot.location}</span>
-                                </p>
-                                <div className="mt-2 bg-amber-50/80 border border-amber-200/80 rounded-xl p-2.5 flex items-start gap-2 text-xs text-amber-900">
-                                  <Info className="w-3.5 h-3.5 text-amber-600 shrink-0 mt-0.5" />
-                                  <span className="text-[11px] font-medium leading-tight">{slot.aiTip}</span>
+                                {/* Time Slot Card */}
+                                <div
+                                  className={`glass-card-container rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-all border p-4 sm:p-5 space-y-3 ${
+                                    isSlotSelected
+                                      ? 'border-[#0D9488] bg-teal-50/40 ring-2 ring-[#0D9488]/20'
+                                      : 'border-slate-200'
+                                  }`}
+                                >
+                                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-3">
+                                    <div className="flex items-center gap-2">
+                                      <span className="px-3 py-1 rounded-full text-xs font-extrabold bg-teal-50 text-[#0D9488] border border-teal-200 flex items-center gap-1">
+                                        <Clock className="w-3.5 h-3.5" />
+                                        <span>{slot.time}</span>
+                                      </span>
+                                      <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-slate-900 text-white">
+                                        {slot.category}
+                                      </span>
+                                    </div>
+                                    <span className="text-xs font-bold text-[#0D9488]">{slot.estimatedCost}</span>
+                                  </div>
+
+                                  {/* Destination Main Row */}
+                                  <div className="flex items-start gap-4">
+                                    <img
+                                      src={slot.image}
+                                      alt={slot.activityTitle}
+                                      className="w-20 sm:w-24 h-20 sm:h-24 rounded-xl object-cover shrink-0 shadow-sm"
+                                    />
+                                    <div className="space-y-1 min-w-0">
+                                      <h4 className="text-sm font-bold text-slate-900 font-display">
+                                        {slot.activityTitle}
+                                      </h4>
+                                      <p className="text-xs text-slate-500 font-sans flex items-center gap-1 truncate">
+                                        <MapPin className="w-3.5 h-3.5 text-[#0D9488] shrink-0" />
+                                        <span>{slot.location}</span>
+                                      </p>
+                                      {slot.aiTip && (
+                                        <div className="mt-2 bg-amber-50/80 border border-amber-200/80 rounded-xl p-2.5 flex items-start gap-2 text-xs text-amber-900">
+                                          <Info className="w-3.5 h-3.5 text-amber-600 shrink-0 mt-0.5" />
+                                          <span className="text-[11px] font-medium leading-tight">{slot.aiTip}</span>
+                                        </div>
+                                      )}
+                                    </div>
+                                  </div>
+
+                                  {/* Travel Time Indicator to Next Location */}
+                                  {slot.travelTime && (
+                                    <div className="pt-2 border-t border-slate-100 flex items-center gap-1.5 text-[11px] text-slate-500 font-semibold">
+                                      <Car className="w-3.5 h-3.5 text-[#0D9488]" />
+                                      <span>{slot.travelTime}</span>
+                                    </div>
+                                  )}
                                 </div>
                               </div>
-                            </div>
-
-                            {/* Travel Time Indicator to Next Location */}
-                            {slot.travelTime && (
-                              <div className="pt-2 border-t border-slate-100 flex items-center gap-1.5 text-[11px] text-slate-500 font-semibold">
-                                <Car className="w-3.5 h-3.5 text-[#0D9488]" />
-                                <span>{slot.travelTime}</span>
-                              </div>
-                            )}
-                          </div>
+                            );
+                          })}
                         </div>
-                      ))}
+                      </div>
+                    )
+                )}
+
+                {/* ESTIMATED TOTAL COST BREAKDOWN */}
+                <div className="glass-card-container rounded-[24px] p-6 space-y-3">
+                  <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+                    <DollarSign className="w-4 h-4 text-siger-500" />
+                    <span>Rincian Estimasi Total Pengeluaran Perjalanan</span>
+                  </h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2 text-xs">
+                    <div className="bg-slate-50 p-3 rounded-2xl border border-slate-200/80 space-y-0.5">
+                      <p className="text-[10px] text-slate-400 font-medium">Tiket & Destinasi</p>
+                      <p className="text-sm font-bold text-slate-900">
+                        Rp {calculateTotalCost().toLocaleString('id-ID')}
+                      </p>
+                    </div>
+                    <div className="bg-slate-50 p-3 rounded-2xl border border-slate-200/80 space-y-0.5">
+                      <p className="text-[10px] text-slate-400 font-medium">Estimasi Transportasi Lokal</p>
+                      <p className="text-sm font-bold text-slate-900">Rp 120.000</p>
+                    </div>
+                    <div className="bg-teal-50/80 p-3 rounded-2xl border border-teal-200 space-y-0.5">
+                      <p className="text-[10px] text-teal-700 font-bold">Total Estimasi Keseluruhan</p>
+                      <p className="text-sm font-extrabold text-[#0D9488]">
+                        Rp {(calculateTotalCost() + 120000).toLocaleString('id-ID')}
+                      </p>
                     </div>
                   </div>
-                )
-            )}
+                </div>
 
-            {/* ESTIMATED TOTAL COST BREAKDOWN */}
-            <div className="glass-card-container rounded-[24px] p-6 space-y-3">
-              <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
-                <DollarSign className="w-4 h-4 text-siger-500" />
-                <span>Rincian Estimasi Total Pengeluaran Perjalanan</span>
-              </h3>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2 text-xs">
-                <div className="bg-slate-50 p-3 rounded-2xl border border-slate-200/80 space-y-0.5">
-                  <p className="text-[10px] text-slate-400 font-medium">Tiket & Destinasi</p>
-                  <p className="text-sm font-bold text-slate-900">
-                    Rp {calculateTotalCost().toLocaleString('id-ID')}
-                  </p>
-                </div>
-                <div className="bg-slate-50 p-3 rounded-2xl border border-slate-200/80 space-y-0.5">
-                  <p className="text-[10px] text-slate-400 font-medium">Estimasi Transportasi Lokal</p>
-                  <p className="text-sm font-bold text-slate-900">Rp 120.000</p>
-                </div>
-                <div className="bg-teal-50/80 p-3 rounded-2xl border border-teal-200 space-y-0.5">
-                  <p className="text-[10px] text-teal-700 font-bold">Total Estimasi Keseluruhan</p>
-                  <p className="text-sm font-extrabold text-[#0D9488]">
-                    Rp {(calculateTotalCost() + 120000).toLocaleString('id-ID')}
-                  </p>
-                </div>
               </div>
+
+              {/* RIGHT COLUMN: 3D TILTED ROUTE MAP (COL-SPAN-5) */}
+              <div className="lg:col-span-5 lg:sticky lg:top-28">
+                <RouteMap3D
+                  slots={activeDaySlots}
+                  selectedSlotIndex={selectedSlotIndex}
+                  onSelectSlot={(idx) => setSelectedSlotIndex(idx)}
+                  regencyName={selectedRegency}
+                />
+              </div>
+
             </div>
 
           </div>
