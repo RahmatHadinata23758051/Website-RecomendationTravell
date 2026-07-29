@@ -212,7 +212,7 @@ const REGENCY_CARDS: RegencyCardInfo[] = [
     name: 'Kota Bandar Lampung',
     tagline: 'Pusat Kota, Kuliner & Wisata Modern',
     highlight: 'Puncak Mas, Bukit Sindy, Mall Boemi Kedaton, Lampung Walk',
-    image: 'https://images.unsplash.com/photo-1567449303183-ae0d6ed1498e?auto=format&fit=crop&w=800&q=80',
+    image: 'https://lh3.googleusercontent.com/gps-cs-s/APNQkAEXXIBAdFSWcFhgIYFvm9phxSg0I0WRXDo9MwX492KJ3IY5v5rQ_4fy4KhfRlDkJsXaAR17e-YwP6fkhcdlhDncMdaMaZOuxuaMjvzgkm_sDLTsGiycQcRk1RHGHqkb5n1tsWQ=w408-h306-k-no',
   },
   {
     name: 'Pesawaran',
@@ -223,14 +223,14 @@ const REGENCY_CARDS: RegencyCardInfo[] = [
   {
     name: 'Lampung Selatan',
     tagline: 'Monumen Siger, Pantai Eksotis & Krakatau',
-    highlight: 'Menara Siger, Pantai Marina, Pantai Minang Rua, Grand Elty',
-    image: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=800&q=80',
+    highlight: 'Menara Siger, Pantai Marina Kalianda, Pantai Minang Rua, Grand Elty',
+    image: 'https://lh3.googleusercontent.com/gps-cs-s/AHRPTWnuVs7q-KmNOK5lvqiGlqKZ43Fr2GGSFOOfmtuWLddKjIPjD6iKQ0Rvx1eT83jzY21zmyHBqn1YSdkVfK8whRHRZ7t37kwBO00mk6ndtVmk1VSN-SOY1j3up-bwVOv0b1fqm2vGlg=w426-h240-k-no',
   },
   {
     name: 'Pesisir Barat',
     tagline: 'Ombak Dolar Internasional & Surfing Krui',
     highlight: 'Labuhan Jukung Krui, Pantai Tanjung Setia, Pulau Pisang',
-    image: 'https://images.unsplash.com/photo-1502680390469-be75c86b636f?auto=format&fit=crop&w=800&q=80',
+    image: 'https://lh3.googleusercontent.com/gps-cs-s/APNQkAFl-SgxRQxJSYry0O5OuazgTGm_U4pitBggG7NCI7qsgJVaBWpZJ0zw7tLfFWg9V6rU4hSETGIETpzlk2OvwQXcIlKSnsp3I96TuZvSUQ_IAzJzxEEkiuFr4hfvTDFlwUTAamiD=w408-h306-k-no',
   },
   {
     name: 'Tanggamus',
@@ -254,13 +254,13 @@ const REGENCY_CARDS: RegencyCardInfo[] = [
     name: 'Way Kanan',
     tagline: 'Negeri Seribu Air Terjun & Arung Jeram',
     highlight: 'Air Terjun Putri Malu, Air Terjun Gangsa',
-    image: 'https://images.unsplash.com/photo-1432405972618-c60b0225b8f9?auto=format&fit=crop&w=800&q=80',
+    image: 'https://lh3.googleusercontent.com/gps-cs-s/APNQkAHwFdqMPNWRPjIHG8MaiD36BCmrmoTauzuh2YJejvvFhBkACDtl4oRzHNRgUplj973Lq4JI4iXFraDaeHd4lqmnZ7OStc40KcHp9Z6GrTG6tqJNy5qF50poa1GwwnJyYCOn2Wfr=w408-h272-k-no',
   },
   {
     name: 'Kota Metro',
     tagline: 'Kota Taman, Wisata Edukasi & Kuliner',
     highlight: 'Taman Merdeka Kota Metro, Masjid Agung Taqwa',
-    image: 'https://images.unsplash.com/photo-1566127444979-b3d2b654e3d7?auto=format&fit=crop&w=800&q=80',
+    image: 'https://lh3.googleusercontent.com/gps-cs-s/AHRPTWloczuH_ii5Pn8Sl0gs58a8uFoSWMv6QokEjKHPKuT1XSj58JGl2lq1V5-GW9KVQWf5zqpvHMXmQglGc58X9lcPbtOUdYtSZHCothh_vjkCarkjFk6MO_dAujaD_5hdl-mIrPGMEg=w408-h306-k-no',
   },
   {
     name: 'Pringsewu',
@@ -270,9 +270,15 @@ const REGENCY_CARDS: RegencyCardInfo[] = [
   },
   {
     name: 'Tulang Bawang Barat',
-    tagline: 'Arsitektur Ikonik & Islamic Center',
-    highlight: 'Islamic Center Tubaba, Kompleks Rumah Adat',
-    image: 'https://images.unsplash.com/photo-1541971875076-8f970d573be6?auto=format&fit=crop&w=800&q=80',
+    tagline: 'Arsitektur Ikonik & Islamic Center Tubaba',
+    highlight: 'Masjid 99 Cahaya Islamic Center Tubaba, Rumah Adat',
+    image: 'https://lh3.googleusercontent.com/gps-cs-s/APNQkAFS5JWEx6mpJY-nLwl1kBo-OnmjZjxEMY4R_X-CrOGZfbpl61I5j79O-mDzu2i5icxEaRuXxkPsQ0Ohw8rb-zqhIFbBygg4bSMwZ4y8Wbq79xqg_N1OKVLE3bZeMh-1jsUK01uVVg=w426-h240-k-no',
+  },
+  {
+    name: 'Lampung Utara',
+    tagline: 'Tugu Payan Mas & Wisata Alam',
+    highlight: 'Tugu Payan Mas Kotabumi, Air Terjun Curup Selendang',
+    image: 'https://lh3.googleusercontent.com/gps-cs-s/AHRPTWm2tvB2g3xFO0vbClaJ77bE0dnNINaatIsNB5EIGaU6WQyZdrHvA4O0GhKlMJCwrF-0eOz-13JubSt0kA8ZT9dWVMS3CNqqTdJw85IMIChEgV_AcqW6ZbNn4MehLj25v_5N-dysmA=w426-h240-k-no',
   },
 ];
 
