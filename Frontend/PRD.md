@@ -9,6 +9,7 @@
 * **Tagline**: *"Jelajah Surga Pariwisata Lampung Berbasis AI yang Personal & Akurat"*
 * **Logo Concept**: Mahkota Siger Lampung berwarna **Siger Gold** (`#F59E0B`) dipadukan dengan tipografi modern beraksen **Ocean Teal** (`#0D9488`).
 * **Design Philosophy**: *Ultra-Clean White Aesthetic, High Whitespace Contrast, Glassmorphism Micro-Interactions, and Authentic Lampung Culture*.
+* **Code & Content Policy**: *Enterprise Standard Compliance. No emojis in committed codebase, logs, or UI microcopy.*
 
 ---
 
@@ -42,11 +43,20 @@
 | **Body Small** | Medium (500) | 14px | 13px | 1.5 |
 | **Microcopy / Badge**| SemiBold (600) | 12px (Uppercase) | 11px | 1.0 |
 
-### 2.3. Glassmorphism & Elevation Tokens
+### 2.3. Icon Library Standard
 
-* **Glassmorphic Card Effect**: `backdrop-filter: blur(12px); background: rgba(255, 255, 255, 0.75); border: 1px solid rgba(226, 232, 240, 0.8);`
-* **Card Drop Shadow**: `box-shadow: 0 10px 30px -5px rgba(15, 23, 42, 0.05);`
-* **Card Border Radius**: `rounded-2xl` (16px) hingga `rounded-3xl` (24px) untuk estetika modern & ramah pengguna.
+* **Primary Enterprise Icon Engine**: `Lucide-React` & `Heroicons v2` (Official SVG Vector Stroke Icons).
+* **Criteria**: Strict 2px stroke width, consistent 24x24 bounding box, vector scalabilities, zero raster icons.
+
+### 2.4. Static Visual Asset Directory Blueprint
+
+Garis dan motif ukiran tradisional Tapis / Batik Lampung pada background mockup disimpan pada struktur direktori berikut:
+
+* **Asset Directory Path**: `Website/Frontend/public/assets/images/patterns/`
+* **Recommended File Names**:
+  1. `lampung-tapis-pattern.svg` (Atau `.png` transparan high-resolution)
+  2. `siger-gold-icon.svg` (Logo Mahkota Siger Emas)
+  3. `hero-pahawang-bg.jpg` (Banner latar belakang pahlawan pantai)
 
 ---
 
@@ -60,14 +70,14 @@ KelanaLampung Frontend App
 │   └── Auth Action Buttons (Masuk [Outline], Daftar Gratis [Teal Filled])
 │
 ├── HeroSection (Main Welcome Banner)
-│   ├── AI Badge ("✨ Rekomendasi Wisata AI • 100% Lokal Lampung")
+│   ├── AI Badge ("Rekomendasi Wisata AI - 100% Lokal Lampung")
 │   ├── Main Title ("Selamat Datang di Kelana Lampung") & Sub-description
 │   ├── Integrated Search Bar (Keyword Input + Location Pill + Teal Action Button)
-│   ├── Quick Action Buttons ("Destinasi Populer", "Mulai Menjelajah ↗")
+│   ├── Quick Action Buttons ("Destinasi Populer", "Mulai Menjelajah")
 │   └── Right Weather & Location Glass Widget (Pahawang Island, Category Quick Filters)
 │
 ├── AiRecommendationsSection (Section 2)
-│   ├── Section Header ("✨ Rekomendasi AI Untukmu") & Filter Categories
+│   ├── Section Header ("Rekomendasi AI Untukmu") & Filter Categories
 │   └── Destination Card Grid Carousel
 │       ├── Image Cover with Category Pill & Bookmark Heart Trigger
 │       ├── Title, City/Regency, & Estimated Travel Hours
@@ -125,7 +135,7 @@ KelanaLampung Frontend App
 ## 5. Technology Stack Specifications
 
 * **Framework**: React.js 18+ with Vite (TypeScript)
-* **Styling & Design System**: Vanilla CSS / Tailwind CSS v3 dengan Kustomisasi CSS Variables untuk Design Tokens
-* **Icons**: Lucide-React / React-Icons (Minimalist modern stroke icons)
+* **Icon Engine**: `Lucide-React` & `Heroicons v2` (Enterprise SVG Vector Stroke Icons)
+* **Styling & Design System**: Tailwind CSS v3 dengan Kustomisasi CSS Variables untuk Design Tokens
 * **HTTP Client**: Axios dengan Interceptor (Penanganan Cookie HTTP-Only Refresh Token & Authorization Bearer Access Token)
 * **Routing**: React Router DOM v6
