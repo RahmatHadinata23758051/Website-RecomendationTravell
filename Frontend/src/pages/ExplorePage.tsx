@@ -294,6 +294,7 @@ export const ExplorePage: React.FC = () => {
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [realDestinations, setRealDestinations] = useState<Destination[]>([]);
   const [isLoadingRealData, setIsLoadingRealData] = useState<boolean>(false);
+  const [loadingProgress, setLoadingProgress] = useState<number>(0);
 
   const mapRef = useRef<HTMLDivElement | null>(null);
   const leafletInstanceRef = useRef<L.Map | null>(null);
@@ -332,6 +333,14 @@ export const ExplorePage: React.FC = () => {
 
     let isMounted = true;
     setIsLoadingRealData(true);
+    setLoadingProgress(15);
+
+    const progressInterval = setInterval(() => {
+      setLoadingProgress((prev) => {
+        if (prev >= 92) return 92;
+        return prev + Math.floor(Math.random() * 15) + 8;
+      });
+    }, 120);
 
     fetchRealDestinations({
       category: selectedCategory,
@@ -340,13 +349,20 @@ export const ExplorePage: React.FC = () => {
       limit: 100,
     }).then((data) => {
       if (isMounted) {
-        setRealDestinations(data || []);
-        setIsLoadingRealData(false);
+        setLoadingProgress(100);
+        setTimeout(() => {
+          if (isMounted) {
+            setRealDestinations(data || []);
+            setIsLoadingRealData(false);
+            clearInterval(progressInterval);
+          }
+        }, 250);
       }
     });
 
     return () => {
       isMounted = false;
+      clearInterval(progressInterval);
     };
   }, [selectedCategory, selectedRegency, searchKeyword]);
 
@@ -475,30 +491,75 @@ export const ExplorePage: React.FC = () => {
         </div>
       )}
 
-      {/* Mascot Loading Overlay */}
+      {/* Mascot Loading Overlay (Matching Mockup Screenshot) */}
       {isLoadingRealData && (
-        <div className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-md flex flex-col items-center justify-center p-6 text-center animate-in fade-in duration-200">
-          <div className="bg-white border border-teal-200/80 rounded-3xl p-8 max-w-md w-full shadow-2xl flex flex-col items-center space-y-4">
-            <div className="relative w-28 h-28 flex items-center justify-center">
-              <div className="absolute inset-0 rounded-full bg-[#0D9488]/20 animate-ping" />
+        <div className="fixed inset-0 z-50 bg-slate-950/40 backdrop-blur-md flex items-center justify-center p-4 sm:p-6 animate-in fade-in duration-200">
+          <div className="bg-white rounded-[32px] p-8 sm:p-10 max-w-md w-full shadow-[0_20px_60px_-15px_rgba(13,148,136,0.25)] border border-slate-100/80 relative flex flex-col items-center text-center space-y-5 overflow-hidden">
+            
+            {/* Mascot Container with Circular Aura & Sparkles */}
+            <div className="relative w-44 h-44 flex items-center justify-center">
+              {/* Circular Aura Layers */}
+              <div className="absolute inset-2 rounded-full border border-teal-100 bg-gradient-to-b from-teal-50/80 to-teal-100/30 animate-pulse" />
+              <div className="absolute inset-6 rounded-full border border-teal-200/60 bg-teal-50/40" />
+
+              {/* Sparkle Stars around mascot */}
+              <span className="absolute top-2 right-6 text-teal-400 text-lg animate-pulse">✦</span>
+              <span className="absolute bottom-4 left-4 text-amber-400 text-base animate-ping" style={{ animationDuration: '3s' }}>✦</span>
+              <span className="absolute top-8 left-6 text-teal-300 text-xs">✨</span>
+              <span className="absolute bottom-8 right-6 text-teal-400 text-sm">✨</span>
+
+              {/* Mascot Image */}
               <img
                 src="/assets/images/mascot/muli-lampung-mascot.png"
                 alt="Muli Lampung Mascot"
-                className="w-24 h-24 object-contain animate-bounce"
+                className="w-36 h-36 object-contain relative z-10 filter drop-shadow-md transition-transform duration-300 hover:scale-105"
               />
+              {/* Mascot Ground Shadow */}
+              <div className="absolute bottom-1 w-20 h-2.5 rounded-full bg-teal-900/10 blur-sm" />
             </div>
-            <div className="space-y-1.5">
-              <h3 className="text-lg font-extrabold text-slate-900 font-display">
-                Memuat Destinasi {selectedRegency !== 'PILIH' ? selectedRegency : 'Wisata'}...
+
+            {/* Title with Animated Teal Dots */}
+            <div className="space-y-2">
+              <h3 className="text-xl sm:text-2xl font-extrabold text-slate-900 font-display flex items-center justify-center gap-1">
+                <span>Memuat Destinasi {selectedRegency !== 'PILIH' ? selectedRegency : 'Wisata'}</span>
+                <span className="inline-flex gap-1 ml-1 text-[#0D9488]">
+                  <span className="animate-bounce font-bold" style={{ animationDelay: '0ms' }}>.</span>
+                  <span className="animate-bounce font-bold" style={{ animationDelay: '150ms' }}>.</span>
+                  <span className="animate-bounce font-bold" style={{ animationDelay: '300ms' }}>.</span>
+                </span>
               </h3>
-              <p className="text-xs text-slate-500 font-sans leading-relaxed">
+              <p className="text-xs text-slate-500 font-sans max-w-xs leading-relaxed mx-auto">
                 Muli Lampung sedang menyiapkan tempat wisata terbaik & lokasi peta spasial untukmu.
               </p>
             </div>
-            <div className="flex items-center gap-2 px-4 py-1.5 rounded-full bg-teal-50 border border-teal-200 text-[#0D9488] text-xs font-bold animate-pulse">
-              <Compass className="w-4 h-4 animate-spin" />
-              <span>Menyusun Peta Spasial Lampung...</span>
+
+            {/* Badge Pill */}
+            <div className="inline-flex items-center gap-2 px-5 py-2 rounded-full bg-teal-50/90 border border-teal-200/80 text-[#0D9488] text-xs font-bold shadow-sm">
+              <Compass className="w-4 h-4 animate-spin text-[#0D9488]" />
+              <span>Menyusun Peta Spasial Lampung</span>
             </div>
+
+            {/* Animated Progress Bar & Percentage */}
+            <div className="w-full max-w-xs space-y-1.5 pt-1">
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex-1 h-3 rounded-full bg-teal-50 border border-teal-100 overflow-hidden relative">
+                  <div
+                    className="h-full rounded-full bg-gradient-to-r from-[#0D9488] via-[#2DD4BF] to-[#0D9488] transition-all duration-300 shadow-sm"
+                    style={{ width: `${loadingProgress}%` }}
+                  />
+                </div>
+                <span className="text-xs font-extrabold text-[#0D9488] min-w-[32px] text-right font-mono">
+                  {loadingProgress}%
+                </span>
+              </div>
+            </div>
+
+            {/* Footer Quote */}
+            <div className="flex items-center gap-1.5 text-[11px] text-slate-400 font-medium pt-1">
+              <MapPin className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+              <span>Menjelajahi keindahan Lampung untukmu...</span>
+            </div>
+
           </div>
         </div>
       )}
