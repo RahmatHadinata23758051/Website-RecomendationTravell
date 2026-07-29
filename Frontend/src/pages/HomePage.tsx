@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Search,
   MapPin,
@@ -87,6 +87,58 @@ export const HomePage: React.FC = () => {
   const navigate = useNavigate();
   const [searchKeyword, setSearchKeyword] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('Pantai');
+
+  // OpenWeather API Integration for Provinsi Lampung (Bandar Lampung coords)
+  const [weatherData, setWeatherData] = useState({
+    temp: 28,
+    condition: 'Cerah',
+    location: 'Lampung',
+    province: 'Provinsi Lampung',
+  });
+
+  useEffect(() => {
+    const fetchLampungWeather = async () => {
+      try {
+        const apiKey = import.meta.env.VITE_OPENWEATHER_API_KEY;
+        if (apiKey) {
+          const response = await fetch(
+            `https://api.openweathermap.org/data/2.5/weather?q=Bandar%20Lampung,ID&units=metric&appid=${apiKey}&lang=id`
+          );
+          if (response.ok) {
+            const data = await response.json();
+            setWeatherData({
+              temp: Math.round(data.main.temp),
+              condition: data.weather[0]?.description
+                ? data.weather[0].description.charAt(0).toUpperCase() + data.weather[0].description.slice(1)
+                : 'Cerah',
+              location: 'Lampung',
+              province: 'Provinsi Lampung',
+            });
+            return;
+          }
+        }
+        // Fallback to free Open-Meteo API for real-time Lampung weather (Lat: -5.45, Lon: 105.26)
+        const freeRes = await fetch(
+          'https://api.open-meteo.com/v1/forecast?latitude=-5.45&longitude=105.26&current_weather=true'
+        );
+        if (freeRes.ok) {
+          const freeData = await freeRes.json();
+          const code = freeData.current_weather?.weathercode ?? 0;
+          const isClear = code <= 3;
+          setWeatherData({
+            temp: Math.round(freeData.current_weather?.temperature ?? 28),
+            condition: isClear ? 'Cerah' : 'Berawan',
+            location: 'Lampung',
+            province: 'Provinsi Lampung',
+          });
+        }
+      } catch {
+        // Keep initial state
+      }
+    };
+
+    fetchLampungWeather();
+  }, []);
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -219,15 +271,15 @@ export const HomePage: React.FC = () => {
                       <Sun className="w-5 h-5" />
                     </div>
                     <div>
-                      <p className="text-sm font-bold text-slate-900">28°C</p>
-                      <p className="text-[10px] text-slate-500 font-medium">Cerah</p>
+                      <p className="text-sm font-bold text-slate-900">{weatherData.temp}°C</p>
+                      <p className="text-[10px] text-slate-500 font-medium">{weatherData.condition}</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-1.5 bg-white/70 px-3 py-1.5 rounded-full border border-slate-200/50">
                     <MapPin className="w-3 h-3 text-[#0D9488]" />
                     <div className="text-right">
-                      <p className="text-xs font-bold text-slate-900">Pahawang Island</p>
-                      <p className="text-[9px] text-slate-500 font-medium">Pesawaran</p>
+                      <p className="text-xs font-bold text-slate-900">{weatherData.location}</p>
+                      <p className="text-[9px] text-slate-500 font-medium">{weatherData.province}</p>
                     </div>
                   </div>
                 </div>
@@ -339,10 +391,24 @@ export const HomePage: React.FC = () => {
             </div>
           </section>
 
-          {/* FEATURE HIGHLIGHTS BAR — Mockup-matched style */}
-          <section className="relative glass-card-container rounded-[24px] px-6 py-4 sm:py-5 overflow-hidden">
+          {/* FEATURE HIGHLIGHTS BAR — Mockup-matched style with Siger ornaments on left & right */}
+          <section className="relative glass-card-container rounded-[24px] px-8 sm:px-12 py-4 sm:py-5 overflow-hidden">
+            {/* Left & Right Siger Crown Ornaments matching card height */}
+            <img
+              src="/assets/images/logos/siger-gold-icon.png"
+              alt=""
+              aria-hidden="true"
+              className="absolute left-1 top-1/2 -translate-y-1/2 h-[85%] w-auto opacity-30 pointer-events-none select-none"
+            />
+            <img
+              src="/assets/images/logos/siger-gold-icon.png"
+              alt=""
+              aria-hidden="true"
+              className="absolute right-1 top-1/2 -translate-y-1/2 h-[85%] w-auto opacity-30 scale-x-[-1] pointer-events-none select-none"
+            />
+
             <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-siger-400/40 to-transparent" />
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="relative z-10 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               {[
                 {
                   icon: Bot,
