@@ -475,6 +475,34 @@ export const ExplorePage: React.FC = () => {
         </div>
       )}
 
+      {/* Mascot Loading Overlay */}
+      {isLoadingRealData && (
+        <div className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-md flex flex-col items-center justify-center p-6 text-center animate-in fade-in duration-200">
+          <div className="bg-white border border-teal-200/80 rounded-3xl p-8 max-w-md w-full shadow-2xl flex flex-col items-center space-y-4">
+            <div className="relative w-28 h-28 flex items-center justify-center">
+              <div className="absolute inset-0 rounded-full bg-[#0D9488]/20 animate-ping" />
+              <img
+                src="/assets/images/mascot/muli-lampung-mascot.png"
+                alt="Muli Lampung Mascot"
+                className="w-24 h-24 object-contain animate-bounce"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <h3 className="text-lg font-extrabold text-slate-900 font-display">
+                Memuat Destinasi {selectedRegency !== 'PILIH' ? selectedRegency : 'Wisata'}...
+              </h3>
+              <p className="text-xs text-slate-500 font-sans leading-relaxed">
+                Muli Lampung sedang menyiapkan tempat wisata terbaik & lokasi peta spasial untukmu.
+              </p>
+            </div>
+            <div className="flex items-center gap-2 px-4 py-1.5 rounded-full bg-teal-50 border border-teal-200 text-[#0D9488] text-xs font-bold animate-pulse">
+              <Compass className="w-4 h-4 animate-spin" />
+              <span>Menyusun Peta Spasial Lampung...</span>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* FULL-WIDTH CONTAINER (Extends beyond Navbar limits to edge of screen) */}
       <div className="w-full max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-10 space-y-6">
 
@@ -524,66 +552,68 @@ export const ExplorePage: React.FC = () => {
             </div>
           </div>
 
-          {/* Filter Pills & Dropdown Row */}
-          <div className="flex flex-wrap items-center justify-between gap-4 pt-2 border-t border-slate-200/60">
-            {/* Category Filter Pills */}
-            <div className="flex flex-wrap items-center gap-2">
-              {[
-                { label: 'Semua', icon: Sparkles },
-                { label: 'Pantai', icon: Palmtree },
-                { label: 'Alam', icon: Mountain },
-                { label: 'Budaya', icon: Landmark },
-                { label: 'Kuliner', icon: Utensils },
-                { label: 'Adventure', icon: Footprints },
-              ].map(({ label, icon: Icon }) => (
-                <button
-                  key={label}
-                  onClick={() => setSelectedCategory(label)}
-                  className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold transition-all ${
-                    selectedCategory === label
-                      ? 'bg-[#0D9488] text-white shadow-md shadow-[#0D9488]/20'
-                      : 'bg-slate-100 hover:bg-slate-200 text-slate-600'
-                  }`}
-                >
-                  <Icon className="w-3.5 h-3.5" />
-                  <span>{label}</span>
-                </button>
-              ))}
-            </div>
-
-            {/* Region Select & Sort Dropdowns */}
-            <div className="flex items-center gap-3">
-              <div className="flex items-center gap-1.5 text-xs text-slate-500 font-medium">
-                <MapPin className="w-3.5 h-3.5 text-[#0D9488]" />
-                <span>Kabupaten/Kota:</span>
-                <select
-                  value={selectedRegency}
-                  onChange={(e) => setSelectedRegency(e.target.value)}
-                  className="bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1 text-xs text-slate-900 font-semibold focus:outline-none focus:border-[#0D9488]"
-                >
-                  {regencies.map((reg) => (
-                    <option key={reg} value={reg}>
-                      {reg}
-                    </option>
-                  ))}
-                </select>
+          {/* Filter Pills & Dropdown Row (ONLY SHOWN WHEN A REGENCY IS SELECTED OR SEARCHING) */}
+          {(selectedRegency !== 'PILIH' || searchKeyword) && (
+            <div className="flex flex-wrap items-center justify-between gap-4 pt-2 border-t border-slate-200/60">
+              {/* Category Filter Pills */}
+              <div className="flex flex-wrap items-center gap-2">
+                {[
+                  { label: 'Semua', icon: Sparkles },
+                  { label: 'Pantai', icon: Palmtree },
+                  { label: 'Alam', icon: Mountain },
+                  { label: 'Budaya', icon: Landmark },
+                  { label: 'Kuliner', icon: Utensils },
+                  { label: 'Adventure', icon: Footprints },
+                ].map(({ label, icon: Icon }) => (
+                  <button
+                    key={label}
+                    onClick={() => setSelectedCategory(label)}
+                    className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold transition-all ${
+                      selectedCategory === label
+                        ? 'bg-[#0D9488] text-white shadow-md shadow-[#0D9488]/20'
+                        : 'bg-slate-100 hover:bg-slate-200 text-slate-600'
+                    }`}
+                  >
+                    <Icon className="w-3.5 h-3.5" />
+                    <span>{label}</span>
+                  </button>
+                ))}
               </div>
 
-              <div className="flex items-center gap-1.5 text-xs text-slate-500 font-medium">
-                <SlidersHorizontal className="w-3.5 h-3.5 text-siger-500" />
-                <span>Urutkan:</span>
-                <select
-                  value={sortBy}
-                  onChange={(e) => setSortBy(e.target.value as any)}
-                  className="bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1 text-xs text-slate-900 font-semibold focus:outline-none focus:border-[#0D9488]"
-                >
-                  <option value="popular">Populer</option>
-                  <option value="rating">Rating Tertinggi</option>
-                  <option value="price">Harga Termurah</option>
-                </select>
+              {/* Region Select & Sort Dropdowns */}
+              <div className="flex items-center gap-3">
+                <div className="flex items-center gap-1.5 text-xs text-slate-500 font-medium">
+                  <MapPin className="w-3.5 h-3.5 text-[#0D9488]" />
+                  <span>Kabupaten/Kota:</span>
+                  <select
+                    value={selectedRegency}
+                    onChange={(e) => setSelectedRegency(e.target.value)}
+                    className="bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1 text-xs text-slate-900 font-semibold focus:outline-none focus:border-[#0D9488]"
+                  >
+                    {regencies.map((reg) => (
+                      <option key={reg} value={reg}>
+                        {reg}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="flex items-center gap-1.5 text-xs text-slate-500 font-medium">
+                  <SlidersHorizontal className="w-3.5 h-3.5 text-siger-500" />
+                  <span>Urutkan:</span>
+                  <select
+                    value={sortBy}
+                    onChange={(e) => setSortBy(e.target.value as any)}
+                    className="bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1 text-xs text-slate-900 font-semibold focus:outline-none focus:border-[#0D9488]"
+                  >
+                    <option value="popular">Populer</option>
+                    <option value="rating">Rating Tertinggi</option>
+                    <option value="price">Harga Termurah</option>
+                  </select>
+                </div>
               </div>
             </div>
-          </div>
+          )}
         </div>
 
         {/* REGENCY SELECTION GRID VIEW (WHEN USER HAS NOT SELECTED A REGENCY YET) */}
