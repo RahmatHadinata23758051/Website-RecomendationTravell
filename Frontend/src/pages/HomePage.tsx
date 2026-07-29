@@ -175,7 +175,7 @@ export const HomePage: React.FC = () => {
           src="/assets/images/patterns/lampung-tapis-pattern-transparent.png"
           alt=""
           aria-hidden="true"
-          className="absolute top-0 left-0 w-[650px] h-auto opacity-100 pointer-events-none select-none z-[2]"
+          className="absolute top-0 left-0 w-[650px] h-auto opacity-80 pointer-events-none select-none z-[2]"
         />
 
         {/* Hero Content — centered within max-width, padded from top for fixed navbar */}
@@ -397,13 +397,13 @@ export const HomePage: React.FC = () => {
               src="/assets/images/patterns/lampung-tapis-pattern-transparent.png"
               alt=""
               aria-hidden="true"
-              className="absolute left-0 top-0 h-full w-28 object-cover object-left opacity-80 pointer-events-none select-none"
+              className="absolute left-0 top-0 h-full w-28 object-cover object-left opacity-40 pointer-events-none select-none"
             />
             <img
               src="/assets/images/patterns/lampung-tapis-pattern-transparent.png"
               alt=""
               aria-hidden="true"
-              className="absolute right-0 top-0 h-full w-28 object-cover object-left opacity-80 scale-x-[-1] pointer-events-none select-none"
+              className="absolute right-0 top-0 h-full w-28 object-cover object-left opacity-40 scale-x-[-1] pointer-events-none select-none"
             />
 
             <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-siger-400/40 to-transparent" />
