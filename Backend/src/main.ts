@@ -34,6 +34,6 @@ async function bootstrap() {
 
   const port = process.env.PORT || 4000;
   await app.listen(port);
-  console.log(`🚀 NestJS Backend Gateway running on http://localhost:${port}/api/v1/health`);
+  console.log(`[INFO] NestJS Backend Gateway running on http://localhost:${port}/api/v1/health`);
 }
 bootstrap();
