@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Sparkles,
   Calendar,
@@ -394,6 +394,22 @@ export const PlannerPage: React.FC = () => {
   const activeDaySlots =
     generatedItinerary?.find((day) => day.dayNumber === activeDayTab)?.slots || [];
 
+  const mascotMessages = [
+    'Tabik Pun! 🐘 Mau liburan seru di Lampung? Pilih Kabupaten impianmu di bawah yuk!',
+    'Raden Gajah & Muli Lampung siap menyusun rute peta spasial 3D harian untukmu!',
+    'Mau budget Ekonomis, Standar, atau Mewah? Semua bisa disesuaikan!',
+    'Tips: Wisata bahari Pesawaran & Pesisir Barat paling pas dikunjungi pagi hari lho!',
+  ];
+
+  const [mascotMsgIndex, setMascotMsgIndex] = useState<number>(0);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setMascotMsgIndex((prev) => (prev + 1) % mascotMessages.length);
+    }, 4500);
+    return () => clearInterval(timer);
+  }, [mascotMessages.length]);
+
   return (
     <div className="flex flex-col min-h-[100dvh] pt-24 pb-16">
       {/* Toast Notification */}
@@ -418,20 +434,49 @@ export const PlannerPage: React.FC = () => {
 
         {/* Hero Content */}
         <div className="relative z-10 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 pt-28 pb-10">
-          <div className="glass-card-container rounded-[32px] p-6 sm:p-10 relative overflow-hidden space-y-3 backdrop-blur-xl border border-white/80 shadow-2xl">
-            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/90 border border-amber-300 shadow-sm">
-              <Sparkles className="w-4 h-4 text-siger-500" />
-              <span className="text-xs font-extrabold text-slate-800">
-                AI Itinerary Generator &bull; Raden Gajah Engine
-              </span>
-            </div>
+          <div className="glass-card-container rounded-[32px] p-6 sm:p-10 relative overflow-hidden backdrop-blur-xl border border-white/80 shadow-2xl">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+              
+              {/* Left Column: Text & Title */}
+              <div className="lg:col-span-7 space-y-3">
+                <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/90 border border-amber-300 shadow-sm">
+                  <Sparkles className="w-4 h-4 text-siger-500" />
+                  <span className="text-xs font-extrabold text-slate-800">
+                    AI Itinerary Generator &bull; Raden Gajah Engine
+                  </span>
+                </div>
 
-            <h1 className="text-3xl sm:text-5xl font-display font-extrabold text-slate-900 tracking-tight leading-tight">
-              Perencana Liburan Multi-Hari AI
-            </h1>
-            <p className="text-xs sm:text-base text-slate-600 font-sans max-w-2xl leading-relaxed">
-              Pilih Kabupaten/Kota impianmu di Lampung, lalu biarkan AI menyusun rute peta spasial 3D & jadwal perjalanan harian dari jam ke jam secara akurat!
-            </p>
+                <h1 className="text-3xl sm:text-5xl font-display font-extrabold text-slate-900 tracking-tight leading-tight">
+                  Perencana Liburan Multi-Hari AI
+                </h1>
+                <p className="text-xs sm:text-base text-slate-600 font-sans leading-relaxed">
+                  Pilih Kabupaten/Kota impianmu di Lampung, lalu biarkan AI menyusun rute peta spasial 3D & jadwal perjalanan harian dari jam ke jam secara akurat!
+                </p>
+              </div>
+
+              {/* Right Column: Muli Lampung Mascot with Animated Chat Bubble */}
+              <div className="lg:col-span-5 flex items-center justify-center lg:justify-end gap-3 pt-2 lg:pt-0">
+                {/* Speech Bubble */}
+                <div className="relative bg-white/95 border border-teal-200 rounded-2xl p-4 shadow-xl max-w-xs transition-all duration-300">
+                  <p className="text-xs font-semibold text-slate-800 leading-relaxed font-sans min-h-[36px] flex items-center">
+                    {mascotMessages[mascotMsgIndex]}
+                  </p>
+                  {/* Tail pointing right to Mascot */}
+                  <div className="hidden sm:block absolute top-1/2 -right-2 -translate-y-1/2 w-0 h-0 border-y-8 border-y-transparent border-l-8 border-l-white" />
+                </div>
+
+                {/* Mascot Avatar */}
+                <div className="relative w-20 h-20 sm:w-24 sm:h-24 shrink-0 flex items-center justify-center">
+                  <div className="absolute inset-1 rounded-full bg-teal-100/70 animate-pulse" />
+                  <img
+                    src="/assets/images/mascot/muli-lampung-mascot.png"
+                    alt="Muli Lampung Mascot"
+                    className="w-20 h-20 sm:w-24 sm:h-24 object-contain relative z-10 transition-transform hover:scale-105"
+                  />
+                </div>
+              </div>
+
+            </div>
           </div>
         </div>
       </section>
