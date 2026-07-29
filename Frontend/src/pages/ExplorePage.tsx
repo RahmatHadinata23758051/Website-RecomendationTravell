@@ -20,8 +20,10 @@ import {
   SlidersHorizontal,
   Compass,
   CheckCircle2,
+  ArrowUpRight,
 } from 'lucide-react';
 import L from 'leaflet';
+import { fetchRealDestinations } from '../services/destinationsApi';
 
 export interface Destination {
   id: string;
@@ -198,28 +200,103 @@ export const mockDestinations: Destination[] = [
   },
 ];
 
-import { fetchRealDestinations } from '../services/destinationsApi';
+interface RegencyCardInfo {
+  name: string;
+  tagline: string;
+  image: string;
+  highlight: string;
+}
+
+const REGENCY_CARDS: RegencyCardInfo[] = [
+  {
+    name: 'Kota Bandar Lampung',
+    tagline: 'Pusat Kota, Kuliner & Wisata Modern',
+    highlight: 'Puncak Mas, Bukit Sindy, Mall Boemi Kedaton, Lampung Walk',
+    image: 'https://images.unsplash.com/photo-1567449303183-ae0d6ed1498e?auto=format&fit=crop&w=800&q=80',
+  },
+  {
+    name: 'Pesawaran',
+    tagline: 'Surga Bahari & Island Hopping Tropis',
+    highlight: 'Pulau Pahawang, Pantai Sari Ringgung, Pulau Kelagian, Mutun',
+    image: '/assets/images/heroes/hero-pahawang-bg.png',
+  },
+  {
+    name: 'Lampung Selatan',
+    tagline: 'Monumen Siger, Pantai Eksotis & Krakatau',
+    highlight: 'Menara Siger, Pantai Marina, Pantai Minang Rua, Grand Elty',
+    image: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=800&q=80',
+  },
+  {
+    name: 'Pesisir Barat',
+    tagline: 'Ombak Dolar Internasional & Surfing Krui',
+    highlight: 'Labuhan Jukung Krui, Pantai Tanjung Setia, Pulau Pisang',
+    image: 'https://images.unsplash.com/photo-1502680390469-be75c86b636f?auto=format&fit=crop&w=800&q=80',
+  },
+  {
+    name: 'Tanggamus',
+    tagline: 'Teluk Kiluan, Gigi Hiu & Keindahan Tropis',
+    highlight: 'Pantai Gigi Hiu (Pegadungan), Lumba-lumba Teluk Kiluan',
+    image: 'https://images.unsplash.com/photo-1519046904884-53103b34b206?auto=format&fit=crop&w=800&q=80',
+  },
+  {
+    name: 'Lampung Timur',
+    tagline: 'Konservasi Gajah Sumatera & Way Kambas',
+    highlight: 'Taman Nasional Way Kambas, Pusat Latihan Gajah',
+    image: 'https://images.unsplash.com/photo-1534567153574-2b12153a87f0?auto=format&fit=crop&w=800&q=80',
+  },
+  {
+    name: 'Lampung Barat',
+    tagline: 'Negeri di Atas Awan & Kawah Suoh',
+    highlight: 'Kawah Keramikan Suoh, Danau Ranau, Kebun Kopi Liwa',
+    image: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=800&q=80',
+  },
+  {
+    name: 'Way Kanan',
+    tagline: 'Negeri Seribu Air Terjun & Arung Jeram',
+    highlight: 'Air Terjun Putri Malu, Air Terjun Gangsa',
+    image: 'https://images.unsplash.com/photo-1432405972618-c60b0225b8f9?auto=format&fit=crop&w=800&q=80',
+  },
+  {
+    name: 'Kota Metro',
+    tagline: 'Kota Taman, Wisata Edukasi & Kuliner',
+    highlight: 'Taman Merdeka Kota Metro, Masjid Agung Taqwa',
+    image: 'https://images.unsplash.com/photo-1566127444979-b3d2b654e3d7?auto=format&fit=crop&w=800&q=80',
+  },
+  {
+    name: 'Pringsewu',
+    tagline: 'Rest Area Bambu & Bukit Panorama',
+    highlight: 'Bukit Bintang Pringsewu, Taman Bambu',
+    image: 'https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?auto=format&fit=crop&w=800&q=80',
+  },
+  {
+    name: 'Tulang Bawang Barat',
+    tagline: 'Arsitektur Ikonik & Islamic Center',
+    highlight: 'Islamic Center Tubaba, Kompleks Rumah Adat',
+    image: 'https://images.unsplash.com/photo-1541971875076-8f970d573be6?auto=format&fit=crop&w=800&q=80',
+  },
+];
 
 export const ExplorePage: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const [searchKeyword, setSearchKeyword] = useState<string>(searchParams.get('search') || '');
   const [selectedCategory, setSelectedCategory] = useState<string>('Semua');
-  const [selectedRegency, setSelectedRegency] = useState<string>('Semua');
+  const [selectedRegency, setSelectedRegency] = useState<string>('PILIH');
   const [sortBy, setSortBy] = useState<'popular' | 'rating' | 'price'>('popular');
   const [selectedDestination, setSelectedDestination] = useState<Destination | null>(null);
   const [hoveredDestinationId, setHoveredDestinationId] = useState<string | null>(null);
   const [favorites, setFavorites] = useState<string[]>([]);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [realDestinations, setRealDestinations] = useState<Destination[]>([]);
-  const [isLoadingRealData, setIsLoadingRealData] = useState<boolean>(true);
+  const [isLoadingRealData, setIsLoadingRealData] = useState<boolean>(false);
 
   const mapRef = useRef<HTMLDivElement | null>(null);
   const leafletInstanceRef = useRef<L.Map | null>(null);
   const markersRef = useRef<{ [key: string]: L.Marker }>({});
 
   const regencies = [
+    'PILIH',
     'Semua',
-    'Bandar Lampung',
+    'Kota Bandar Lampung',
     'Pesawaran',
     'Lampung Selatan',
     'Tanggamus',
@@ -229,7 +306,7 @@ export const ExplorePage: React.FC = () => {
     'Lampung Barat',
     'Lampung Tengah',
     'Lampung Utara',
-    'Metro',
+    'Kota Metro',
     'Pringsewu',
     'Tulang Bawang',
   ];
@@ -237,19 +314,22 @@ export const ExplorePage: React.FC = () => {
   // Sync search input with URL params
   useEffect(() => {
     const query = searchParams.get('search');
-    if (query !== null) {
+    if (query !== null && query.trim()) {
       setSearchKeyword(query);
+      setSelectedRegency('Semua');
     }
   }, [searchParams]);
 
   // Fetch Live Real Data from Backend / FastAPI / Public Data JSON
   useEffect(() => {
+    if (selectedRegency === 'PILIH' && !searchKeyword) return;
+
     let isMounted = true;
     setIsLoadingRealData(true);
 
     fetchRealDestinations({
       category: selectedCategory,
-      city_or_regency: selectedRegency,
+      city_or_regency: selectedRegency === 'PILIH' ? 'Semua' : selectedRegency,
       search: searchKeyword,
       limit: 100,
     }).then((data) => {
@@ -500,8 +580,81 @@ export const ExplorePage: React.FC = () => {
           </div>
         </div>
 
-        {/* CONTENT SPLIT VIEW GRID (DESTINATION LIST & INTERACTIVE MAP) */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        {/* REGENCY SELECTION GRID VIEW (WHEN USER HAS NOT SELECTED A REGENCY YET) */}
+        {selectedRegency === 'PILIH' && !searchKeyword ? (
+          <div className="space-y-6">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-gradient-to-r from-[#0F2937] via-[#0D9488] to-[#0F766E] p-6 sm:p-8 rounded-[28px] text-white shadow-xl">
+              <div className="space-y-1.5 max-w-2xl">
+                <span className="px-3 py-1 rounded-full text-[10px] font-extrabold bg-siger-400 text-slate-950 uppercase tracking-wider">
+                  Langkah 1: Pilih Kabupaten / Kota
+                </span>
+                <h2 className="text-xl sm:text-2xl font-display font-extrabold tracking-tight">
+                  Mau Jelajah Wisata di Mana Hari Ini?
+                </h2>
+                <p className="text-xs text-slate-100 font-sans leading-relaxed">
+                  Pilih wilayah di Provinsi Lampung di bawah ini untuk menampilkan daftar destinasi wisata resmi, lokasi presisi, dan peta interaktifnya.
+                </p>
+              </div>
+              <button
+                onClick={() => setSelectedRegency('Semua')}
+                className="px-6 py-3 rounded-full bg-white text-slate-900 hover:bg-siger-400 hover:text-slate-950 text-xs font-bold shadow-lg transition-all shrink-0 self-start md:self-auto flex items-center gap-2"
+              >
+                <span>Lihat Semua Kabupaten (1.590+ Data)</span>
+                <ArrowUpRight className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
+              {REGENCY_CARDS.map((card) => (
+                <div
+                  key={card.name}
+                  onClick={() => setSelectedRegency(card.name)}
+                  className="group relative rounded-3xl overflow-hidden bg-slate-900 shadow-md hover:shadow-2xl transition-all duration-300 cursor-pointer border border-slate-200/50 aspect-[4/3] flex flex-col justify-between p-5"
+                >
+                  <img
+                    src={card.image}
+                    alt={card.name}
+                    className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-slate-950/95 via-slate-950/40 to-slate-950/20 group-hover:via-slate-950/60 transition-colors" />
+
+                  <div className="relative z-10 flex items-center justify-between">
+                    <span className="px-3 py-1 rounded-full text-[10px] font-extrabold bg-[#0D9488] text-white shadow-md">
+                      Provinsi Lampung
+                    </span>
+                    <span className="w-8 h-8 rounded-full bg-white/20 text-white group-hover:bg-[#0D9488] flex items-center justify-center backdrop-blur-md transition-all group-hover:scale-110 text-xs">
+                      →
+                    </span>
+                  </div>
+
+                  <div className="relative z-10 space-y-1 text-white">
+                    <h3 className="text-base font-extrabold font-display leading-tight group-hover:text-siger-400 transition-colors">
+                      {card.name}
+                    </h3>
+                    <p className="text-[11px] text-siger-300 font-semibold">{card.tagline}</p>
+                    <p className="text-[9px] text-slate-300 line-clamp-1">{card.highlight}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : (
+          /* CONTENT SPLIT VIEW GRID (DESTINATION LIST & INTERACTIVE MAP) */
+          <div className="space-y-4">
+            {/* Top Navigation Bar when inside a specific Regency */}
+            <div className="flex items-center justify-between bg-slate-100/80 p-3 rounded-2xl border border-slate-200/70">
+              <button
+                onClick={() => setSelectedRegency('PILIH')}
+                className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white text-slate-700 hover:bg-[#0D9488] hover:text-white border border-slate-300 text-xs font-bold transition-all shadow-sm"
+              >
+                <span>← Pilih Kabupaten Lain</span>
+              </button>
+              <div className="text-xs font-semibold text-slate-600">
+                Wilayah Aktif: <span className="font-extrabold text-[#0D9488]">{selectedRegency}</span>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
 
           {/* LEFT: DESTINATIONS CARDS LIST (7 Cols - 2 Cards Per Row) */}
           <div className="lg:col-span-7 space-y-4">
@@ -642,8 +795,9 @@ export const ExplorePage: React.FC = () => {
               <div ref={mapRef} className="flex-1 w-full h-full z-10 bg-slate-100" />
             </div>
           </div>
-
         </div>
+      </div>
+    )}
 
       </div>
 
