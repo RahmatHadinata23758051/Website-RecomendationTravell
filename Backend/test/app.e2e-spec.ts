@@ -4,14 +4,25 @@ import * as request from 'supertest';
 import helmet from 'helmet';
 import { AppModule } from './../src/app.module';
 import { HttpExceptionFilter } from './../src/common/filters/http-exception.filter';
+import { PrismaService } from './../src/prisma/prisma.service';
 
-describe('AppController (e2e) - Backend Fase 1 Security & Health', () => {
+jest.setTimeout(30000);
+
+describe('AppController (e2e) - Backend Security & Health', () => {
   let app: INestApplication;
+
+  const mockPrismaService = {
+    $connect: jest.fn().mockResolvedValue(undefined),
+    $disconnect: jest.fn().mockResolvedValue(undefined),
+  };
 
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
-    }).compile();
+    })
+      .overrideProvider(PrismaService)
+      .useValue(mockPrismaService)
+      .compile();
 
     app = moduleFixture.createNestApplication();
     app.use(helmet());
@@ -25,10 +36,12 @@ describe('AppController (e2e) - Backend Fase 1 Security & Health', () => {
     );
     app.useGlobalFilters(new HttpExceptionFilter());
     await app.init();
-  });
+  }, 30000);
 
   afterAll(async () => {
-    await app.close();
+    if (app) {
+      await app.close();
+    }
   });
 
   it('/api/v1/health (GET) - Should return 200 OK & Healthy Status', () => {

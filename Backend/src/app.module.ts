@@ -9,6 +9,7 @@ import { AuthModule } from './auth/auth.module';
 import { RedisModule } from './redis/redis.module';
 import { DestinationsModule } from './destinations/destinations.module';
 import { SpatialModule } from './spatial/spatial.module';
+import { FavoritesModule } from './favorites/favorites.module';
 
 @Module({
   imports: [
@@ -26,6 +27,7 @@ import { SpatialModule } from './spatial/spatial.module';
     RedisModule,
     DestinationsModule,
     SpatialModule,
+    FavoritesModule,
   ],
   controllers: [AppController],
   providers: [
