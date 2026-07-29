@@ -212,7 +212,7 @@ const REGENCY_CARDS: RegencyCardInfo[] = [
     name: 'Kota Bandar Lampung',
     tagline: 'Pusat Kota, Kuliner & Wisata Modern',
     highlight: 'Puncak Mas, Bukit Sindy, Mall Boemi Kedaton, Lampung Walk',
-    image: 'https://images.unsplash.com/photo-1519501025264-65ba15a82390?auto=format&fit=crop&w=800&q=80',
+    image: 'https://images.unsplash.com/photo-1544644181-1484b3fdfc62?auto=format&fit=crop&w=800&q=80',
   },
   {
     name: 'Pesawaran',
@@ -242,13 +242,13 @@ const REGENCY_CARDS: RegencyCardInfo[] = [
     name: 'Lampung Timur',
     tagline: 'Konservasi Gajah Sumatera & Way Kambas',
     highlight: 'Taman Nasional Way Kambas, Pusat Latihan Gajah',
-    image: 'https://images.unsplash.com/photo-1534567153574-2b12153a87f0?auto=format&fit=crop&w=800&q=80',
+    image: 'https://images.unsplash.com/photo-1557050543-4d5f4e07ef46?auto=format&fit=crop&w=800&q=80',
   },
   {
     name: 'Lampung Barat',
     tagline: 'Negeri di Atas Awan & Kawah Suoh',
     highlight: 'Kawah Keramikan Suoh, Danau Ranau, Kebun Kopi Liwa',
-    image: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=800&q=80',
+    image: 'https://images.unsplash.com/photo-1511497584788-8767611136f6?auto=format&fit=crop&w=800&q=80',
   },
   {
     name: 'Way Kanan',
@@ -266,19 +266,19 @@ const REGENCY_CARDS: RegencyCardInfo[] = [
     name: 'Pringsewu',
     tagline: 'Rest Area Bambu & Bukit Panorama',
     highlight: 'Bukit Bintang Pringsewu, Taman Bambu',
-    image: 'https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?auto=format&fit=crop&w=800&q=80',
+    image: 'https://images.unsplash.com/photo-1528183429752-a97d0bf99b5a?auto=format&fit=crop&w=800&q=80',
   },
   {
     name: 'Tulang Bawang Barat',
     tagline: 'Arsitektur Ikonik & Islamic Center Tubaba',
     highlight: 'Masjid 99 Cahaya Islamic Center Tubaba, Rumah Adat',
-    image: 'https://images.unsplash.com/photo-1513694203232-719a280e022f?auto=format&fit=crop&w=800&q=80',
+    image: 'https://images.unsplash.com/photo-1564769625905-50e93615e769?auto=format&fit=crop&w=800&q=80',
   },
   {
     name: 'Lampung Utara',
     tagline: 'Tugu Payan Mas & Wisata Alam',
     highlight: 'Tugu Payan Mas Kotabumi, Air Terjun Curup Selendang',
-    image: 'https://images.unsplash.com/photo-1541971875076-8f970d573be6?auto=format&fit=crop&w=800&q=80',
+    image: 'https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?auto=format&fit=crop&w=800&q=80',
   },
 ];
 
