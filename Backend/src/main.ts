@@ -1,6 +1,7 @@
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import helmet from 'helmet';
+import * as cookieParser from 'cookie-parser';
 import { AppModule } from './app.module';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 
@@ -9,6 +10,9 @@ async function bootstrap() {
 
   // Security Middleware: Helmet Security Headers
   app.use(helmet());
+
+  // Security Middleware: Cookie Parser for HTTP-Only Refresh Token Cookies
+  app.use(cookieParser());
 
   // Security Middleware: CORS Policy
   app.enableCors({
