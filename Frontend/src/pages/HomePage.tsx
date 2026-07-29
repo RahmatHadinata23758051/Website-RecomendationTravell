@@ -113,8 +113,8 @@ export const HomePage: React.FC = () => {
         />
         {/* Left white gradient for text readability */}
         <div className="absolute inset-0 bg-gradient-to-r from-white/[0.93] via-white/60 to-transparent z-[1]" />
-        {/* Bottom fade to content below */}
-        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-[#F4F8FA] z-[1]" />
+        {/* Bottom fade — multi-layered for smooth transition (NO patahan) */}
+        <div className="absolute inset-0 z-[1]" style={{ background: 'linear-gradient(to bottom, transparent 40%, rgba(244,248,250,0.3) 60%, rgba(244,248,250,0.7) 80%, #F4F8FA 100%)' }} />
 
         {/* Tapis Gold Ornamental Pattern — FULL from top-left edge
             Using the actual image which has the pattern concentrated on its left side.
@@ -127,7 +127,7 @@ export const HomePage: React.FC = () => {
         />
 
         {/* Hero Content — centered within max-width, padded from top for fixed navbar */}
-        <div className="relative z-10 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 pt-28 pb-20">
+        <div className="relative z-10 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 pt-28 pb-10">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start min-h-[420px]">
 
             {/* LEFT: Text, Search, Buttons */}
@@ -264,7 +264,7 @@ export const HomePage: React.FC = () => {
           CONTENT SECTIONS BELOW HERO
           ================================================================ */}
       <div className="bg-[#F4F8FA] flex-1">
-        <div className="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+        <div className="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 pt-2 pb-8 space-y-6">
 
           {/* REKOMENDASI AI UNTUKMU */}
           <section className="glass-card-container rounded-[28px] p-6 sm:p-8 space-y-5">
@@ -339,10 +339,10 @@ export const HomePage: React.FC = () => {
             </div>
           </section>
 
-          {/* FEATURE HIGHLIGHTS BAR — With Siger Polish */}
-          <section className="relative glass-card-container rounded-[24px] p-5 sm:p-6 overflow-hidden">
-            <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-siger-400/50 to-transparent" />
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+          {/* FEATURE HIGHLIGHTS BAR — Mockup-matched style */}
+          <section className="relative glass-card-container rounded-[24px] px-6 py-4 sm:py-5 overflow-hidden">
+            <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-siger-400/40 to-transparent" />
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               {[
                 {
                   icon: Bot,
@@ -365,13 +365,13 @@ export const HomePage: React.FC = () => {
                   desc: 'Tim kami siap membantu perjalananmu kapan saja',
                 },
               ].map(({ icon: Icon, title, desc }) => (
-                <div key={title} className="flex items-center gap-3.5">
-                  <div className="relative w-11 h-11 rounded-2xl bg-gradient-to-br from-[#CCFBF1] to-[#B2F5EA] flex items-center justify-center shrink-0 shadow-sm">
-                    <div className="absolute inset-[2px] rounded-[14px] border border-siger-400/30" />
-                    <Icon className="w-5 h-5 text-[#0D9488] relative z-10" />
+                <div key={title} className="flex items-center gap-3">
+                  {/* Rounded circle icon — matches mockup reference */}
+                  <div className="w-10 h-10 rounded-full bg-[#E6FAF5] border border-[#0D9488]/15 flex items-center justify-center shrink-0">
+                    <Icon className="w-[18px] h-[18px] text-[#0D9488]" />
                   </div>
-                  <div>
-                    <h4 className="text-xs font-bold text-slate-900">{title}</h4>
+                  <div className="min-w-0">
+                    <h4 className="text-[11px] font-bold text-slate-900 leading-tight">{title}</h4>
                     <p className="text-[10px] text-slate-500 mt-0.5 leading-tight">{desc}</p>
                   </div>
                 </div>
