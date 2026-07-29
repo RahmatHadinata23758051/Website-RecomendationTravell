@@ -9,13 +9,27 @@
 * **Tagline**: *"Jelajah Surga Pariwisata Lampung Berbasis AI yang Personal & Akurat"*
 * **Logo Concept**: Mahkota Siger Lampung berwarna **Siger Gold** (`#F59E0B`) dipadukan dengan tipografi modern beraksen **Ocean Teal** (`#0D9488`).
 * **Design Philosophy**: *Ultra-Clean White Aesthetic, High Whitespace Contrast, Glassmorphism Micro-Interactions, and Authentic Lampung Culture*.
-* **Code & Content Policy**: *Enterprise Standard Compliance. No emojis in committed codebase, logs, or UI microcopy.*
+* **Code & Content Policy**: *Enterprise Standard Compliance. Zero AI Slop. No emojis in committed codebase, logs, or UI microcopy.*
 
 ---
 
-## 2. Comprehensive Design System & Design Tokens
+## 2. Anti-AI Slop Rules & Engineering Quality Safeguards
 
-### 2.1. Color Palette System
+### 2.1. Strict Anti-Slop Directives
+
+1. **BAN ON EMOJIS (CRITICAL)**: Absolutely NO emojis in UI microcopy, component text, alt tags, comments, or logs. All visual indicators MUST use official `Lucide-React` or `Heroicons v2` vector SVG primitives.
+2. **BAN ON NEON/AI PURPLE GRADIENTS**: No oversaturated AI purple glows, neon gradient fills, or generic floating purple cards. All accents must strictly adhere to the calibrated **Siger Gold** (`#F59E0B`) and **Ocean Teal** (`#0D9488`).
+3. **VIEWPORT STABILITY**: NEVER use `h-screen` for full-height hero sections. ALWAYS use `min-h-[100dvh]` to prevent iOS Safari address bar height jumping.
+4. **GRID OVER FLEX MATH**: Use Tailwind CSS Grid (`grid grid-cols-1 md:grid-cols-3 gap-6`) for page components instead of fragile flexbox percentage calculations (`w-[calc(33%-1rem)]`).
+5. **DETERMINISTIC TYPOGRAPHY**: Use `Plus Jakarta Sans` / `Inter` for UI body text and `Outfit` / `Sora` for display headings. No generic browser fallback fonts.
+6. **LIQUID GLASS REFRACTION**: For glassmorphic panels, combine `backdrop-blur-md`, semi-transparent background (`bg-white/75`), 1px inner border (`border-slate-200/80`), and light drop shadow (`shadow-xl shadow-slate-900/5`).
+7. **ATOMIC APPROVAL GATE**: Work strictly 1 backlog/page at a time. No jumping to subsequent backlogs until explicit user DEAL / approval is granted.
+
+---
+
+## 3. Comprehensive Design System & Design Tokens
+
+### 3.1. Color Palette System
 
 | Category | Token Name | Hex Code | Usage & Placement |
 | :--- | :--- | :--- | :--- |
@@ -30,7 +44,7 @@
 | **Neutral Border/Line**| `border-slate-200` | `#E2E8F0` | Border halus pada kartu & pembatas seksional |
 | **Modal Overlay Blur** | `bg-backdrop-blur` | `rgba(15,23,42,0.6)` | Backdrop blur overlay Traveloka-style modal (blur 8px) |
 
-### 2.2. Typography System
+### 3.2. Typography System
 
 * **Primary Font Family (Body & UI Components)**: `'Plus Jakarta Sans', 'Inter', sans-serif`
 * **Display Font Family (Headings & Hero Title)**: `'Outfit', 'Sora', sans-serif`
@@ -44,17 +58,15 @@
 | **Body Small** | Medium (500) | 14px | 13px | 1.5 |
 | **Microcopy / Badge**| SemiBold (600) | 12px (Uppercase) | 11px | 1.0 |
 
-### 2.3. Icon Library Standard
+### 3.3. Icon Library Standard
 
 * **Primary Enterprise Icon Engine**: `Lucide-React` & `Heroicons v2` (Official SVG Vector Stroke Icons).
 * **Criteria**: Strict 2px stroke width, consistent 24x24 bounding box, vector scalabilities, zero raster icons.
 
-### 2.4. Static Visual Asset Directory Blueprint
-
-Garis dan motif ukiran tradisional Tapis / Batik Lampung pada background mockup disimpan pada struktur direktori berikut:
+### 3.4. Static Visual Asset Directory Blueprint
 
 * **Asset Directory Path**: `Website/Frontend/public/assets/images/`
-* **Sub-directories & Recommended File Names**:
+* **Sub-directories**:
   1. `patterns/lampung-tapis-pattern.png` (Ornamen Motif Tapis Lampung)
   2. `heroes/hero-pahawang-bg.png` (Banner Latar Belakang Pahawang Island)
   3. `logos/siger-gold-icon.png` (Logo Mahkota Siger Emas)
@@ -62,9 +74,9 @@ Garis dan motif ukiran tradisional Tapis / Batik Lampung pada background mockup 
 
 ---
 
-## 3. Web Page Routing & Component Architecture
+## 4. Web Page Routing & Component Architecture
 
-### 3.1. React Router DOM Routing Blueprint
+### 4.1. React Router DOM Routing Blueprint
 
 | Route Path | Page View Component | Description & Responsibilities |
 | :--- | :--- | :--- |
@@ -74,13 +86,13 @@ Garis dan motif ukiran tradisional Tapis / Batik Lampung pada background mockup 
 | `/favorites` | `FavoritesPage` | User Bookmarked Destinations List (Protected Route) |
 | `/share/:shareToken` | `PublicSharePage` | Public View for Shared Itinerary Link |
 
-### 3.2. Traveloka-Style Auth Modal Popup (Login & Register)
+### 4.2. Traveloka-Style Auth Modal Popup (Login & Register)
 
 * **Behavior**: Triggered from Navbar `Masuk` / `Daftar` buttons.
 * **Backdrop**: Smooth dark semi-transparent backdrop with gaussian blur overlay (`backdrop-filter: blur(8px); background: rgba(15, 23, 42, 0.6);`).
 * **Modal Card**: Centered clean white card (`rounded-3xl`, shadow-2xl), with smooth enter/exit scale transition animation.
 
-### 3.3. Component Tree Structure
+### 4.3. Component Tree Structure
 
 ```text
 KelanaLampung Frontend App
@@ -111,7 +123,7 @@ KelanaLampung Frontend App
 
 ---
 
-## 4. REST API Integration Mapping (NestJS Gateway `http://localhost:4000/api/v1`)
+## 5. REST API Integration Mapping (NestJS Gateway `http://localhost:4000/api/v1`)
 
 | Frontend Feature Component | NestJS REST API Endpoint | HTTP Method | Auth Required |
 | :--- | :--- | :--- | :---: |
@@ -135,7 +147,7 @@ KelanaLampung Frontend App
 
 ---
 
-## 5. Technology Stack Specifications
+## 6. Technology Stack Specifications
 
 * **Framework**: React.js 18+ with Vite (TypeScript)
 * **Routing**: React Router DOM v6
