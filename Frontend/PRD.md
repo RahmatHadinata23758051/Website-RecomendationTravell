@@ -28,6 +28,7 @@
 | **Neutral Dark Text** | `text-slate-900` | `#0F172A` | Judul utama (H1, H2, H3) & teks penting |
 | **Neutral Body Text** | `text-slate-600` | `#475569` | Deskripsi paragraf & teks ulasan |
 | **Neutral Border/Line**| `border-slate-200` | `#E2E8F0` | Border halus pada kartu & pembatas seksional |
+| **Modal Overlay Blur** | `bg-backdrop-blur` | `rgba(15,23,42,0.6)` | Backdrop blur overlay Traveloka-style modal (blur 8px) |
 
 ### 2.2. Typography System
 
@@ -52,15 +53,34 @@
 
 Garis dan motif ukiran tradisional Tapis / Batik Lampung pada background mockup disimpan pada struktur direktori berikut:
 
-* **Asset Directory Path**: `Website/Frontend/public/assets/images/patterns/`
-* **Recommended File Names**:
-  1. `lampung-tapis-pattern.svg` (Atau `.png` transparan high-resolution)
-  2. `siger-gold-icon.svg` (Logo Mahkota Siger Emas)
-  3. `hero-pahawang-bg.jpg` (Banner latar belakang pahlawan pantai)
+* **Asset Directory Path**: `Website/Frontend/public/assets/images/`
+* **Sub-directories & Recommended File Names**:
+  1. `patterns/lampung-tapis-pattern.png` (Ornamen Motif Tapis Lampung)
+  2. `heroes/hero-pahawang-bg.png` (Banner Latar Belakang Pahawang Island)
+  3. `logos/siger-gold-icon.png` (Logo Mahkota Siger Emas)
+  4. `mascot/muli-lampung-mascot.png` (Maskot Animasi Wanita Siger Adat Lampung untuk Chatbot AI)
 
 ---
 
-## 3. Web Page Architecture & Component Tree
+## 3. Web Page Routing & Component Architecture
+
+### 3.1. React Router DOM Routing Blueprint
+
+| Route Path | Page View Component | Description & Responsibilities |
+| :--- | :--- | :--- |
+| `/` | `HomePage` | Hero Banner, Search Bar, AI Recommendations Carousel, Feature Highlights |
+| `/explore` | `ExplorePage` | Spatial Radius Search, Interactive Destination Map, Filters |
+| `/planner` | `PlannerPage` | Multi-Day Time-Slotted Itinerary Generator & Share Modal |
+| `/favorites` | `FavoritesPage` | User Bookmarked Destinations List (Protected Route) |
+| `/share/:shareToken` | `PublicSharePage` | Public View for Shared Itinerary Link |
+
+### 3.2. Traveloka-Style Auth Modal Popup (Login & Register)
+
+* **Behavior**: Triggered from Navbar `Masuk` / `Daftar` buttons.
+* **Backdrop**: Smooth dark semi-transparent backdrop with gaussian blur overlay (`backdrop-filter: blur(8px); background: rgba(15, 23, 42, 0.6);`).
+* **Modal Card**: Centered clean white card (`rounded-3xl`, shadow-2xl), with smooth enter/exit scale transition animation.
+
+### 3.3. Component Tree Structure
 
 ```text
 KelanaLampung Frontend App
@@ -69,40 +89,23 @@ KelanaLampung Frontend App
 │   ├── Navigation Links (Home, Explore, AI Planner [Badge AI], Favorites)
 │   └── Auth Action Buttons (Masuk [Outline], Daftar Gratis [Teal Filled])
 │
-├── HeroSection (Main Welcome Banner)
-│   ├── AI Badge ("Rekomendasi Wisata AI - 100% Lokal Lampung")
-│   ├── Main Title ("Selamat Datang di Kelana Lampung") & Sub-description
-│   ├── Integrated Search Bar (Keyword Input + Location Pill + Teal Action Button)
-│   ├── Quick Action Buttons ("Destinasi Populer", "Mulai Menjelajah")
-│   └── Right Weather & Location Glass Widget (Pahawang Island, Category Quick Filters)
+├── AuthModal (Traveloka-Style Backdrop Blur Popup)
+│   ├── Login Form (Email & Password Input + Access/Refresh Token handling)
+│   └── Register Form (Full Name, Email, Password Input)
 │
-├── AiRecommendationsSection (Section 2)
-│   ├── Section Header ("Rekomendasi AI Untukmu") & Filter Categories
-│   └── Destination Card Grid Carousel
-│       ├── Image Cover with Category Pill & Bookmark Heart Trigger
-│       ├── Title, City/Regency, & Estimated Travel Hours
-│       └── Rating Stars & Review Count
-│
-├── SpatialNearbySection (Section 3 - PostGIS Radius Search)
-│   ├── Interactive Coordinate Search Bar & Radius Slider (1 km - 50 km)
-│   └── Nearby Destinations Card Grid & Distance Calculator Badge (km & mins)
-│
-├── AiPlannerSection (Section 4 - Itinerary Generator)
-│   ├── Multi-Day Planner Form (Title, Duration Days 1-14, Budget Max IDR)
-│   ├── Time-Slotted Daily Schedule Display (Morning, Lunch, Afternoon Sunset, Dinner)
-│   └── Share Token Public Link Generator Modal
-│
-├── ReviewsSentimentSection (Section 5 - NLP Sentiment Analytics)
-│   ├── Real-time Sentiment Review Form & Star Rating Input
-│   └── Sentiment Analytics Summary Bar (Positive/Negative/Neutral Ratio)
+├── App Routes (React Router DOM)
+│   ├── HomePage (/)
+│   ├── ExplorePage (/explore)
+│   ├── PlannerPage (/planner)
+│   ├── FavoritesPage (/favorites)
+│   └── PublicSharePage (/share/:shareToken)
 │
 ├── RadenGajahAiChatbot (Floating Widget)
-│   ├── Floating Icon Button (Bottom Right)
-│   └── Chat Window Popup (Interactive Q&A with Raden Gajah Virtual Assistant)
+│   ├── Mascot Avatar Button (Muli Lampung Adat Avatar)
+│   └── Chat Window Popup (Interactive Q&A with Virtual Assistant)
 │
 └── Footer Section
     ├── Brand Info & Social Media Links
-    ├── Quick Feature Highlights Bar (Informasi Terpercaya, Panduan Lengkap, Bantuan 24/7)
     └── Copyright & Regional Tourism Disclaimer
 ```
 
@@ -135,7 +138,7 @@ KelanaLampung Frontend App
 ## 5. Technology Stack Specifications
 
 * **Framework**: React.js 18+ with Vite (TypeScript)
+* **Routing**: React Router DOM v6
 * **Icon Engine**: `Lucide-React` & `Heroicons v2` (Enterprise SVG Vector Stroke Icons)
 * **Styling & Design System**: Tailwind CSS v3 dengan Kustomisasi CSS Variables untuk Design Tokens
 * **HTTP Client**: Axios dengan Interceptor (Penanganan Cookie HTTP-Only Refresh Token & Authorization Bearer Access Token)
-* **Routing**: React Router DOM v6
