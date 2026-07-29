@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Heart, LogOut, Menu, X, User as UserIcon } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
@@ -8,11 +8,30 @@ export const Navbar: React.FC = () => {
   const location = useLocation();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
+  const [isVisible, setIsVisible] = useState(true);
+  const [lastScrollY, setLastScrollY] = useState(0);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const currentScrollY = window.scrollY;
+      if (currentScrollY > 80 && currentScrollY > lastScrollY) {
+        setIsVisible(false); // Hide on scroll down
+      } else {
+        setIsVisible(true); // Show on scroll up or top
+      }
+      setLastScrollY(currentScrollY);
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [lastScrollY]);
 
   const isActive = (path: string) => location.pathname === path;
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-40 px-4 sm:px-6 lg:px-8">
+    <header className={`fixed top-0 left-0 right-0 z-40 px-4 sm:px-6 lg:px-8 transition-transform duration-300 ease-in-out ${
+      isVisible ? 'translate-y-0' : '-translate-y-full'
+    }`}>
       {/* Floating Pill Navbar Container Matching Mockup */}
       <div className="max-w-7xl mx-auto glass-pill-nav rounded-full px-6 sm:px-8 py-3.5 my-4 flex items-center justify-between transition-all">
         {/* Brand Logo */}
