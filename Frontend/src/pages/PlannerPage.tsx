@@ -404,26 +404,40 @@ export const PlannerPage: React.FC = () => {
         </div>
       )}
 
+      {/* FULL-BLEED PAHAWANG BEACH HERO BACKGROUND BANNER */}
+      <section className="relative w-screen overflow-hidden -mt-24 mb-8" style={{ marginLeft: 'calc(-50vw + 50%)', width: '100vw' }}>
+        {/* Background Image */}
+        <img
+          src="/assets/images/heroes/hero-pahawang-bg.png"
+          alt="Panorama Pantai Pahawang Lampung"
+          className="absolute inset-0 w-full h-full object-cover object-center z-0"
+        />
+        {/* Gradient overlays for contrast & smooth transition */}
+        <div className="absolute inset-0 bg-gradient-to-r from-white/95 via-white/80 to-white/40 z-[1]" />
+        <div className="absolute inset-0 z-[1]" style={{ background: 'linear-gradient(to bottom, transparent 30%, rgba(248,250,252,0.6) 70%, #F8FAFC 100%)' }} />
+
+        {/* Hero Content */}
+        <div className="relative z-10 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 pt-28 pb-10">
+          <div className="glass-card-container rounded-[32px] p-6 sm:p-10 relative overflow-hidden space-y-3 backdrop-blur-xl border border-white/80 shadow-2xl">
+            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/90 border border-amber-300 shadow-sm">
+              <Sparkles className="w-4 h-4 text-siger-500" />
+              <span className="text-xs font-extrabold text-slate-800">
+                AI Itinerary Generator &bull; Raden Gajah Engine
+              </span>
+            </div>
+
+            <h1 className="text-3xl sm:text-5xl font-display font-extrabold text-slate-900 tracking-tight leading-tight">
+              Perencana Liburan Multi-Hari AI
+            </h1>
+            <p className="text-xs sm:text-base text-slate-600 font-sans max-w-2xl leading-relaxed">
+              Pilih Kabupaten/Kota impianmu di Lampung, lalu biarkan AI menyusun rute peta spasial 3D & jadwal perjalanan harian dari jam ke jam secara akurat!
+            </p>
+          </div>
+        </div>
+      </section>
+
       {/* Main Container */}
       <div className="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 space-y-8">
-
-        {/* HERO SECTION BANNER */}
-        <div className="glass-card-container rounded-[28px] p-6 sm:p-8 relative overflow-hidden space-y-3">
-          <div className="absolute top-0 right-0 w-80 h-full bg-gradient-to-l from-teal-500/10 to-transparent pointer-events-none" />
-          <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-amber-50 border border-amber-200">
-            <Sparkles className="w-3.5 h-3.5 text-siger-500" />
-            <span className="text-[11px] font-semibold text-amber-700">
-              AI Itinerary Generator &bull; Raden Gajah Engine
-            </span>
-          </div>
-
-          <h1 className="text-3xl sm:text-4xl font-display font-extrabold text-slate-900 tracking-tight leading-tight">
-            Perencana Liburan Multi-Hari AI
-          </h1>
-          <p className="text-xs sm:text-sm text-slate-600 font-sans max-w-2xl leading-relaxed">
-            Pilih Kabupaten/Kota impianmu, lalu biarkan AI menyusun rute peta spasial 3D & jadwal perjalanan harian dari jam ke jam secara akurat!
-          </p>
-        </div>
 
         {/* AI WIZARD FORM INPUT */}
         <form
