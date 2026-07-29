@@ -11,6 +11,7 @@ import { DestinationsModule } from './destinations/destinations.module';
 import { SpatialModule } from './spatial/spatial.module';
 import { FavoritesModule } from './favorites/favorites.module';
 import { PlannerModule } from './planner/planner.module';
+import { ReviewsModule } from './reviews/reviews.module';
 
 @Module({
   imports: [
@@ -30,6 +31,7 @@ import { PlannerModule } from './planner/planner.module';
     SpatialModule,
     FavoritesModule,
     PlannerModule,
+    ReviewsModule,
   ],
   controllers: [AppController],
   providers: [
