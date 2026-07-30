@@ -145,12 +145,12 @@ export const WeatherWidget: React.FC = () => {
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
   const parseWmoCode = (code: number, temp: number): { condition: string; icon: 'sun' | 'cloud-sun' | 'cloud-rain' } => {
-    if (code === 0) return { condition: 'Cerah ☀️', icon: 'sun' };
-    if ([1, 2, 3].includes(code)) return { condition: 'Cerah Berawan 🌤️', icon: 'cloud-sun' };
-    if ([45, 48].includes(code)) return { condition: 'Berembun / Kabut 🌫️', icon: 'cloud-sun' };
-    if ([51, 53, 55, 61, 63, 65, 80, 81, 82].includes(code)) return { condition: 'Hujan Gerimis / Hujan 🌧️', icon: 'cloud-rain' };
-    if ([95, 96, 99].includes(code)) return { condition: 'Hujan Petir 🌩️', icon: 'cloud-rain' };
-    return { condition: temp > 28 ? 'Cerah ☀️' : 'Berawan 🌤️', icon: 'cloud-sun' };
+    if (code === 0) return { condition: 'Cerah', icon: 'sun' };
+    if ([1, 2, 3].includes(code)) return { condition: 'Cerah Berawan', icon: 'cloud-sun' };
+    if ([45, 48].includes(code)) return { condition: 'Berembun / Kabut', icon: 'cloud-sun' };
+    if ([51, 53, 55, 61, 63, 65, 80, 81, 82].includes(code)) return { condition: 'Hujan Gerimis / Hujan', icon: 'cloud-rain' };
+    if ([95, 96, 99].includes(code)) return { condition: 'Hujan Petir', icon: 'cloud-rain' };
+    return { condition: temp > 28 ? 'Cerah' : 'Berawan', icon: 'cloud-sun' };
   };
 
   const generateDynamicAdvisory = (
@@ -165,29 +165,29 @@ export const WeatherWidget: React.FC = () => {
   ): string => {
     // 1. Hujan / Hujan Petir
     if (wmoIcon === 'cloud-rain') {
-      return `🌧️ Terdeteksi ${wmoCondition} di ${regencyName} (${temp}°C, Kelembapan ${humidity}%). Hati-hati jalanan licin & visibilitas terbatas. Disarankan mengutamakan wisata indoor (museum, pusat oleh-oleh, cafe) serta membawa jas hujan/payung.`;
+      return `Terdeteksi ${wmoCondition} di ${regencyName} (${temp}°C, Kelembapan ${humidity}%). Hati-hati jalanan licin & visibilitas terbatas. Disarankan mengutamakan wisata indoor (museum, pusat oleh-oleh, cafe) serta membawa jas hujan/payung.`;
     }
 
     // 2. Cuaca Terik / UV Ekstrem
     if (temp >= 32 || uv >= 8) {
-      return `☀️ Terik Matahari & UV Tinggi (${temp}°C, Indeks UV ${uv}). Terik matahari menyengat di ${regencyName}. Disarankan memakai sunscreen SPF 30+, kacamata hitam, topi, & menjaga hidrasi air minum.`;
+      return `Terik Matahari & UV Tinggi (${temp}°C, Indeks UV ${uv}). Terik matahari menyengat di ${regencyName}. Disarankan memakai sunscreen SPF 30+, kacamata hitam, topi, & menjaga hidrasi air minum.`;
     }
 
     // 3. Angin Kencang
     if (windSpeed >= 15) {
       if (regencyName.includes('Pesisir Barat')) {
-        return `🏄‍♂️ Angin Kencang & Ombak Maksimal (${windSpeed} km/j, ${temp}°C). Kondisi angin laut sangat ideal bagi para peselancar (surfer) di pantai Krui & Tanjung Setia!`;
+        return `Angin Kencang & Ombak Maksimal (${windSpeed} km/j, ${temp}°C). Kondisi angin laut sangat ideal bagi para peselancar (surfer) di pantai Krui & Tanjung Setia!`;
       }
-      return `🌬️ Hembusan Angin Cukup Kencang (${windSpeed} km/j). Berhati-hati di area wahana tinggi atau perbukitan terbuka. ${defaultAdvisory}`;
+      return `Hembusan Angin Cukup Kencang (${windSpeed} km/j). Berhati-hati di area wahana tinggi atau perbukitan terbuka. ${defaultAdvisory}`;
     }
 
     // 4. Cuaca Sejuk Pegunungan (misal Lampung Barat / Liwa)
     if (temp <= 25) {
-      return `🍃 Udara Sejuk Pegunungan (${temp}°C, Kelembapan ${humidity}%). Suasana sejuk & nyaman di ${regencyName}. Sangat pas untuk menikmati kopi hangat khas Lampung & menjelajahi perkebunan. Disarankan membawa jaket ringan.`;
+      return `Udara Sejuk Pegunungan (${temp}°C, Kelembapan ${humidity}%). Suasana sejuk & nyaman di ${regencyName}. Sangat pas untuk menikmati kopi hangat khas Lampung & menjelajahi perkebunan. Disarankan membawa jaket ringan.`;
     }
 
     // 5. Cuaca Cerah / Ideal
-    return `✨ Kondisi Wisata Sempurna: Cuaca ${wmoCondition.toLowerCase()} dengan suhu ${temp}°C & angin ${windSpeed} km/j. ${defaultAdvisory}`;
+    return `Kondisi Wisata Sempurna: Cuaca ${wmoCondition.toLowerCase()} dengan suhu ${temp}°C & angin ${windSpeed} km/j. ${defaultAdvisory}`;
   };
 
   const fetchLiveWeather = async (lat: number, lng: number) => {
@@ -228,7 +228,7 @@ export const WeatherWidget: React.FC = () => {
       // Fallback
       setWeatherData({
         temp: 29,
-        condition: 'Cerah Berawan 🌤️',
+        condition: 'Cerah Berawan',
         icon: 'cloud-sun',
         humidity: 70,
         windSpeed: 10,
