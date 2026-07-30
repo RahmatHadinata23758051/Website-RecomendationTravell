@@ -23,13 +23,13 @@ export class FavoritesController {
   @Post()
   @HttpCode(HttpStatus.CREATED)
   async addFavorite(@Req() req: Request, @Body() dto: CreateFavoriteDto) {
-    const userId = req['user']['id'];
+    const userId = (req as any).user.id;
     return this.favoritesService.addFavorite(userId, dto);
   }
 
   @Get()
   async getFavorites(@Req() req: Request) {
-    const userId = req['user']['id'];
+    const userId = (req as any).user.id;
     return this.favoritesService.getUserFavorites(userId);
   }
 
@@ -39,7 +39,7 @@ export class FavoritesController {
     @Req() req: Request,
     @Param('canonicalId') canonicalId: string,
   ) {
-    const userId = req['user']['id'];
+    const userId = (req as any).user.id;
     return this.favoritesService.removeFavorite(userId, canonicalId);
   }
 }

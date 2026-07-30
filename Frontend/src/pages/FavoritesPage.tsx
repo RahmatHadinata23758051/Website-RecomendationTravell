@@ -20,54 +20,92 @@ import {
   Footprints,
 } from 'lucide-react';
 import { Destination, mockDestinations } from './ExplorePage';
+import { useAuth } from '../context/AuthContext';
+import { apiClient } from '../lib/api';
+import { fetchRealDestinations } from '../services/destinationsApi';
 
 export const FavoritesPage: React.FC = () => {
+  const { isAuthenticated } = useAuth();
   const [favoriteIds, setFavoriteIds] = useState<string[]>([]);
+  const [allDestinations, setAllDestinations] = useState<Destination[]>(mockDestinations);
   const [searchKeyword, setSearchKeyword] = useState<string>('');
   const [selectedCategory, setSelectedCategory] = useState<string>('Semua');
   const [selectedDestination, setSelectedDestination] = useState<Destination | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
-  // Load initial favorites from localStorage or default seed
+  // Clear legacy dummy seeds from localStorage on clean up
   useEffect(() => {
-    const saved = localStorage.getItem('kelana_lampung_favorites');
-    if (saved) {
-      try {
-        setFavoriteIds(JSON.parse(saved));
-      } catch (e) {
-        setFavoriteIds(['dest-001', 'dest-004', 'dest-007']);
-      }
-    } else {
-      // Default seed demo favorites if none saved yet
-      const seed = ['dest-001', 'dest-004', 'dest-007'];
-      setFavoriteIds(seed);
-      localStorage.setItem('kelana_lampung_favorites', JSON.stringify(seed));
-    }
+    localStorage.removeItem('kelana_lampung_favorites');
   }, []);
+
+  // Fetch Real Destinations & User Favorites from Backend API
+  useEffect(() => {
+    let isMounted = true;
+    fetchRealDestinations({ limit: 200 }).then((dests) => {
+      if (isMounted && dests && dests.length > 0) {
+        setAllDestinations(dests);
+      }
+    });
+
+    if (isAuthenticated) {
+      apiClient
+        .get('/favorites')
+        .then((res) => {
+          if (isMounted && res.data?.data) {
+            const ids = res.data.data.map((fav: any) => fav.canonicalId);
+            setFavoriteIds(ids);
+          }
+        })
+        .catch(() => {});
+    } else {
+      setFavoriteIds([]);
+    }
+
+    return () => {
+      isMounted = false;
+    };
+  }, [isAuthenticated]);
 
   const triggerToast = (msg: string) => {
     setToastMessage(msg);
     setTimeout(() => setToastMessage(null), 3000);
   };
 
-  const removeFavorite = (id: string, name: string, e: React.MouseEvent) => {
+  const removeFavorite = async (id: string, name: string, e: React.MouseEvent) => {
     e.stopPropagation();
     const updated = favoriteIds.filter((item) => item !== id);
     setFavoriteIds(updated);
-    localStorage.setItem('kelana_lampung_favorites', JSON.stringify(updated));
     triggerToast(`"${name}" dihapus dari favorit`);
+
+    if (isAuthenticated) {
+      try {
+        await apiClient.delete(`/favorites/${id}`);
+      } catch (err) {
+        // Fallback
+      }
+    }
   };
 
-  const clearAllFavorites = () => {
+  const clearAllFavorites = async () => {
     if (window.confirm('Apakah Anda yakin ingin menghapus semua destinasi favorit?')) {
+      const currentIds = [...favoriteIds];
       setFavoriteIds([]);
-      localStorage.setItem('kelana_lampung_favorites', JSON.stringify([]));
       triggerToast('Semua favorit berhasil dihapus');
+
+      if (isAuthenticated) {
+        for (const id of currentIds) {
+          try {
+            await apiClient.delete(`/favorites/${id}`);
+          } catch (err) {
+            // Ignore
+          }
+        }
+      }
     }
   };
 
   // Filtered list of favorite destinations
-  const favoriteDestinations = mockDestinations.filter((dest) =>
+  const favoriteDestinations = allDestinations.filter((dest) =>
     favoriteIds.includes(dest.id)
   );
 

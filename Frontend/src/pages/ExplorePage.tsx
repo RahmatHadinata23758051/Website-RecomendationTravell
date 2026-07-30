@@ -285,6 +285,7 @@ const REGENCY_CARDS: RegencyCardInfo[] = [
 ];
 
 export const ExplorePage: React.FC = () => {
+  const { isAuthenticated, openAuthModal } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
   const [searchKeyword, setSearchKeyword] = useState<string>(searchParams.get('search') || '');
   const [selectedCategory, setSelectedCategory] = useState<string>('Semua');
@@ -334,6 +335,22 @@ export const ExplorePage: React.FC = () => {
       }
     }
   }, [searchParams]);
+
+  // Load user favorites from backend API when authenticated
+  useEffect(() => {
+    if (isAuthenticated) {
+      apiClient
+        .get('/favorites')
+        .then((res) => {
+          if (res.data?.data) {
+            setFavorites(res.data.data.map((fav: any) => fav.canonicalId));
+          }
+        })
+        .catch(() => {});
+    } else {
+      setFavorites([]);
+    }
+  }, [isAuthenticated]);
 
   // Fetch Live Real Data from Backend / FastAPI / Public Data JSON
   useEffect(() => {
@@ -500,8 +517,6 @@ export const ExplorePage: React.FC = () => {
     setToastMessage(msg);
     setTimeout(() => setToastMessage(null), 3000);
   };
-
-  const { isAuthenticated, openAuthModal } = useAuth();
 
   const toggleFavorite = async (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
