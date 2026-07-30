@@ -36,6 +36,8 @@ export class ItinerariesService {
           select: {
             fullName: true,
             email: true,
+            avatarUrl: true,
+            xp: true,
           },
         },
       },
