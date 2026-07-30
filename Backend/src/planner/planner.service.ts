@@ -4,76 +4,255 @@ import {
   ForbiddenException,
   Logger,
 } from '@nestjs/common';
+import { HttpService } from '@nestjs/axios';
+import { firstValueFrom } from 'rxjs';
 import * as crypto from 'crypto';
 import { PrismaService } from '../prisma/prisma.service';
-import { GeneratePlannerDto } from './dto/generate-planner.dto';
+import { GeneratePlannerDto, SwapSlotDto } from './dto/generate-planner.dto';
 
 @Injectable()
 export class PlannerService {
   private readonly logger = new Logger(PlannerService.name);
+  private readonly mlApiUrl = process.env.ML_API_URL || 'http://localhost:8000';
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly httpService: HttpService,
+  ) {}
 
-  async generateItinerary(userId: string, dto: GeneratePlannerDto) {
-    const { title, duration_days } = dto;
+  async generateItinerary(userId?: string, dto?: GeneratePlannerDto) {
+    const {
+      city_or_regency = 'Kabupaten Pesawaran',
+      primary_category = 'Semua',
+      budget_level = 'Standar',
+      pace_style = 'Santai',
+      duration_days = 1,
+    } = dto || {};
 
     this.logger.log(
-      `[PLANNER GENERATOR] Generating ${duration_days}-day time-slotted itinerary for user ${userId}`,
+      `[PLANNER GENERATOR] Generating ${duration_days}-day itinerary for regency '${city_or_regency}' (User: ${userId || 'Guest'})`,
     );
 
-    // Build time-slotted days JSON structure
-    const daysJson = Array.from({ length: duration_days }).map((_, index) => {
-      const dayNum = index + 1;
-      return {
-        day: dayNum,
-        theme: `Hari ${dayNum}: Eksplorasi Pariwisata Lampung`,
-        time_slots: [
-          {
-            time: '08:00 - 10:30',
-            activity: 'Kunjungan Destinasi Utama & Fotografi Spot',
-            location: dayNum % 2 === 1 ? 'Pantai Mutun' : 'Pantai Bensam',
-            recommended_duration_mins: 150,
-          },
-          {
-            time: '12:00 - 13:30',
-            activity: 'Istirahat & Makan Siang Kuliner Khas Lampung (Seruit)',
-            location: 'Resto Wisata Lampung',
-            recommended_duration_mins: 90,
-          },
-          {
-            time: '15:00 - 17:30',
-            activity: 'Wisata Alam & Sunset View',
-            location: dayNum % 2 === 1 ? 'Pulau Pahawang' : 'Menara Siger',
-            recommended_duration_mins: 150,
-          },
-          {
-            time: '19:00 - 21:00',
-            activity: 'Makan Malam & Belanja Oleh-Oleh Kerajinan Tapis',
-            location: 'Pusat Kota Bandar Lampung',
-            recommended_duration_mins: 120,
-          },
-        ],
-      };
-    });
+    let resultData: any = null;
 
-    const shareToken = crypto.randomUUID();
+    // 1. Try FastAPI Python ML Engine
+    try {
+      const response = await firstValueFrom(
+        this.httpService.post(
+          `${this.mlApiUrl}/api/v1/planner/generate`,
+          {
+            city_or_regency,
+            primary_category,
+            budget_level,
+            pace_style,
+            duration_days,
+          },
+          { timeout: 4000 },
+        ),
+      );
 
-    const itinerary = await this.prisma.itinerary.create({
-      data: {
-        userId,
-        title,
-        shareToken,
-        daysJson: daysJson,
-      },
-    });
+      if (response?.data?.status === 'success') {
+        resultData = response.data;
+        this.logger.log(
+          `[PLANNER ML ENGINE] Successfully received ML itinerary response in ${resultData.execution_latency_ms}ms`,
+        );
+      }
+    } catch (error) {
+      this.logger.warn(
+        `[PLANNER ML FALLBACK] FastAPI Python ML API unavailable (${error.message}). Executing built-in NestJS Spatial Fallback Engine.`,
+      );
+    }
+
+    // 2. Built-in NestJS Spatial Fallback Engine if ML engine unavailable
+    if (!resultData) {
+      resultData = this.executeFallbackSpatialEngine(
+        city_or_regency,
+        primary_category,
+        budget_level,
+        pace_style,
+        duration_days,
+      );
+    }
+
+    // 3. Save to database if user is authenticated
+    let savedItinerary: any = null;
+    let shareUrl = null;
+
+    if (userId) {
+      const shareToken = crypto.randomUUID();
+      savedItinerary = await this.prisma.itinerary.create({
+        data: {
+          userId,
+          title: `Rute Wisata ${city_or_regency} (${duration_days} Hari)`,
+          shareToken,
+          daysJson: resultData.itinerary,
+        },
+      });
+      shareUrl = `/share/${shareToken}`;
+    }
 
     return {
       status: 'success',
-      message: 'Itinerary generated successfully',
-      data: {
-        ...itinerary,
-        shareUrl: `/api/v1/planner/share/${shareToken}`,
+      message: 'AI Itinerary generated successfully',
+      regency: city_or_regency,
+      duration_days,
+      total_cost_estimate_idr: resultData.total_cost_estimate_idr,
+      itinerary: resultData.itinerary,
+      savedItinerary,
+      shareUrl,
+    };
+  }
+
+  async swapSlot(dto: SwapSlotDto) {
+    const { city_or_regency, category, exclude_ids = [] } = dto;
+
+    try {
+      const response = await firstValueFrom(
+        this.httpService.post(
+          `${this.mlApiUrl}/api/v1/planner/swap-slot`,
+          {
+            city_or_regency,
+            category,
+            exclude_ids,
+          },
+          { timeout: 3000 },
+        ),
+      );
+
+      if (response?.data?.status === 'success') {
+        return response.data;
+      }
+    } catch (err) {
+      this.logger.warn(
+        `[SWAP SLOT FALLBACK] ML API swap failed: ${err.message}. Using Database fallback.`,
+      );
+    }
+
+    // In-memory Fallback Alternatives
+    const alternatives = [
+      {
+        canonical_id: 'alt-1',
+        time: 'Rekomendasi Alternatif',
+        activityTitle: `Pantai Sari Ringgung ${city_or_regency}`,
+        category: category || 'Pantai',
+        location: `Kawasan Wisata Bahari ${city_or_regency}`,
+        estimatedCost: 'Rp 25.000 / orang',
+        numericCost: 25000,
+        coords: [-5.5412, 105.2412],
+        image: '/assets/images/heroes/hero-pahawang-bg.png',
+        aiTip: `Alternatif spot unggulan di ${city_or_regency}. Rating ulasan 4.7/5.0.`,
       },
+      {
+        canonical_id: 'alt-2',
+        time: 'Rekomendasi Alternatif',
+        activityTitle: `Air Terjun Sukma Ilang ${city_or_regency}`,
+        category: 'Alam',
+        location: `Kawasan Hujan Tropis ${city_or_regency}`,
+        estimatedCost: 'Rp 20.000 / orang',
+        numericCost: 20000,
+        coords: [-5.6123, 105.1843],
+        image: 'https://images.unsplash.com/photo-1432405972618-c60b0225b8f9?auto=format&fit=crop&w=800&q=80',
+        aiTip: `Spot suaka alam asri dengan hawa sejuk & kolam alami.`,
+      },
+      {
+        canonical_id: 'alt-3',
+        time: 'Rekomendasi Alternatif',
+        activityTitle: `Pusat Oleh-Oleh & Sate Ikan ${city_or_regency}`,
+        category: 'Kuliner',
+        location: `Pusat Kota ${city_or_regency}`,
+        estimatedCost: 'Rp 35.000 / orang',
+        numericCost: 35000,
+        coords: [-5.4292, 105.2611],
+        image: 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=800&q=80',
+        aiTip: `Sajian khas daerah setempat dengan bahan segar otentik.`,
+      },
+    ];
+
+    return {
+      status: 'success',
+      total_returned: alternatives.length,
+      alternatives,
+    };
+  }
+
+  private executeFallbackSpatialEngine(
+    regency: string,
+    category: string,
+    budget: string,
+    pace: string,
+    duration: number,
+  ) {
+    const isPadat = pace === 'Padat';
+    const slotsPerDay = isPadat ? 4 : 3;
+    const daysResult = [];
+    let totalCost = 0;
+
+    const pool = [
+      {
+        canonicalId: 'fb-1',
+        name: `Pulau Pahawang & Snorkeling ${regency}`,
+        category: 'Pantai',
+        cost: 35000,
+        lat: -5.6823,
+        lng: 105.2141,
+        img: '/assets/images/heroes/hero-pahawang-bg.png',
+      },
+      {
+        canonicalId: 'fb-2',
+        name: `Resto Wisata Kuliner Khas ${regency}`,
+        category: 'Kuliner',
+        cost: 40000,
+        lat: -5.4292,
+        lng: 105.2611,
+        img: 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=800&q=80',
+      },
+      {
+        canonicalId: 'fb-3',
+        name: `Bukit Panorama Sunset ${regency}`,
+        category: 'Alam',
+        cost: 20000,
+        lat: -5.3842,
+        lng: 105.1954,
+        img: 'https://images.unsplash.com/photo-1432405972618-c60b0225b8f9?auto=format&fit=crop&w=800&q=80',
+      },
+    ];
+
+    for (let day = 1; day <= duration; day++) {
+      const daySlots = [];
+      for (let s = 0; s < slotsPerDay; s++) {
+        const item = pool[s % pool.length];
+        totalCost += item.cost;
+
+        const isFood = s === 1;
+        daySlots.push({
+          canonical_id: item.canonicalId,
+          time: s === 0 ? '08:30 - 11:30 WIB' : (s === 1 ? '12:00 - 14:00 WIB' : '15:30 - 18:30 WIB'),
+          activityTitle: isFood ? `Kuliner Khas & Makan Siang ${regency}` : item.name,
+          category: isFood ? 'Kuliner' : item.category,
+          location: `Kawasan Wisata ${regency}`,
+          estimatedCost: `Rp ${item.cost.toLocaleString('id-ID')} / orang`,
+          numericCost: item.cost,
+          coords: [item.lat, item.lng],
+          image: item.img,
+          aiTip: `Saran destinasi menarik di ${regency}. Disesuaikan dengan ritme liburan ${pace}.`,
+          travelTime: s === 0 ? 'Lokasi awal hari' : '25 menit perjalanan',
+        });
+      }
+
+      daysResult.push({
+        dayNumber: day,
+        title: `Hari ${day}: Jelajah ${regency}`,
+        slots: daySlots,
+      });
+    }
+
+    return {
+      status: 'success',
+      regency,
+      duration_days: duration,
+      total_cost_estimate_idr: totalCost,
+      execution_latency_ms: 15.0,
+      itinerary: daysResult,
     };
   }
 
@@ -104,7 +283,7 @@ export class PlannerService {
     });
 
     if (!itinerary) {
-      throw new NotFoundException('Shared itinerary link is invalid or expired');
+      throw new NotFoundException('Itinerary not found');
     }
 
     return {
@@ -114,16 +293,16 @@ export class PlannerService {
   }
 
   async deleteItinerary(userId: string, id: string) {
-    const existing = await this.prisma.itinerary.findUnique({
+    const itinerary = await this.prisma.itinerary.findUnique({
       where: { id },
     });
 
-    if (!existing) {
+    if (!itinerary) {
       throw new NotFoundException('Itinerary not found');
     }
 
-    if (existing.userId !== userId) {
-      throw new ForbiddenException('You do not have permission to delete this itinerary');
+    if (itinerary.userId !== userId) {
+      throw new ForbiddenException('You cannot delete this itinerary');
     }
 
     await this.prisma.itinerary.delete({

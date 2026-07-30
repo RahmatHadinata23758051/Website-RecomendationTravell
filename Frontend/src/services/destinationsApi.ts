@@ -60,40 +60,35 @@ export const fetchRealDestinations = async (query: DestinationsQuery = {}): Prom
     // Silent fallback
   }
 
-  // 3. Guaranteed Fallback: Fetch 3,130 real scraped destinations from /data/destinations.json
+  // 3. Fallback to local static JSON dataset
   try {
     if (!staticDestinationsCache) {
-      const publicRes = await axios.get('/data/destinations.json', { timeout: 3000 });
-      if (publicRes.data && Array.isArray(publicRes.data)) {
-        staticDestinationsCache = publicRes.data;
+      const staticRes = await fetch('/assets/data/public_destinations.json');
+      if (staticRes.ok) {
+        staticDestinationsCache = await staticRes.json();
       }
     }
 
-    if (staticDestinationsCache && staticDestinationsCache.length > 0) {
-      let filtered = staticDestinationsCache;
+    if (staticDestinationsCache && Array.isArray(staticDestinationsCache)) {
+      let filtered = [...staticDestinationsCache];
 
       if (query.category && query.category !== 'Semua') {
-        const catSearch = query.category.toLowerCase().trim();
-        filtered = filtered.filter((item: any) => {
-          const itemCat = mapCategoryName(item.primary_category);
-          return itemCat.toLowerCase() === catSearch || String(item.primary_category).toLowerCase().includes(catSearch);
-        });
+        const catLow = query.category.toLowerCase();
+        filtered = filtered.filter((d) => String(d.primary_category || '').toLowerCase().includes(catLow));
       }
 
       if (query.city_or_regency && query.city_or_regency !== 'Semua') {
-        const regSearch = query.city_or_regency.toLowerCase();
-        filtered = filtered.filter((item: any) =>
-          String(item.city_or_regency).toLowerCase().includes(regSearch)
-        );
+        const regLow = query.city_or_regency.toLowerCase();
+        filtered = filtered.filter((d) => String(d.city_or_regency || '').toLowerCase().includes(regLow));
       }
 
       if (query.search) {
         const kw = query.search.toLowerCase();
         filtered = filtered.filter(
-          (item: any) =>
-            String(item.name).toLowerCase().includes(kw) ||
-            String(item.city_or_regency).toLowerCase().includes(kw) ||
-            String(item.address).toLowerCase().includes(kw)
+          (d) =>
+            String(d.name || '').toLowerCase().includes(kw) ||
+            String(d.city_or_regency || '').toLowerCase().includes(kw) ||
+            String(d.address || '').toLowerCase().includes(kw)
         );
       }
 
@@ -101,22 +96,21 @@ export const fetchRealDestinations = async (query: DestinationsQuery = {}): Prom
       const paginated = filtered.slice(startIdx, startIdx + limit);
       return paginated.map((item: any) => mapApiToDestination(item));
     }
-  } catch (e) {
-    console.error('Failed to load static destinations.json', e);
+  } catch (err) {
+    // Silent fallback
   }
 
   return [];
 };
 
 const mapCategoryName = (raw: string): string => {
-  const catMap: Record<string, 'Pantai' | 'Alam' | 'Budaya' | 'Kuliner' | 'Adventure'> = {
+  if (!raw) return 'Alam';
+  const catMap: Record<string, string> = {
     beach: 'Pantai',
     pantai: 'Pantai',
     nature: 'Alam',
     alam: 'Alam',
-    mountain: 'Alam',
     waterfall: 'Alam',
-    forest: 'Alam',
     culture: 'Budaya',
     budaya: 'Budaya',
     museum: 'Budaya',
@@ -155,4 +149,65 @@ export const mapApiToDestination = (item: any): Destination => {
     facilities: ['Spot Foto', 'Area Parkir', 'Warung Makan', 'Mushola', 'Toilet'],
     aiReason: `Rekomendasi resmi AI Raden Gajah untuk kategori ${primaryCategory} unggulan di ${item.city_or_regency}.`,
   };
+};
+
+// ==========================================
+// AI PLANNER LIVE API SERVICES (FASE 11)
+// ==========================================
+
+export interface GeneratePlannerPayload {
+  city_or_regency: string;
+  primary_category?: string;
+  budget_level?: string;
+  pace_style?: string;
+  duration_days: number;
+}
+
+export interface SwapSlotPayload {
+  city_or_regency: string;
+  category?: string;
+  exclude_ids?: string[];
+}
+
+export const generateAiPlannerItinerary = async (payload: GeneratePlannerPayload): Promise<any> => {
+  // 1. Try NestJS Backend API
+  try {
+    const response = await axios.post(`${API_BASE_URL}/planner/generate`, payload, { timeout: 4500 });
+    if (response.data && (response.data.status === 'success' || response.data.itinerary)) {
+      return response.data;
+    }
+  } catch (err) {
+    // Silent fallback
+  }
+
+  // 2. Try FastAPI ML API Direct
+  try {
+    const fastApiRes = await axios.post('http://localhost:8000/api/v1/planner/generate', payload, { timeout: 4500 });
+    if (fastApiRes.data && (fastApiRes.data.status === 'success' || fastApiRes.data.itinerary)) {
+      return fastApiRes.data;
+    }
+  } catch (e) {
+    // Silent fallback
+  }
+
+  return null;
+};
+
+export const swapPlannerSlotApi = async (payload: SwapSlotPayload): Promise<any[]> => {
+  try {
+    const response = await axios.post(`${API_BASE_URL}/planner/swap-slot`, payload, { timeout: 3500 });
+    if (response.data && response.data.alternatives) {
+      return response.data.alternatives;
+    }
+  } catch (e) {
+    try {
+      const fastApiRes = await axios.post('http://localhost:8000/api/v1/planner/swap-slot', payload, { timeout: 3500 });
+      if (fastApiRes.data && fastApiRes.data.alternatives) {
+        return fastApiRes.data.alternatives;
+      }
+    } catch (err) {
+      return [];
+    }
+  }
+  return [];
 };

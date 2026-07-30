@@ -3,7 +3,6 @@ import {
   Sparkles,
   Calendar,
   DollarSign,
-  Users,
   Compass,
   Clock,
   MapPin,
@@ -11,9 +10,7 @@ import {
   Bookmark,
   Printer,
   CheckCircle2,
-  Copy,
   X,
-  Tag,
   Palmtree,
   Mountain,
   Landmark,
@@ -21,10 +18,14 @@ import {
   Footprints,
   Info,
   Car,
+  RotateCw,
+  RefreshCw,
 } from 'lucide-react';
 import { RouteMap3D, RouteSlot } from '../components/RouteMap3D';
+import { generateAiPlannerItinerary, swapPlannerSlotApi } from '../services/destinationsApi';
 
 interface ItinerarySlot extends RouteSlot {
+  canonical_id?: string;
   numericCost: number;
 }
 
@@ -38,49 +39,51 @@ export const PlannerPage: React.FC = () => {
   // Wizard Input State
   const [selectedRegency, setSelectedRegency] = useState<string>('Kota Bandar Lampung');
   const [durationDays, setDurationDays] = useState<number>(3);
-  const [budgetTier, setBudgetTier] = useState<'Ekonomis' | 'Standar' | 'Mewah'>('Standar');
-  const [selectedPreferences, setSelectedPreferences] = useState<string[]>([
-    'Pantai & Bahari',
-    'Kuliner Lampung',
-  ]);
-  const [tripType, setTripType] = useState<'Solo' | 'Pasangan' | 'Keluarga' | 'Teman'>('Pasangan');
+  const [selectedCategory, setSelectedCategory] = useState<string>('Semua');
+  const [selectedBudget, setSelectedBudget] = useState<string>('Standar');
+  const [selectedPace, setSelectedPace] = useState<string>('Santai');
 
-  // AI Generation State
+  // Generator & Interactive State
   const [isGenerating, setIsGenerating] = useState<boolean>(false);
   const [generatedItinerary, setGeneratedItinerary] = useState<DaySchedule[] | null>(null);
   const [activeDayTab, setActiveDayTab] = useState<number>(1);
   const [selectedSlotIndex, setSelectedSlotIndex] = useState<number | null>(null);
 
-  // Modals & Notifications
-  const [isShareModalOpen, setIsShareModalOpen] = useState<boolean>(false);
+  // Toast & Share State
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [copiedLink, setCopiedLink] = useState<boolean>(false);
 
+  // Spot Swap Modal State
+  const [swapModalOpen, setSwapModalOpen] = useState<boolean>(false);
+  const [swapTargetInfo, setSwapTargetInfo] = useState<{ dayNumber: number; slotIndex: number; slot: ItinerarySlot } | null>(null);
+  const [swapAlternatives, setSwapAlternatives] = useState<any[]>([]);
+  const [isLoadingSwap, setIsLoadingSwap] = useState<boolean>(false);
+
   const regenciesList = [
     'Kota Bandar Lampung',
-    'Pesawaran',
-    'Lampung Selatan',
-    'Pesisir Barat',
-    'Tanggamus',
-    'Lampung Timur',
-    'Lampung Barat',
-    'Way Kanan',
     'Kota Metro',
-    'Pringsewu',
-    'Tulang Bawang Barat',
-    'Lampung Utara',
-    'Lampung Tengah',
-    'Tulang Bawang',
-    'Mesuji',
-    'Semua Kabupaten',
+    'Kabupaten Pesawaran',
+    'Kabupaten Pesisir Barat',
+    'Kabupaten Lampung Selatan',
+    'Kabupaten Lampung Barat',
+    'Kabupaten Tanggamus',
+    'Kabupaten Pringsewu',
+    'Kabupaten Lampung Tengah',
+    'Kabupaten Lampung Utara',
+    'Kabupaten Lampung Timur',
+    'Kabupaten Way Kanan',
+    'Kabupaten Tulang Bawang',
+    'Kabupaten Tulang Bawang Barat',
+    'Kabupaten Mesuji',
   ];
 
-  const preferencesList = [
-    { id: 'Pantai & Bahari', icon: Palmtree },
-    { id: 'Wisata Alam & Hutan', icon: Mountain },
-    { id: 'Kuliner Lampung', icon: Utensils },
-    { id: 'Budaya & Sejarah', icon: Landmark },
-    { id: 'Petualangan Extrem', icon: Footprints },
+  const categories = [
+    { name: 'Semua', icon: Sparkles },
+    { name: 'Pantai', icon: Palmtree },
+    { name: 'Alam', icon: Mountain },
+    { name: 'Budaya', icon: Landmark },
+    { name: 'Kuliner', icon: Utensils },
+    { name: 'Adventure', icon: Footprints },
   ];
 
   const triggerToast = (msg: string) => {
@@ -88,293 +91,140 @@ export const PlannerPage: React.FC = () => {
     setTimeout(() => setToastMessage(null), 3000);
   };
 
-  const togglePreference = (id: string) => {
-    if (selectedPreferences.includes(id)) {
-      if (selectedPreferences.length > 1) {
-        setSelectedPreferences(selectedPreferences.filter((item) => item !== id));
-      }
-    } else {
-      setSelectedPreferences([...selectedPreferences, id]);
-    }
-  };
-
-  // AI Generator Handler with Real Regency Data & Coordinates
-  const handleGenerateItinerary = (e: React.FormEvent) => {
+  // AI Generator Handler with Live API & Fallback
+  const handleGenerateItinerary = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsGenerating(true);
     setGeneratedItinerary(null);
     setSelectedSlotIndex(null);
 
-    setTimeout(() => {
-      // Build dynamic days based on selected Regency
-      let mockResult: DaySchedule[] = [];
+    try {
+      const response = await generateAiPlannerItinerary({
+        city_or_regency: selectedRegency,
+        primary_category: selectedCategory,
+        budget_level: selectedBudget,
+        pace_style: selectedPace,
+        duration_days: durationDays,
+      });
 
-      if (selectedRegency === 'Pesawaran') {
-        mockResult = [
-          {
-            dayNumber: 1,
-            title: 'Eksplorasi Pulau Pahawang & Snorkeling Bahari Pesawaran',
-            slots: [
-              {
-                time: '08:00 - 09:00 WIB',
-                activityTitle: 'Dermaga Ketapang Pesawaran',
-                category: 'Adventure',
-                location: 'Ketapang, Teluk Pandan, Pesawaran',
-                estimatedCost: 'Rp 15.000 / motor',
-                numericCost: 15000,
-                coords: [-5.5782, 105.2341],
-                image: '/assets/images/regencies/pesawaran.jpg',
-                aiTip: 'Dermaga utama penyeberangan perahu jelajah ke kepulauan Pahawang & Kelagian.',
-                travelTime: '30 menit perahu ke Pulau Pahawang',
-              },
-              {
-                time: '09:30 - 13:00 WIB',
-                activityTitle: 'Snorkeling Taman Laut & Pulau Pahawang Besar',
-                category: 'Pantai',
-                location: 'Pulau Pahawang Besar, Pesawaran',
-                estimatedCost: 'Rp 150.000 / orang',
-                numericCost: 150000,
-                coords: [-5.6743, 105.2198],
-                image: '/assets/images/regencies/pesawaran.jpg',
-                aiTip: 'Spot foto ikonik bersama Ikan Nemo bawah laut dan terumbu karang alami.',
-                travelTime: '20 menit perahu ke Pasir Timbul',
-              },
-              {
-                time: '13:30 - 15:30 WIB',
-                activityTitle: 'Pasir Timbul Pulau Pahawang Kecil',
-                category: 'Pantai',
-                location: 'Pulau Pahawang Kecil, Pesawaran',
-                estimatedCost: 'Gratis (Sudah termasuk tur)',
-                numericCost: 0,
-                coords: [-5.6821, 105.2289],
-                image: '/assets/images/regencies/pesawaran.jpg',
-                aiTip: 'Hamparan pasir putih melingkar di tengah laut yang hanya muncul saat air surut.',
-                travelTime: '35 menit kembali ke daratan',
-              },
-              {
-                time: '16:30 - 18:30 WIB',
-                activityTitle: 'Sunset & Kuliner Seafood Pantai Mutun',
-                category: 'Kuliner',
-                location: 'Pantai Mutun, Pesawaran',
-                estimatedCost: 'Rp 45.000 / orang',
-                numericCost: 45000,
-                coords: [-5.5231, 105.2512],
-                image: '/assets/images/regencies/pesawaran.jpg',
-                aiTip: 'Bersantai menikmati es kelapa muda dan kelapa bakar manis saat matahari terbenam.',
-              },
-            ],
-          },
-          {
-            dayNumber: 2,
-            title: 'Petualangan Air Terjun & Hutan Tropis Pesawaran',
-            slots: [
-              {
-                time: '08:30 - 11:30 WIB',
-                activityTitle: 'Air Terjun Ciupang Pesawaran',
-                category: 'Alam',
-                location: 'Desa Sumberjaya, Way Ratai, Pesawaran',
-                estimatedCost: 'Rp 10.000 / orang',
-                numericCost: 10000,
-                coords: [-5.5412, 105.1234],
-                image: '/assets/images/regencies/pesawaran.jpg',
-                aiTip: 'Air terjun unik berundak-undak batu hitam tebal terlindung pepohonan rimbun.',
-                travelTime: '40 menit berkendara',
-              },
-              {
-                time: '12:30 - 15:00 WIB',
-                activityTitle: 'Pantai Sari Ringgung & Masjid Terapung',
-                category: 'Budaya',
-                location: 'Sidodadi, Teluk Pandan, Pesawaran',
-                estimatedCost: 'Rp 20.000 / orang',
-                numericCost: 20000,
-                coords: [-5.5567, 105.2412],
-                image: '/assets/images/regencies/pesawaran.jpg',
-                aiTip: 'Kunjungi Masjid Terapung Al-Amin di tengah laut Sari Ringgung yang estetik.',
-              },
-            ],
-          },
-        ];
-      } else if (selectedRegency === 'Pesisir Barat') {
-        mockResult = [
-          {
-            dayNumber: 1,
-            title: 'Petualangan Ombak Surfing Krui & Wisata Bahari Pesisir Barat',
-            slots: [
-              {
-                time: '08:00 - 11:00 WIB',
-                activityTitle: 'Surfing & Santai Pantai Tanjung Setia',
-                category: 'Adventure',
-                location: 'Tanjung Setia, Pesisir Selatan, Pesisir Barat',
-                estimatedCost: 'Rp 25.000 / orang',
-                numericCost: 25000,
-                coords: [-5.3087, 103.9927],
-                image: '/assets/images/regencies/pesisir-barat.jpg',
-                aiTip: 'Surga ombak kelas dunia bagi peselancar mancanegara dengan gulungan ombak yang stabil.',
-                travelTime: '20 menit berkendara ke Krui pusat',
-              },
-              {
-                time: '11:30 - 14:00 WIB',
-                activityTitle: 'Pantai Labuhan Jukung Krui',
-                category: 'Pantai',
-                location: 'Pesisir Tengah, Kabupaten Pesisir Barat',
-                estimatedCost: 'Rp 15.000 / orang',
-                numericCost: 15000,
-                coords: [-5.1909, 103.9310],
-                image: '/assets/images/regencies/pesisir-barat.jpg',
-                aiTip: 'Pantai landmark utama Kota Krui dengan fasilitas lengkap & landmark tugu obeliks.',
-                travelTime: '15 menit perjalanan makan siang',
-              },
-              {
-                time: '14:30 - 16:00 WIB',
-                activityTitle: 'Makan Siang Olahan Ikan Tuhuk (Blue Marlin)',
-                category: 'Kuliner',
-                location: 'Pusat Kuliner Krui, Pesisir Barat',
-                estimatedCost: 'Rp 50.000 / orang',
-                numericCost: 50000,
-                coords: [-5.1843, 103.9363],
-                image: '/assets/images/regencies/pesisir-barat.jpg',
-                aiTip: 'Cicipi sate & sup Ikan Tuhuk khas Krui yang teksturnya mirip daging empuk manis.',
-                travelTime: '30 menit penyeberangan perahu ke Pulau Pisang',
-              },
-              {
-                time: '16:30 - 18:30 WIB',
-                activityTitle: 'Sunset Eksotis Pulau Pisang',
-                category: 'Alam',
-                location: 'Kecamatan Pulau Pisang, Pesisir Barat',
-                estimatedCost: 'Rp 30.000 / orang',
-                numericCost: 30000,
-                coords: [-5.1123, 103.8741],
-                image: '/assets/images/regencies/pesisir-barat.jpg',
-                aiTip: 'Pulau terpencil dengan mercusuar tua peninggalan zaman kolonial dan pantai pasir halus.',
-              },
-            ],
-          },
-        ];
-      } else if (selectedRegency === 'Lampung Selatan') {
-        mockResult = [
-          {
-            dayNumber: 1,
-            title: 'Wisata Monumen Ikonik & Pantai Marina Kalianda',
-            slots: [
-              {
-                time: '08:00 - 10:30 WIB',
-                activityTitle: 'Menara Siger Bakauheni',
-                category: 'Budaya',
-                location: 'Bakauheni, Lampung Selatan',
-                estimatedCost: 'Rp 15.000 / orang',
-                numericCost: 15000,
-                coords: [-5.8712, 105.7534],
-                image: '/assets/images/regencies/lampung-selatan.jpg',
-                aiTip: 'Landmark mahkota mahakarya Lampung di titik Nol Sumatera dengan pemandangan Selat Sunda.',
-                travelTime: '30 menit berkendara ke Kalianda',
-              },
-              {
-                time: '11:30 - 15:00 WIB',
-                activityTitle: 'Pantai Marina Kalianda',
-                category: 'Pantai',
-                location: 'Merak Belantung, Kalianda, Lampung Selatan',
-                estimatedCost: 'Rp 30.000 / orang',
-                numericCost: 30000,
-                coords: [-5.6234, 105.5891],
-                image: '/assets/images/regencies/lampung-selatan.jpg',
-                aiTip: 'Pemandangan tebing batu karang eksotis dengan dentuman ombak laut yang dramatis.',
-                travelTime: '20 menit ke Minang Rua',
-              },
-              {
-                time: '15:30 - 18:00 WIB',
-                activityTitle: 'Pantai Minang Rua & Green Canyon',
-                category: 'Alam',
-                location: 'Kawi, Bakauheni, Lampung Selatan',
-                estimatedCost: 'Rp 20.000 / orang',
-                numericCost: 20000,
-                coords: [-5.7912, 105.7123],
-                image: '/assets/images/regencies/lampung-selatan.jpg',
-                aiTip: 'Jelajahi gua penyu alami dan aliran sungai Green Canyon yang sejuk.',
-              },
-            ],
-          },
-        ];
-      } else {
-        // Default Bandar Lampung / General
-        mockResult = [
-          {
-            dayNumber: 1,
-            title: `Eksplorasi Perkotaan & Sunset Puncak ${selectedRegency}`,
-            slots: [
-              {
-                time: '08:30 - 11:00 WIB',
-                activityTitle: 'Museum Lampung (Ruwa Jurai)',
-                category: 'Budaya',
-                location: 'Rajabasa, Bandar Lampung',
-                estimatedCost: 'Rp 5.000 / orang',
-                numericCost: 5000,
-                coords: [-5.3721, 105.2412],
-                image: '/assets/images/regencies/bandar-lampung.jpg',
-                aiTip: 'Datang pagi hari untuk tur pemandu gratis mengenai sejarah kain Tapis kuno Lampung.',
-                travelTime: '20 menit perjalanan ke resto',
-              },
-              {
-                time: '11:30 - 13:30 WIB',
-                activityTitle: 'Makan Siang Khas Seruit Tempoyak',
-                category: 'Kuliner',
-                location: 'Pusat Kota Bandar Lampung',
-                estimatedCost: 'Rp 45.000 / orang',
-                numericCost: 45000,
-                coords: [-5.4212, 105.2612],
-                image: '/assets/images/regencies/bandar-lampung.jpg',
-                aiTip: 'Nikmati olahan ikan segar dengan sambal tempoyak durian khas Lampung yang menggugah selera.',
-                travelTime: '25 menit ke bukit puncak',
-              },
-              {
-                time: '14:30 - 18:00 WIB',
-                activityTitle: 'Puncak Mas & Panorama Teluk Lampung',
-                category: 'Alam',
-                location: 'Sukadanaham, Bandar Lampung',
-                estimatedCost: 'Rp 20.000 / orang',
-                numericCost: 20000,
-                coords: [-5.4312, 105.2212],
-                image: '/assets/images/regencies/bandar-lampung.jpg',
-                aiTip: 'Lokasi terbaik untuk menikmati lanskap pemandangan Teluk Lampung dari ketinggian.',
-              },
-            ],
-          },
-          {
-            dayNumber: 2,
-            title: 'Wisata Edukasi & Pusat Souvenir Khas Lampung',
-            slots: [
-              {
-                time: '09:00 - 12:00 WIB',
-                activityTitle: 'Taman Wisata Lembah Hijau',
-                category: 'Alam',
-                location: 'Tanjung Karang Barat, Bandar Lampung',
-                estimatedCost: 'Rp 35.000 / orang',
-                numericCost: 35000,
-                coords: [-5.4123, 105.2341],
-                image: '/assets/images/regencies/bandar-lampung.jpg',
-                aiTip: 'Taman rekreasi hijau keluarga dengan fasilitas waterboom & taman satwa.',
-                travelTime: '20 menit ke pusat oleh-oleh',
-              },
-              {
-                time: '13:00 - 16:00 WIB',
-                activityTitle: 'Belanja Souvenir Tapis & Kripik Pisang Yen Yen',
-                category: 'Budaya',
-                location: 'Teluk Betung, Bandar Lampung',
-                estimatedCost: 'Rp 100.000 / estimasi',
-                numericCost: 100000,
-                coords: [-5.4412, 105.2567],
-                image: '/assets/images/regencies/bandar-lampung.jpg',
-                aiTip: 'Dapatkan Keripik Pisang Cokelat murni dan kain Tapis sulam asli Lampung.',
-              },
-            ],
-          },
-        ];
+      if (response && response.itinerary && Array.isArray(response.itinerary) && response.itinerary.length > 0) {
+        setGeneratedItinerary(response.itinerary);
+        setIsGenerating(false);
+        setActiveDayTab(1);
+        triggerToast(`Itinerary AI ${selectedRegency} Berhasil Dibuat!`);
+        return;
       }
+    } catch (err) {
+      console.warn('Live API itinerary failed, using client fallback', err);
+    }
 
-      setGeneratedItinerary(mockResult.slice(0, durationDays));
+    // Fallback Mock Result if Live API unavailable
+    setTimeout(() => {
+      let mockResult: DaySchedule[] = [
+        {
+          dayNumber: 1,
+          title: `Eksplorasi Perdana ${selectedRegency}`,
+          slots: [
+            {
+              canonical_id: 'mock-1',
+              time: '08:30 - 11:30 WIB',
+              activityTitle: `Wisata Bahari Ikonik ${selectedRegency}`,
+              category: selectedCategory !== 'Semua' ? selectedCategory : 'Pantai',
+              location: `Kawasan Pariwisata ${selectedRegency}`,
+              estimatedCost: 'Rp 25.000 / orang',
+              numericCost: 25000,
+              coords: [-5.4292, 105.2611],
+              image: '/assets/images/heroes/hero-pahawang-bg.png',
+              aiTip: `Spot unggulan terpopuler di ${selectedRegency} dengan lanskap eksotik.`,
+              travelTime: 'Lokasi awal hari',
+            },
+            {
+              canonical_id: 'mock-2',
+              time: '12:00 - 14:00 WIB',
+              activityTitle: `Makan Siang Kuliner Khas ${selectedRegency}`,
+              category: 'Kuliner',
+              location: `Pusat Kuliner ${selectedRegency}`,
+              estimatedCost: 'Rp 35.000 / orang',
+              numericCost: 35000,
+              coords: [-5.4412, 105.2512],
+              image: 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=800&q=80',
+              aiTip: `Mencicipi masakan khas Lampung otentik dengan racikan rempah istimewa.`,
+              travelTime: '15 menit perjalanan',
+            },
+            {
+              canonical_id: 'mock-3',
+              time: '15:30 - 18:30 WIB',
+              activityTitle: `Pesona Sunset & Bukit Panorama ${selectedRegency}`,
+              category: 'Alam',
+              location: `Dataran Tinggi ${selectedRegency}`,
+              estimatedCost: 'Rp 20.000 / orang',
+              numericCost: 20000,
+              coords: [-5.3842, 105.1954],
+              image: 'https://images.unsplash.com/photo-1432405972618-c60b0225b8f9?auto=format&fit=crop&w=800&q=80',
+              aiTip: `Spot foto matahari terbenam paling indah dan adem.`,
+              travelTime: '20 menit perjalanan',
+            },
+          ],
+        },
+      ];
+
+      setGeneratedItinerary(mockResult);
       setIsGenerating(false);
       setActiveDayTab(1);
       triggerToast(`Itinerary AI ${selectedRegency} Berhasil Dibuat!`);
-    }, 1600);
+    }, 1200);
+  };
+
+  // Open Swap Slot Modal & Fetch Alternatives
+  const handleOpenSwapModal = async (slot: ItinerarySlot, dayNumber: number, slotIndex: number) => {
+    setSwapTargetInfo({ dayNumber, slotIndex, slot });
+    setSwapModalOpen(true);
+    setIsLoadingSwap(true);
+
+    const currentExcludeIds = generatedItinerary
+      ? generatedItinerary.flatMap((d) => d.slots.map((s) => s.canonical_id).filter(Boolean)) as string[]
+      : [];
+
+    const alternatives = await swapPlannerSlotApi({
+      city_or_regency: selectedRegency,
+      category: slot.category,
+      exclude_ids: currentExcludeIds,
+    });
+
+    setSwapAlternatives(alternatives);
+    setIsLoadingSwap(false);
+  };
+
+  // Replace Slot with Selected Alternative
+  const handleReplaceSlot = (newAlternative: any) => {
+    if (!swapTargetInfo || !generatedItinerary) return;
+
+    const { dayNumber, slotIndex } = swapTargetInfo;
+
+    const updatedItinerary = generatedItinerary.map((day) => {
+      if (day.dayNumber === dayNumber) {
+        const updatedSlots = [...day.slots];
+        updatedSlots[slotIndex] = {
+          ...updatedSlots[slotIndex],
+          canonical_id: newAlternative.canonical_id,
+          activityTitle: newAlternative.activityTitle,
+          category: newAlternative.category,
+          location: newAlternative.location,
+          estimatedCost: newAlternative.estimatedCost,
+          numericCost: newAlternative.numericCost,
+          coords: newAlternative.coords,
+          image: newAlternative.image,
+          aiTip: newAlternative.aiTip,
+        };
+        return { ...day, slots: updatedSlots };
+      }
+      return day;
+    });
+
+    setGeneratedItinerary(updatedItinerary);
+    setSwapModalOpen(false);
+    setSwapTargetInfo(null);
+    triggerToast(`Spot berhasil diganti ke ${newAlternative.activityTitle}!`);
   };
 
   const calculateTotalCost = () => {
@@ -390,7 +240,6 @@ export const PlannerPage: React.FC = () => {
     setTimeout(() => setCopiedLink(false), 2500);
   };
 
-  // Get active day slots
   const activeDaySlots =
     generatedItinerary?.find((day) => day.dayNumber === activeDayTab)?.slots || [];
 
@@ -428,7 +277,7 @@ export const PlannerPage: React.FC = () => {
           alt="Panorama Pantai Pahawang Lampung"
           className="absolute inset-0 w-full h-full object-cover object-center z-0"
         />
-        {/* Gradient overlays for contrast & smooth transition */}
+        {/* Gradient overlays */}
         <div className="absolute inset-0 bg-gradient-to-r from-white/95 via-white/80 to-white/40 z-[1]" />
         <div className="absolute inset-0 z-[1]" style={{ background: 'linear-gradient(to bottom, transparent 30%, rgba(248,250,252,0.6) 70%, #F8FAFC 100%)' }} />
 
@@ -461,7 +310,6 @@ export const PlannerPage: React.FC = () => {
                   <p className="text-xs font-semibold text-slate-800 leading-relaxed font-sans min-h-[36px] flex items-center">
                     {mascotMessages[mascotMsgIndex]}
                   </p>
-                  {/* Tail pointing right to Mascot */}
                   <div className="hidden sm:block absolute top-1/2 -right-2 -translate-y-1/2 w-0 h-0 border-y-8 border-y-transparent border-l-8 border-l-white" />
                 </div>
 
@@ -508,7 +356,7 @@ export const PlannerPage: React.FC = () => {
               <select
                 value={selectedRegency}
                 onChange={(e) => setSelectedRegency(e.target.value)}
-                className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-3 py-2 text-xs font-bold text-slate-900 focus:outline-none focus:border-[#0D9488]"
+                className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-3.5 py-2.5 text-xs font-bold text-slate-900 focus:outline-none focus:border-[#0D9488]"
               >
                 {regenciesList.map((reg) => (
                   <option key={reg} value={reg}>
@@ -522,344 +370,306 @@ export const PlannerPage: React.FC = () => {
             <div className="space-y-2">
               <label className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
                 <Calendar className="w-4 h-4 text-[#0D9488]" />
-                <span>Durasi Perjalanan</span>
+                <span>Durasi Hari</span>
               </label>
-              <div className="grid grid-cols-3 gap-1.5">
-                {[1, 2, 3].map((days) => (
-                  <button
-                    key={days}
-                    type="button"
-                    onClick={() => setDurationDays(days)}
-                    className={`py-2 px-2 rounded-2xl text-xs font-bold transition-all border ${
-                      durationDays === days
-                        ? 'bg-[#0D9488] text-white border-[#0D9488] shadow-md'
-                        : 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100'
-                    }`}
-                  >
-                    {days} Hari
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* 3. BUDGET TIER */}
-            <div className="space-y-2">
-              <label className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
-                <DollarSign className="w-4 h-4 text-siger-500" />
-                <span>Estimasi Budget</span>
-              </label>
-              <div className="grid grid-cols-3 gap-1.5">
-                {(['Ekonomis', 'Standar', 'Mewah'] as const).map((tier) => (
-                  <button
-                    key={tier}
-                    type="button"
-                    onClick={() => setBudgetTier(tier)}
-                    className={`py-2 px-1 rounded-2xl text-[11px] font-bold transition-all border ${
-                      budgetTier === tier
-                        ? 'bg-[#0D9488] text-white border-[#0D9488] shadow-md'
-                        : 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100'
-                    }`}
-                  >
-                    {tier}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* 4. TRIP TYPE */}
-            <div className="space-y-2">
-              <label className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
-                <Users className="w-4 h-4 text-[#0D9488]" />
-                <span>Rombongan</span>
-              </label>
-              <div className="grid grid-cols-2 gap-1.5">
-                {(['Solo', 'Pasangan', 'Keluarga', 'Teman'] as const).map((type) => (
-                  <button
-                    key={type}
-                    type="button"
-                    onClick={() => setTripType(type)}
-                    className={`py-1.5 px-1 rounded-xl text-[10px] font-bold transition-all border text-center ${
-                      tripType === type
-                        ? 'bg-[#0D9488] text-white border-[#0D9488] shadow-md'
-                        : 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100'
-                    }`}
-                  >
-                    {type}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* 5. SUBMIT BUTTON */}
-            <div className="flex items-end">
-              <button
-                type="submit"
-                disabled={isGenerating}
-                className="w-full py-3 rounded-2xl bg-[#0D9488] hover:bg-[#0F766E] text-white text-xs font-extrabold shadow-lg shadow-[#0D9488]/30 flex items-center justify-center gap-2 transition-all active:scale-95 disabled:opacity-60"
+              <select
+                value={durationDays}
+                onChange={(e) => setDurationDays(Number(e.target.value))}
+                className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-3.5 py-2.5 text-xs font-bold text-slate-900 focus:outline-none focus:border-[#0D9488]"
               >
-                {isGenerating ? (
-                  <>
-                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                    <span>Menyusun Rute...</span>
-                  </>
-                ) : (
-                  <>
-                    <Sparkles className="w-4 h-4 text-siger-400" />
-                    <span>Generate Itinerary AI</span>
-                  </>
-                )}
-              </button>
+                <option value={1}>1 Hari (Day Trip)</option>
+                <option value={2}>2 Hari (Weekend Getaway)</option>
+                <option value={3}>3 Hari (Full Exploration)</option>
+                <option value={4}>4 Hari (Grand Tour)</option>
+                <option value={5}>5 Hari (Ultimate Holiday)</option>
+              </select>
+            </div>
+
+            {/* 3. CATEGORY PREFERENCE */}
+            <div className="space-y-2">
+              <label className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                <Sparkles className="w-4 h-4 text-[#0D9488]" />
+                <span>Kategori Utama</span>
+              </label>
+              <select
+                value={selectedCategory}
+                onChange={(e) => setSelectedCategory(e.target.value)}
+                className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-3.5 py-2.5 text-xs font-bold text-slate-900 focus:outline-none focus:border-[#0D9488]"
+              >
+                {categories.map((cat) => (
+                  <option key={cat.name} value={cat.name}>
+                    {cat.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* 4. BUDGET LEVEL */}
+            <div className="space-y-2">
+              <label className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                <DollarSign className="w-4 h-4 text-[#0D9488]" />
+                <span>Batas Budget</span>
+              </label>
+              <select
+                value={selectedBudget}
+                onChange={(e) => setSelectedBudget(e.target.value)}
+                className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-3.5 py-2.5 text-xs font-bold text-slate-900 focus:outline-none focus:border-[#0D9488]"
+              >
+                <option value="Ekonomis">Ekonomis (&lt; Rp 100rb/hari)</option>
+                <option value="Standar">Standar (Rp 100rb - 300rb)</option>
+                <option value="Mewah">Mewah (&gt; Rp 300rb/hari)</option>
+              </select>
+            </div>
+
+            {/* 5. PACE STYLE */}
+            <div className="space-y-2">
+              <label className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                <Clock className="w-4 h-4 text-[#0D9488]" />
+                <span>Ritme Liburan</span>
+              </label>
+              <select
+                value={selectedPace}
+                onChange={(e) => setSelectedPace(e.target.value)}
+                className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-3.5 py-2.5 text-xs font-bold text-slate-900 focus:outline-none focus:border-[#0D9488]"
+              >
+                <option value="Santai">Santai (3 Spot Utama / Hari)</option>
+                <option value="Padat">Padat Wisata (4-5 Spot / Hari)</option>
+              </select>
             </div>
 
           </div>
 
-          {/* MULTI-SELECT PREFERENCES */}
-          <div className="space-y-2.5 pt-2 border-t border-slate-100">
-            <label className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
-              <Tag className="w-4 h-4 text-siger-500" />
-              <span>Minat & Preferensi Wisata (Pilih beberapa)</span>
-            </label>
-            <div className="flex flex-wrap gap-2">
-              {preferencesList.map(({ id, icon: Icon }) => (
-                <button
-                  key={id}
-                  type="button"
-                  onClick={() => togglePreference(id)}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-full text-xs font-bold transition-all border ${
-                    selectedPreferences.includes(id)
-                      ? 'bg-amber-100 text-amber-800 border-amber-300 shadow-sm'
-                      : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
-                  }`}
-                >
-                  <Icon className="w-3.5 h-3.5" />
-                  <span>{id}</span>
-                </button>
-              ))}
-            </div>
+          {/* SUBMIT BUTTON */}
+          <div className="pt-2 flex justify-end">
+            <button
+              type="submit"
+              disabled={isGenerating}
+              className="bg-[#0D9488] hover:bg-[#0F766E] text-white font-extrabold text-xs sm:text-sm px-6 py-3 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 flex items-center gap-2 disabled:opacity-50 active:scale-95"
+            >
+              {isGenerating ? (
+                <>
+                  <RefreshCw className="w-4 h-4 animate-spin" />
+                  <span>Meracik Rute Spasial AI...</span>
+                </>
+              ) : (
+                <>
+                  <Sparkles className="w-4 h-4 text-amber-300" />
+                  <span>Buat Itinerary AI {selectedRegency}</span>
+                </>
+              )}
+            </button>
           </div>
         </form>
 
-        {/* LOADING ANIMATION STATE */}
+        {/* LOADING ANIMATED STATE */}
         {isGenerating && (
-          <div className="glass-card-container rounded-[28px] p-12 text-center space-y-4 animate-pulse">
-            <div className="w-16 h-16 rounded-full bg-teal-100 text-[#0D9488] flex items-center justify-center mx-auto shadow-inner">
-              <Sparkles className="w-8 h-8 animate-spin" />
+          <div className="glass-card-container rounded-[32px] p-12 text-center space-y-5 animate-pulse">
+            <div className="relative w-24 h-24 mx-auto flex items-center justify-center">
+              <div className="absolute inset-0 rounded-full bg-[#0D9488]/20 animate-ping" />
+              <img
+                src="/assets/images/mascot/muli-lampung-mascot.png"
+                alt="AI Mascot Loading"
+                className="w-20 h-20 object-contain relative z-10 animate-bounce"
+              />
             </div>
-            <div className="space-y-1">
-              <h3 className="text-base font-bold text-slate-900">
-                AI Raden Gajah Sedang Menyusun Rute {selectedRegency}...
+            <div className="space-y-2">
+              <h3 className="text-xl font-bold font-display text-slate-900">
+                Meracik Rute Wisata Terbaik di {selectedRegency}...
               </h3>
-              <p className="text-xs text-slate-500 max-w-md mx-auto">
-                Menganalisis koordinat peta 3D, estimasi rute perjalanan, dan tempat wisata paling populer di {selectedRegency}.
+              <p className="text-xs text-slate-500 font-sans max-w-md mx-auto">
+                AI Raden Gajah & Model Spasial sedang mengelompokkan tempat terdekat, menyisipkan kuliner khas, dan menghitung estimasi perjalanan harianmu.
               </p>
             </div>
           </div>
         )}
 
-        {/* ITINERARY RESULT DISPLAY (2-COLUMN SPLIT VIEW) */}
+        {/* ITINERARY RESULT SECTION */}
         {generatedItinerary && !isGenerating && (
-          <div className="space-y-6 animate-in fade-in duration-300">
-            
-            {/* ITINERARY HEADER & ACTION BAR */}
-            <div className="glass-card-container rounded-[24px] p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-              <div className="space-y-1">
-                <div className="flex items-center gap-2">
-                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-[#0D9488] text-white">
-                    {selectedRegency} &bull; {durationDays} Hari
-                  </span>
-                  <span className="text-xs font-bold text-slate-600">
-                    Budget: <span className="text-[#0D9488]">{budgetTier}</span>
-                  </span>
-                </div>
-                <h2 className="text-xl font-display font-extrabold text-slate-900">
-                  Rencana Perjalanan & Rute Spasial 3D
-                </h2>
+          <div className="space-y-8 animate-in fade-in duration-500">
+
+            {/* ACTION HEADER & SUMMARY BAR */}
+            <div className="glass-card-container rounded-[28px] p-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
+              <div>
+                <h3 className="text-xl font-bold font-display text-slate-900">
+                  Rencana Liburan {selectedRegency} ({durationDays} Hari)
+                </h3>
+                <p className="text-xs text-slate-500 font-sans mt-0.5">
+                  Estimasi Total Biaya Tiket & Kuliner: <span className="font-extrabold text-[#0D9488] text-sm">Rp {calculateTotalCost().toLocaleString('id-ID')}</span> / orang
+                </p>
               </div>
 
-              {/* Action Buttons */}
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 <button
-                  onClick={() => triggerToast('Itinerary tersimpan ke daftar favorit!')}
-                  className="px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold flex items-center gap-1.5 transition-colors"
+                  type="button"
+                  onClick={handleCopyShareLink}
+                  className="bg-white border border-slate-200 text-slate-700 hover:text-[#0D9488] px-4 py-2 rounded-xl text-xs font-bold transition-all shadow-sm flex items-center gap-1.5 active:scale-95"
                 >
-                  <Bookmark className="w-3.5 h-3.5 text-[#0D9488]" />
-                  <span>Simpan</span>
+                  {copiedLink ? <CheckCircle2 className="w-4 h-4 text-emerald-500" /> : <Share2 className="w-4 h-4" />}
+                  <span>{copiedLink ? 'Tersalin!' : 'Bagikan Link'}</span>
                 </button>
                 <button
+                  type="button"
+                  onClick={() => triggerToast('Itinerary Disimpan ke Menu Favorit!')}
+                  className="bg-white border border-slate-200 text-slate-700 hover:text-[#0D9488] px-4 py-2 rounded-xl text-xs font-bold transition-all shadow-sm flex items-center gap-1.5 active:scale-95"
+                >
+                  <Bookmark className="w-4 h-4" />
+                  <span>Simpan Rute</span>
+                </button>
+                <button
+                  type="button"
                   onClick={() => window.print()}
-                  className="px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold flex items-center gap-1.5 transition-colors"
+                  className="bg-white border border-slate-200 text-slate-700 hover:text-[#0D9488] px-4 py-2 rounded-xl text-xs font-bold transition-all shadow-sm flex items-center gap-1.5 active:scale-95"
                 >
-                  <Printer className="w-3.5 h-3.5 text-slate-600" />
-                  <span>Print</span>
-                </button>
-                <button
-                  onClick={() => setIsShareModalOpen(true)}
-                  className="px-4 py-2 rounded-xl bg-[#0D9488] hover:bg-[#0F766E] text-white text-xs font-extrabold shadow-md flex items-center gap-1.5 transition-colors"
-                >
-                  <Share2 className="w-3.5 h-3.5" />
-                  <span>Bagikan Link</span>
+                  <Printer className="w-4 h-4" />
+                  <span>Cetak PDF</span>
                 </button>
               </div>
             </div>
 
-            {/* DAY TABS */}
-            <div className="flex items-center gap-2 border-b border-slate-200 pb-2 overflow-x-auto">
-              {generatedItinerary.map((day) => (
-                <button
-                  key={day.dayNumber}
-                  onClick={() => {
-                    setActiveDayTab(day.dayNumber);
-                    setSelectedSlotIndex(null);
-                  }}
-                  className={`px-5 py-2 rounded-2xl text-xs font-bold transition-all whitespace-nowrap ${
-                    activeDayTab === day.dayNumber
-                      ? 'bg-[#0D9488] text-white shadow-md'
-                      : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
-                  }`}
-                >
-                  Hari {day.dayNumber}
-                </button>
-              ))}
-            </div>
-
-            {/* 2-COLUMN LAYOUT: TIMELINE SCHEDULE (LEFT) & 3D ROUTE MAP (RIGHT) */}
+            {/* MAIN TWO-COLUMN GRID: 3D MAP & DAILY TIMELINE */}
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-              
-              {/* LEFT COLUMN: ACTIVE DAY TIMELINE SCHEDULER (COL-SPAN-7) */}
-              <div className="lg:col-span-7 space-y-6">
-                {generatedItinerary.map(
-                  (day) =>
-                    day.dayNumber === activeDayTab && (
-                      <div key={day.dayNumber} className="space-y-6">
-                        <div className="bg-white rounded-2xl p-4 border border-slate-200 flex items-center justify-between">
-                          <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
-                            <Calendar className="w-4 h-4 text-siger-500" />
-                            <span>{day.title}</span>
-                          </h3>
-                          <span className="text-xs text-slate-500 font-medium">
-                            {day.slots.length} Aktivitas Terjadwal
-                          </span>
-                        </div>
 
-                        {/* Timeline Slots */}
-                        <div className="relative pl-6 sm:pl-8 space-y-6 before:absolute before:left-2.5 sm:before:left-3.5 before:top-3 before:bottom-3 before:w-0.5 before:bg-slate-200">
-                          {day.slots.map((slot, index) => {
-                            const isSlotSelected = selectedSlotIndex === index;
-
-                            return (
-                              <div
-                                key={index}
-                                onClick={() => setSelectedSlotIndex(index)}
-                                className="relative group cursor-pointer"
-                              >
-                                {/* Timeline Dot & Waypoint Badge Number */}
-                                <div
-                                  className={`absolute -left-6 sm:-left-8 top-4 w-6 h-6 rounded-full flex items-center justify-center z-10 shadow-md font-mono text-[10px] font-extrabold transition-transform ${
-                                    isSlotSelected
-                                      ? 'bg-[#0D9488] text-white ring-4 ring-[#0D9488]/30 scale-125'
-                                      : 'bg-slate-900 text-white border-2 border-white group-hover:scale-110'
-                                  }`}
-                                >
-                                  {index + 1}
-                                </div>
-
-                                {/* Time Slot Card */}
-                                <div
-                                  className={`glass-card-container rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-all border p-4 sm:p-5 space-y-3 ${
-                                    isSlotSelected
-                                      ? 'border-[#0D9488] bg-teal-50/40 ring-2 ring-[#0D9488]/20'
-                                      : 'border-slate-200'
-                                  }`}
-                                >
-                                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-3">
-                                    <div className="flex items-center gap-2">
-                                      <span className="px-3 py-1 rounded-full text-xs font-extrabold bg-teal-50 text-[#0D9488] border border-teal-200 flex items-center gap-1">
-                                        <Clock className="w-3.5 h-3.5" />
-                                        <span>{slot.time}</span>
-                                      </span>
-                                      <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-slate-900 text-white">
-                                        {slot.category}
-                                      </span>
-                                    </div>
-                                    <span className="text-xs font-bold text-[#0D9488]">{slot.estimatedCost}</span>
-                                  </div>
-
-                                  {/* Destination Main Row */}
-                                  <div className="flex items-start gap-4">
-                                    <img
-                                      src={slot.image}
-                                      alt={slot.activityTitle}
-                                      className="w-20 sm:w-24 h-20 sm:h-24 rounded-xl object-cover shrink-0 shadow-sm"
-                                    />
-                                    <div className="space-y-1 min-w-0">
-                                      <h4 className="text-sm font-bold text-slate-900 font-display">
-                                        {slot.activityTitle}
-                                      </h4>
-                                      <p className="text-xs text-slate-500 font-sans flex items-center gap-1 truncate">
-                                        <MapPin className="w-3.5 h-3.5 text-[#0D9488] shrink-0" />
-                                        <span>{slot.location}</span>
-                                      </p>
-                                      {slot.aiTip && (
-                                        <div className="mt-2 bg-amber-50/80 border border-amber-200/80 rounded-xl p-2.5 flex items-start gap-2 text-xs text-amber-900">
-                                          <Info className="w-3.5 h-3.5 text-amber-600 shrink-0 mt-0.5" />
-                                          <span className="text-[11px] font-medium leading-tight">{slot.aiTip}</span>
-                                        </div>
-                                      )}
-                                    </div>
-                                  </div>
-
-                                  {/* Travel Time Indicator to Next Location */}
-                                  {slot.travelTime && (
-                                    <div className="pt-2 border-t border-slate-100 flex items-center gap-1.5 text-[11px] text-slate-500 font-semibold">
-                                      <Car className="w-3.5 h-3.5 text-[#0D9488]" />
-                                      <span>{slot.travelTime}</span>
-                                    </div>
-                                  )}
-                                </div>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    )
-                )}
-
-                {/* ESTIMATED TOTAL COST BREAKDOWN */}
-                <div className="glass-card-container rounded-[24px] p-6 space-y-3">
-                  <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
-                    <DollarSign className="w-4 h-4 text-siger-500" />
-                    <span>Rincian Estimasi Total Pengeluaran Perjalanan</span>
-                  </h3>
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2 text-xs">
-                    <div className="bg-slate-50 p-3 rounded-2xl border border-slate-200/80 space-y-0.5">
-                      <p className="text-[10px] text-slate-400 font-medium">Tiket & Destinasi</p>
-                      <p className="text-sm font-bold text-slate-900">
-                        Rp {calculateTotalCost().toLocaleString('id-ID')}
-                      </p>
-                    </div>
-                    <div className="bg-slate-50 p-3 rounded-2xl border border-slate-200/80 space-y-0.5">
-                      <p className="text-[10px] text-slate-400 font-medium">Estimasi Transportasi Lokal</p>
-                      <p className="text-sm font-bold text-slate-900">Rp 120.000</p>
-                    </div>
-                    <div className="bg-teal-50/80 p-3 rounded-2xl border border-teal-200 space-y-0.5">
-                      <p className="text-[10px] text-teal-700 font-bold">Total Estimasi Keseluruhan</p>
-                      <p className="text-sm font-extrabold text-[#0D9488]">
-                        Rp {(calculateTotalCost() + 120000).toLocaleString('id-ID')}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-              </div>
-
-              {/* RIGHT COLUMN: 3D TILTED ROUTE MAP (COL-SPAN-5) */}
-              <div className="lg:col-span-5 lg:sticky lg:top-28">
+              {/* LEFT 7 COLS: SPATIAL 3D ROUTE MAP */}
+              <div className="lg:col-span-7 sticky top-28 space-y-4">
                 <RouteMap3D
                   slots={activeDaySlots}
                   selectedSlotIndex={selectedSlotIndex}
                   onSelectSlot={(idx) => setSelectedSlotIndex(idx)}
                   regencyName={selectedRegency}
                 />
+              </div>
+
+              {/* RIGHT 5 COLS: DAILY TIMELINE TABS & SLOTS */}
+              <div className="lg:col-span-5 space-y-6">
+
+                {/* DAY TABS NAVIGATOR */}
+                <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none">
+                  {generatedItinerary.map((day) => (
+                    <button
+                      key={day.dayNumber}
+                      type="button"
+                      onClick={() => {
+                        setActiveDayTab(day.dayNumber);
+                        setSelectedSlotIndex(null);
+                      }}
+                      className={`px-4 py-2.5 rounded-2xl text-xs font-extrabold transition-all whitespace-nowrap flex items-center gap-2 shadow-sm ${
+                        activeDayTab === day.dayNumber
+                          ? 'bg-[#0D9488] text-white shadow-md'
+                          : 'bg-white border border-slate-200 text-slate-600 hover:text-slate-900'
+                      }`}
+                    >
+                      <Calendar className="w-3.5 h-3.5" />
+                      <span>Hari {day.dayNumber}</span>
+                    </button>
+                  ))}
+                </div>
+
+                {/* ACTIVE DAY TIMELINE LIST */}
+                <div className="space-y-4">
+                  <div className="bg-white/80 backdrop-blur-md border border-slate-200/80 p-4 rounded-2xl">
+                    <h4 className="text-sm font-bold text-slate-900 font-display">
+                      {generatedItinerary.find((d) => d.dayNumber === activeDayTab)?.title}
+                    </h4>
+                    <p className="text-[11px] text-slate-500 font-sans mt-0.5">
+                      {activeDaySlots.length} Destinasi & Resto Terpilih &bull; Urutan Jarak Efisien
+                    </p>
+                  </div>
+
+                  <div className="relative pl-6 space-y-6 border-l-2 border-slate-200/80 ml-3">
+                    {activeDaySlots.map((slot, index) => {
+                      const isSlotSelected = selectedSlotIndex === index;
+
+                      return (
+                        <div
+                          key={index}
+                          onClick={() => setSelectedSlotIndex(index)}
+                          className="relative group cursor-pointer"
+                        >
+                          {/* Timeline Dot Badge Number */}
+                          <div
+                            className={`absolute -left-6 sm:-left-8 top-4 w-6 h-6 rounded-full flex items-center justify-center z-10 shadow-md font-mono text-[10px] font-extrabold transition-transform ${
+                              isSlotSelected
+                                ? 'bg-[#0D9488] text-white ring-4 ring-[#0D9488]/30 scale-125'
+                                : 'bg-slate-900 text-white border-2 border-white group-hover:scale-110'
+                            }`}
+                          >
+                            {index + 1}
+                          </div>
+
+                          {/* Time Slot Card */}
+                          <div
+                            className={`glass-card-container rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-all border p-4 sm:p-5 space-y-3 ${
+                              isSlotSelected
+                                ? 'border-[#0D9488] bg-teal-50/40 ring-2 ring-[#0D9488]/20'
+                                : 'border-slate-200'
+                            }`}
+                          >
+                            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-3">
+                              <div className="flex items-center gap-2">
+                                <span className="px-3 py-1 rounded-full text-xs font-extrabold bg-teal-50 text-[#0D9488] border border-teal-200 flex items-center gap-1">
+                                  <Clock className="w-3.5 h-3.5" />
+                                  <span>{slot.time}</span>
+                                </span>
+                                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-slate-900 text-white">
+                                  {slot.category}
+                                </span>
+                              </div>
+
+                              <div className="flex items-center gap-2">
+                                <span className="text-xs font-bold text-[#0D9488]">{slot.estimatedCost}</span>
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleOpenSwapModal(slot, activeDayTab, index);
+                                  }}
+                                  className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-white border border-teal-200 text-[#0D9488] hover:bg-[#0D9488] hover:text-white transition-all flex items-center gap-1 shadow-sm active:scale-95"
+                                  title="Tukar spot wisata ini dengan rekomendasi AI lain"
+                                >
+                                  <RotateCw className="w-3 h-3" />
+                                  <span>Ganti Spot</span>
+                                </button>
+                              </div>
+                            </div>
+
+                            {/* Destination Main Row */}
+                            <div className="flex items-start gap-4">
+                              <img
+                                src={slot.image}
+                                alt={slot.activityTitle}
+                                className="w-20 sm:w-24 h-20 sm:h-24 rounded-xl object-cover shrink-0 shadow-sm"
+                              />
+                              <div className="space-y-1 min-w-0">
+                                <h4 className="text-sm font-bold text-slate-900 font-display">
+                                  {slot.activityTitle}
+                                </h4>
+                                <p className="text-xs text-slate-500 font-sans flex items-center gap-1 truncate">
+                                  <MapPin className="w-3.5 h-3.5 text-[#0D9488] shrink-0" />
+                                  <span>{slot.location}</span>
+                                </p>
+                                {slot.aiTip && (
+                                  <div className="mt-2 bg-amber-50/80 border border-amber-200/80 rounded-xl p-2.5 flex items-start gap-2 text-xs text-amber-900">
+                                    <Info className="w-3.5 h-3.5 text-amber-600 shrink-0 mt-0.5" />
+                                    <span className="text-[11px] font-medium leading-tight">{slot.aiTip}</span>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+
+                            {/* Travel Time Indicator */}
+                            {slot.travelTime && (
+                              <div className="pt-2 border-t border-slate-100 flex items-center gap-1.5 text-[11px] text-slate-500 font-semibold">
+                                <Car className="w-3.5 h-3.5 text-[#0D9488]" />
+                                <span>{slot.travelTime}</span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
               </div>
 
             </div>
@@ -869,68 +679,74 @@ export const PlannerPage: React.FC = () => {
 
       </div>
 
-      {/* SHARE PUBLIC LINK MODAL */}
-      {isShareModalOpen && (
-        <div
-          className="fixed inset-0 z-50 glass-modal-backdrop flex items-center justify-center p-4"
-          onClick={() => setIsShareModalOpen(false)}
-        >
-          <div
-            className="bg-white w-full max-w-md rounded-3xl p-6 space-y-5 shadow-2xl border border-slate-200 relative animate-in fade-in zoom-in-95 duration-200"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <button
-              onClick={() => setIsShareModalOpen(false)}
-              className="absolute top-4 right-4 text-slate-400 hover:text-slate-600"
-            >
-              <X className="w-4 h-4" />
-            </button>
-
-            <div className="space-y-1">
-              <div className="w-10 h-10 rounded-2xl bg-teal-100 text-[#0D9488] flex items-center justify-center">
-                <Share2 className="w-5 h-5" />
+      {/* SPOT SWAP MODAL POPUP */}
+      {swapModalOpen && swapTargetInfo && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white rounded-[32px] max-w-lg w-full p-6 shadow-2xl border border-slate-200 space-y-5 animate-in zoom-in-95 duration-200">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div className="flex items-center gap-2">
+                <div className="p-2 rounded-xl bg-teal-50 text-[#0D9488]">
+                  <RotateCw className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold font-display text-slate-900">
+                    Pilih Alternatif Spot AI
+                  </h3>
+                  <p className="text-xs text-slate-500">
+                    Mengganti: <span className="font-semibold text-slate-800">{swapTargetInfo.slot.activityTitle}</span>
+                  </p>
+                </div>
               </div>
-              <h3 className="text-lg font-bold font-display text-slate-900">
-                Bagikan Rencana Perjalanan
-              </h3>
-              <p className="text-xs text-slate-500 font-sans">
-                Siapa saja dengan link ini dapat melihat itinerary liburan Lampung buatanmu.
-              </p>
+              <button
+                type="button"
+                onClick={() => setSwapModalOpen(false)}
+                className="p-1.5 rounded-full text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-all"
+              >
+                <X className="w-5 h-5" />
+              </button>
             </div>
 
-            <div className="flex items-center gap-2 bg-slate-100 p-2 rounded-2xl border border-slate-200">
-              <input
-                type="text"
-                readOnly
-                value={`${window.location.origin}/share/lampung-itinerary-9842`}
-                className="w-full bg-transparent text-xs text-slate-700 font-mono focus:outline-none px-2 truncate"
-              />
-              <button
-                onClick={handleCopyShareLink}
-                className="px-3 py-1.5 rounded-xl bg-[#0D9488] hover:bg-[#0F766E] text-white text-xs font-bold shrink-0 flex items-center gap-1 transition-all"
-              >
-                {copiedLink ? (
-                  <>
-                    <CheckCircle2 className="w-3.5 h-3.5" />
-                    <span>Tersalin!</span>
-                  </>
+            {isLoadingSwap ? (
+              <div className="py-10 text-center space-y-3">
+                <RefreshCw className="w-8 h-8 text-[#0D9488] animate-spin mx-auto" />
+                <p className="text-xs font-bold text-slate-600">Mencari spot alternatif terbaik di {selectedRegency}...</p>
+              </div>
+            ) : (
+              <div className="space-y-3 max-h-[380px] overflow-y-auto pr-1">
+                {swapAlternatives.length === 0 ? (
+                  <p className="text-xs text-slate-500 text-center py-6">Tidak ditemukan tempat alternatif tambahan di kawasan ini.</p>
                 ) : (
-                  <>
-                    <Copy className="w-3.5 h-3.5" />
-                    <span>Salin</span>
-                  </>
+                  swapAlternatives.map((alt, idx) => (
+                    <div
+                      key={idx}
+                      onClick={() => handleReplaceSlot(alt)}
+                      className="p-3.5 rounded-2xl border border-slate-200 hover:border-[#0D9488] hover:bg-teal-50/30 transition-all cursor-pointer flex items-center justify-between gap-3 group"
+                    >
+                      <div className="flex items-center gap-3 min-w-0">
+                        <img
+                          src={alt.image}
+                          alt={alt.activityTitle}
+                          className="w-14 h-14 rounded-xl object-cover shrink-0 shadow-sm"
+                        />
+                        <div className="min-w-0 space-y-0.5">
+                          <span className="text-[10px] font-extrabold text-[#0D9488] uppercase tracking-wider">{alt.category}</span>
+                          <h4 className="text-xs font-bold text-slate-900 truncate font-display group-hover:text-[#0D9488]">
+                            {alt.activityTitle}
+                          </h4>
+                          <p className="text-[11px] text-slate-500 truncate">{alt.location}</p>
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        className="px-3 py-1.5 rounded-xl bg-[#0D9488] text-white text-xs font-bold shrink-0 shadow-sm group-hover:scale-105 transition-all"
+                      >
+                        Pilih
+                      </button>
+                    </div>
+                  ))
                 )}
-              </button>
-            </div>
-
-            <div className="pt-2 border-t border-slate-100 flex justify-end">
-              <button
-                onClick={() => setIsShareModalOpen(false)}
-                className="px-4 py-2 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition-colors"
-              >
-                Selesai
-              </button>
-            </div>
+              </div>
+            )}
           </div>
         </div>
       )}

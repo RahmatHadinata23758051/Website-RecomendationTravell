@@ -10,25 +10,41 @@ import {
 import { Type } from 'class-transformer';
 
 export class GeneratePlannerDto {
-  @IsNotEmpty({ message: 'title is required' })
-  @IsString({ message: 'title must be a string' })
-  title: string;
+  @IsNotEmpty({ message: 'city_or_regency is required' })
+  @IsString({ message: 'city_or_regency must be a string' })
+  city_or_regency: string;
+
+  @IsOptional()
+  @IsString()
+  primary_category?: string;
+
+  @IsOptional()
+  @IsString()
+  budget_level?: string;
+
+  @IsOptional()
+  @IsString()
+  pace_style?: string;
 
   @IsNotEmpty({ message: 'duration_days is required' })
   @IsNumber({}, { message: 'duration_days must be a number' })
   @Min(1, { message: 'duration_days must be at least 1 day' })
-  @Max(14, { message: 'duration_days cannot exceed 14 days' })
+  @Max(7, { message: 'duration_days cannot exceed 7 days' })
   @Type(() => Number)
   duration_days: number;
+}
+
+export class SwapSlotDto {
+  @IsNotEmpty({ message: 'city_or_regency is required' })
+  @IsString()
+  city_or_regency: string;
 
   @IsOptional()
-  @IsArray({ message: 'categories must be an array of strings' })
-  @IsString({ each: true, message: 'each category must be a string' })
-  categories?: string[];
+  @IsString()
+  category?: string;
 
   @IsOptional()
-  @IsNumber({}, { message: 'budget_max_idr must be a number' })
-  @Min(0)
-  @Type(() => Number)
-  budget_max_idr?: number;
+  @IsArray()
+  @IsString({ each: true })
+  exclude_ids?: string[];
 }
