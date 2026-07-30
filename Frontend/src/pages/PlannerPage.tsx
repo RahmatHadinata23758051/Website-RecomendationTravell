@@ -27,6 +27,7 @@ import { RouteMap3D, RouteSlot } from '../components/RouteMap3D';
 import { generateAiPlannerItinerary, swapPlannerSlotApi } from '../services/destinationsApi';
 import { useAuth } from '../context/AuthContext';
 import { apiClient } from '../lib/api';
+import { logUserActivity } from '../services/activitiesApi';
 
 interface ItinerarySlot extends RouteSlot {
   canonical_id?: string;
@@ -64,7 +65,7 @@ export const PlannerPage: React.FC = () => {
   const [isLoadingSwap, setIsLoadingSwap] = useState<boolean>(false);
 
   // Auth & Saved Itinerary State
-  const { isAuthenticated, openAuthModal } = useAuth();
+  const { isAuthenticated, openAuthModal, addXp } = useAuth();
   const [isSavingItinerary, setIsSavingItinerary] = useState<boolean>(false);
 
   const handleSaveItinerary = async () => {
@@ -82,7 +83,14 @@ export const PlannerPage: React.FC = () => {
         title: `Liburan ${selectedRegency} (${durationDays} Hari)`,
         daysJson: generatedItinerary,
       });
-      triggerToast('Itinerary berhasil disimpan ke profil Anda!');
+      await addXp(50, 'create_route');
+      await logUserActivity(
+        'CREATE_ROUTE',
+        `Membuat Rute ${selectedRegency} (${durationDays} Hari)`,
+        '+50 XP',
+        'map',
+      );
+      triggerToast('Itinerary berhasil disimpan ke profil Anda! (+50 XP 🎉)');
     } catch (err: any) {
       const msg = err.response?.data?.message || 'Gagal menyimpan itinerary';
       triggerToast(msg);
