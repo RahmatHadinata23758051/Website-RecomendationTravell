@@ -47,6 +47,7 @@ export class AuthService {
           bio: true,
           location: true,
           preferences: true,
+          xp: true,
           role: true,
           createdAt: true,
         },
@@ -91,6 +92,7 @@ export class AuthService {
         bio: user.bio,
         location: user.location,
         preferences: user.preferences,
+        xp: user.xp,
         role: user.role,
         createdAt: user.createdAt,
       },
@@ -110,6 +112,7 @@ export class AuthService {
         ...(updateDto.bio !== undefined && { bio: updateDto.bio }),
         ...(updateDto.location !== undefined && { location: updateDto.location }),
         ...(updateDto.avatarUrl !== undefined && { avatarUrl: updateDto.avatarUrl }),
+        xp: { increment: 20 }, // Award +20 XP for editing profile
       },
       select: {
         id: true,
@@ -119,6 +122,7 @@ export class AuthService {
         bio: true,
         location: true,
         preferences: true,
+        xp: true,
         role: true,
         createdAt: true,
       },
@@ -139,6 +143,32 @@ export class AuthService {
         bio: true,
         location: true,
         preferences: true,
+        xp: true,
+        role: true,
+        createdAt: true,
+      },
+    });
+
+    return user;
+  }
+
+  async addXp(userId: string, amount: number) {
+    const user = await this.prisma.user.update({
+      where: { id: userId },
+      data: {
+        xp: {
+          increment: amount,
+        },
+      },
+      select: {
+        id: true,
+        email: true,
+        fullName: true,
+        avatarUrl: true,
+        bio: true,
+        location: true,
+        preferences: true,
+        xp: true,
         role: true,
         createdAt: true,
       },

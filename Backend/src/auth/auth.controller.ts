@@ -139,6 +139,25 @@ export class AuthController {
     };
   }
 
+  @UseGuards(JwtAuthGuard)
+  @Post('xp')
+  @HttpCode(HttpStatus.OK)
+  async addXp(
+    @Req() req: Request,
+    @Body() body: { amount: number; action?: string },
+  ) {
+    const userId = (req as any).user.id;
+    const amount = body.amount || 10;
+    const updatedUser = await this.authService.addXp(userId, amount);
+    return {
+      statusCode: HttpStatus.OK,
+      message: `Berhasil mendapatkan +${amount} XP!`,
+      data: {
+        user: updatedUser,
+      },
+    };
+  }
+
   private setRefreshTokenCookie(res: Response, token: string) {
     res.cookie('refreshToken', token, {
       httpOnly: true,
