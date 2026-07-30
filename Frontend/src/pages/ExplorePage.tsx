@@ -285,7 +285,7 @@ const REGENCY_CARDS: RegencyCardInfo[] = [
 ];
 
 export const ExplorePage: React.FC = () => {
-  const { user, isAuthenticated, openAuthModal } = useAuth();
+  const { user, isAuthenticated, openAuthModal, addXp } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
   const [searchKeyword, setSearchKeyword] = useState<string>(searchParams.get('search') || '');
   const [selectedCategory, setSelectedCategory] = useState<string>('Semua');
@@ -543,9 +543,10 @@ export const ExplorePage: React.FC = () => {
     } else {
       const updated = [...favorites, id];
       setFavorites(updated);
-      triggerToast('Ditambahkan ke daftar favorit!');
+      triggerToast('Ditambahkan ke daftar favorit! (+15 XP 🎉)');
       try {
         await apiClient.post('/favorites', { canonicalId: id });
+        await addXp(15, 'save_favorite');
       } catch (err) {
         // Fallback
       }

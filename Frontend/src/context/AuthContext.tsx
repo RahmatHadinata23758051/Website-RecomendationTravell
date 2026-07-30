@@ -10,6 +10,7 @@ interface User {
   bio?: string;
   location?: string;
   preferences?: string[];
+  xp?: number;
 }
 
 interface AuthContextType {
@@ -23,6 +24,7 @@ interface AuthContextType {
   setAuthData: (user: User, token: string) => void;
   updateUserProfile: (data: { fullName?: string; bio?: string; location?: string; avatarUrl?: string }) => Promise<User | undefined>;
   updateUserPreferences: (preferences: string[]) => Promise<User | undefined>;
+  addXp: (amount: number, actionName?: string) => Promise<User | undefined>;
   logout: () => Promise<void>;
 }
 
@@ -96,6 +98,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const addXp = async (amount: number, actionName?: string) => {
+    try {
+      const res = await apiClient.post('/auth/xp', { amount, action: actionName });
+      if (res.data?.data?.user) {
+        setUser(res.data.data.user);
+        return res.data.data.user;
+      }
+    } catch (err) {
+      // Ignore XP errors silently or fallback
+    }
+  };
+
   const logout = async () => {
     try {
       await apiClient.post('/auth/logout');
@@ -120,6 +134,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setAuthData,
         updateUserProfile,
         updateUserPreferences,
+        addXp,
         logout,
       }}
     >

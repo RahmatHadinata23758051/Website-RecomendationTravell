@@ -424,43 +424,69 @@ export const ProfilePage: React.FC = () => {
           </div>
 
           {/* CARD 3 (3 COLS): LEVEL KEANGGOTAAN EXPLORER CARD */}
-          <div className="lg:col-span-3 bg-gradient-to-br from-[#FFFBEB] via-[#FEF3C7]/40 to-[#FFFBEB] rounded-[28px] p-6 shadow-sm border border-amber-200/80 flex flex-col justify-between space-y-4 relative overflow-hidden">
-            <div className="space-y-3 relative z-10">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-[10px] font-bold text-amber-700 uppercase tracking-wider">Level Keanggotaan</p>
-                  <h3 className="text-lg font-extrabold font-display text-slate-900">Explorer Lampung</h3>
+          {(() => {
+            const userXp = user?.xp || 0;
+            const getExplorerLevelInfo = (xp: number = 0) => {
+              if (xp >= 1000) return { level: 5, name: 'Legenda Kelana Lampung', minXp: 1000, maxXp: 2000, badgeBg: 'bg-gradient-to-r from-amber-500 to-amber-600' };
+              if (xp >= 600) return { level: 4, name: 'Pakar Wisata Lampung', minXp: 600, maxXp: 1000, badgeBg: 'bg-gradient-to-r from-purple-500 to-purple-700' };
+              if (xp >= 300) return { level: 3, name: 'Explorer Sejati', minXp: 300, maxXp: 600, badgeBg: 'bg-gradient-to-r from-blue-500 to-teal-600' };
+              if (xp >= 100) return { level: 2, name: 'Kelana Muda', minXp: 100, maxXp: 300, badgeBg: 'bg-gradient-to-r from-teal-500 to-emerald-600' };
+              return { level: 1, name: 'Penjelajah Pemula', minXp: 0, maxXp: 100, badgeBg: 'bg-gradient-to-r from-slate-600 to-slate-800' };
+            };
+
+            const levelInfo = getExplorerLevelInfo(userXp);
+            const progressPercent = Math.min(100, Math.max(0, ((userXp - levelInfo.minXp) / (levelInfo.maxXp - levelInfo.minXp)) * 100));
+
+            return (
+              <div className="lg:col-span-3 bg-gradient-to-br from-[#FFFBEB] via-[#FEF3C7]/40 to-[#FFFBEB] rounded-[28px] p-6 shadow-sm border border-amber-200/80 flex flex-col justify-between space-y-4 relative overflow-hidden">
+                <div className="space-y-3 relative z-10">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <div className="flex items-center gap-1.5">
+                        <span className={`px-2 py-0.5 rounded-full text-[9px] font-extrabold text-white shadow-xs ${levelInfo.badgeBg}`}>
+                          Level {levelInfo.level}
+                        </span>
+                        <p className="text-[10px] font-bold text-amber-800 uppercase tracking-wider">Level Keanggotaan</p>
+                      </div>
+                      <h3 className="text-base sm:text-lg font-extrabold font-display text-slate-900 pt-0.5">
+                        {levelInfo.name}
+                      </h3>
+                    </div>
+                    {/* Gold Medal / Crown Icon */}
+                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-amber-400 to-amber-600 text-white flex items-center justify-center shadow-md border border-white shrink-0">
+                      <Award className="w-5 h-5" />
+                    </div>
+                  </div>
+
+                  <p className="text-[11px] text-slate-600 font-sans leading-relaxed">
+                    Dapatkan XP dengan membuat rute AI (+50), menulis ulasan (+30), edit profil (+20), atau simpan favorit (+15)!
+                  </p>
+
+                  {/* Progress Bar */}
+                  <div className="space-y-1 pt-1">
+                    <div className="w-full h-2.5 rounded-full bg-amber-200/70 overflow-hidden relative border border-amber-300/40">
+                      <div
+                        className="h-full bg-gradient-to-r from-amber-400 to-amber-600 rounded-full transition-all duration-500 shadow-sm"
+                        style={{ width: `${progressPercent}%` }}
+                      />
+                    </div>
+                    <div className="flex items-center justify-between text-[10px] font-bold text-amber-900 font-mono">
+                      <span>{userXp} / {levelInfo.maxXp} XP</span>
+                      <span>Level {levelInfo.level < 5 ? levelInfo.level + 1 : 'MAX'}</span>
+                    </div>
+                  </div>
                 </div>
-                {/* Gold Medal Icon */}
-                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-amber-400 to-amber-600 text-white flex items-center justify-center shadow-md border border-white">
-                  <Award className="w-5 h-5" />
-                </div>
+
+                <button
+                  onClick={() => triggerToast(`Status: ${levelInfo.name} (${userXp} XP). Dapatkan +50 XP tiap buat Rute AI!`)}
+                  className="text-xs font-bold text-amber-800 hover:text-amber-950 transition-colors flex items-center gap-1 pt-1 self-start relative z-10"
+                >
+                  <span>Lihat Perolehan XP</span>
+                  <ChevronRight className="w-3.5 h-3.5" />
+                </button>
               </div>
-
-              <p className="text-[11px] text-slate-600 font-sans leading-relaxed">
-                Terus jelajahi untuk naik level dan dapatkan hadiah menarik!
-              </p>
-
-              {/* Progress Bar */}
-              <div className="space-y-1 pt-1">
-                <div className="w-full h-2 rounded-full bg-amber-200/70 overflow-hidden">
-                  <div className="h-full bg-amber-500 rounded-full w-[62.5%]" />
-                </div>
-                <div className="flex items-center justify-between text-[10px] font-bold text-amber-800">
-                  <span>1.250 / 2.000 XP</span>
-                  <span>Level Berikutnya</span>
-                </div>
-              </div>
-            </div>
-
-            <button
-              onClick={() => triggerToast('Benefit Explorer Lampung: Diskon tiket & rekomendasi prioritas AI')}
-              className="text-xs font-bold text-amber-800 hover:text-amber-950 transition-colors flex items-center gap-1 pt-1 self-start relative z-10"
-            >
-              <span>Lihat Benefit</span>
-              <ChevronRight className="w-3.5 h-3.5" />
-            </button>
-          </div>
+            );
+          })()}
 
         </div>
 
