@@ -28,8 +28,22 @@ model User {
   favorites     UserFavorite[]
   itineraries   Itinerary[]
   reviews       Review[]
+  activities    UserActivity[]
 
   @@map("users")
+}
+
+model UserActivity {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  action    String
+  title     String
+  subtitle  String?
+  iconType  String?
+  createdAt DateTime @default(now())
+
+  @@map("user_activities")
 }
 
 model UserFavorite {
