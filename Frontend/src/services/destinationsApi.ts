@@ -221,8 +221,7 @@ export const generateAiPlannerItinerary = async (payload: GeneratePlannerPayload
 
       let matched = staticDestinationsCache.filter((item: any) => {
         const itemReg = cleanRegency(item.city_or_regency);
-        const itemAddr = String(item.address || '').toLowerCase();
-        return itemReg.includes(cleanTargetReg) || itemAddr.includes(cleanTargetReg);
+        return itemReg.includes(cleanTargetReg);
       });
 
       if (matched.length === 0) {
