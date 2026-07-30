@@ -130,7 +130,7 @@ export const FavoritesPage: React.FC = () => {
       )}
 
       {/* Main Container */}
-      <div className="max-w-6xl mx-auto w-full px-4 sm:px-6 lg:px-8 space-y-8">
+      <div className="w-full max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-10 space-y-6">
 
         {/* HERO HEADER */}
         <div className="glass-card-container rounded-[28px] p-6 sm:p-8 flex flex-col md:flex-row md:items-center justify-between gap-6">

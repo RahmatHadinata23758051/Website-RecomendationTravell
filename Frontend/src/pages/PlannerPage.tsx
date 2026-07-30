@@ -366,7 +366,7 @@ export const PlannerPage: React.FC = () => {
         <div className="absolute inset-0 z-[1]" style={{ background: 'linear-gradient(to bottom, transparent 30%, rgba(248,250,252,0.6) 70%, #F8FAFC 100%)' }} />
 
         {/* Hero Content */}
-        <div className="relative z-10 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 pt-28 pb-10">
+        <div className="relative z-10 w-full max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-10 pt-28 pb-10">
           <div className="glass-card-container rounded-[32px] p-6 sm:p-10 relative overflow-hidden backdrop-blur-xl border border-white/80 shadow-2xl">
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
               
@@ -414,7 +414,7 @@ export const PlannerPage: React.FC = () => {
       </section>
 
       {/* Main Container */}
-      <div className="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 space-y-8">
+      <div className="w-full max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-10 space-y-6">
 
         {/* FASE 9: WEATHER & SEASON ALERT WIDGET */}
         <WeatherWidget />
