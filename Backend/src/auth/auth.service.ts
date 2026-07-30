@@ -43,6 +43,9 @@ export class AuthService {
           id: true,
           email: true,
           fullName: true,
+          avatarUrl: true,
+          bio: true,
+          location: true,
           role: true,
           createdAt: true,
         },
@@ -83,12 +86,42 @@ export class AuthService {
         id: user.id,
         email: user.email,
         fullName: user.fullName,
+        avatarUrl: user.avatarUrl,
+        bio: user.bio,
+        location: user.location,
         role: user.role,
         createdAt: user.createdAt,
       },
       accessToken: tokens.accessToken,
       refreshToken: tokens.refreshToken,
     };
+  }
+
+  async updateProfile(
+    userId: string,
+    updateDto: { fullName?: string; bio?: string; location?: string; avatarUrl?: string },
+  ) {
+    const user = await this.prisma.user.update({
+      where: { id: userId },
+      data: {
+        ...(updateDto.fullName && { fullName: updateDto.fullName }),
+        ...(updateDto.bio !== undefined && { bio: updateDto.bio }),
+        ...(updateDto.location !== undefined && { location: updateDto.location }),
+        ...(updateDto.avatarUrl !== undefined && { avatarUrl: updateDto.avatarUrl }),
+      },
+      select: {
+        id: true,
+        email: true,
+        fullName: true,
+        avatarUrl: true,
+        bio: true,
+        location: true,
+        role: true,
+        createdAt: true,
+      },
+    });
+
+    return user;
   }
 
   async refreshToken(refreshTokenString: string) {

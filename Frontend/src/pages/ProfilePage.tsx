@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
   User as UserIcon,
@@ -28,6 +28,8 @@ import {
   Bookmark,
   ExternalLink,
   Edit3,
+  Upload,
+  X,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { apiClient } from '../lib/api';
@@ -43,13 +45,70 @@ interface SavedItinerary {
 }
 
 export const ProfilePage: React.FC = () => {
-  const { user, isAuthenticated, logout, openAuthModal } = useAuth();
+  const { user, isAuthenticated, logout, openAuthModal, updateUserProfile } = useAuth();
   const navigate = useNavigate();
 
   const [savedTrips, setSavedTrips] = useState<SavedItinerary[]>([]);
   const [favoriteDestinations, setFavoriteDestinations] = useState<Destination[]>([]);
   const [isLoadingTrips, setIsLoadingTrips] = useState<boolean>(true);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+  // Edit Profile Modal State
+  const [isEditModalOpen, setIsEditModalOpen] = useState<boolean>(false);
+  const [editFullName, setEditFullName] = useState<string>('');
+  const [editBio, setEditBio] = useState<string>('');
+  const [editLocation, setEditLocation] = useState<string>('');
+  const [editAvatarUrl, setEditAvatarUrl] = useState<string>('');
+  const [isSavingProfile, setIsSavingProfile] = useState<boolean>(false);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+  const handleOpenEditModal = () => {
+    setEditFullName(user?.fullName || '');
+    setEditBio(user?.bio || 'Pecinta alam & budaya Lampung 🌴');
+    setEditLocation(user?.location || 'Bandar Lampung, Lampung, Indonesia');
+    setEditAvatarUrl(user?.avatarUrl || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80');
+    setIsEditModalOpen(true);
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 4 * 1024 * 1024) {
+        triggerToast('Ukuran foto maksimal 4MB');
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = () => {
+        if (reader.result) {
+          setEditAvatarUrl(reader.result as string);
+        }
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleSaveProfile = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editFullName.trim()) {
+      triggerToast('Nama lengkap tidak boleh kosong');
+      return;
+    }
+    setIsSavingProfile(true);
+    try {
+      await updateUserProfile({
+        fullName: editFullName,
+        bio: editBio,
+        location: editLocation,
+        avatarUrl: editAvatarUrl,
+      });
+      setIsEditModalOpen(false);
+      triggerToast('Profil & Foto berhasil diperbarui!');
+    } catch (err: any) {
+      triggerToast(err.message || 'Gagal memperbarui profil');
+    } finally {
+      setIsSavingProfile(false);
+    }
+  };
 
   const triggerToast = (msg: string) => {
     setToastMessage(msg);
@@ -211,19 +270,26 @@ export const ProfilePage: React.FC = () => {
             <div className="flex items-start justify-between gap-4">
               <div className="flex items-center gap-4">
                 {/* Circular Avatar with Camera Upload Icon */}
-                <div className="relative shrink-0">
-                  <div className="w-20 h-20 rounded-full overflow-hidden border-2 border-white shadow-md bg-slate-100 flex items-center justify-center text-slate-700 font-display font-extrabold text-2xl">
-                    <img
-                      src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80"
-                      alt={user.fullName}
-                      className="w-full h-full object-cover"
-                      onError={(e) => {
-                        (e.target as HTMLElement).style.display = 'none';
-                      }}
-                    />
+                <div className="relative shrink-0 cursor-pointer" onClick={handleOpenEditModal}>
+                  <div className="w-20 h-20 rounded-full overflow-hidden border-2 border-white shadow-md bg-[#0D9488] text-white flex items-center justify-center font-display font-extrabold text-2xl">
+                    {user.avatarUrl ? (
+                      <img
+                        src={user.avatarUrl}
+                        alt={user.fullName}
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          (e.target as HTMLElement).style.display = 'none';
+                        }}
+                      />
+                    ) : null}
                     <span className="uppercase">{user.fullName ? user.fullName.charAt(0) : 'U'}</span>
                   </div>
-                  <button className="absolute bottom-0 right-0 w-6 h-6 rounded-full bg-[#0D9488] text-white flex items-center justify-center shadow-md hover:scale-105 transition-transform border border-white">
+                  <button
+                    type="button"
+                    onClick={handleOpenEditModal}
+                    title="Ganti Foto Profil"
+                    className="absolute bottom-0 right-0 w-6 h-6 rounded-full bg-[#0D9488] hover:bg-[#0F766E] text-white flex items-center justify-center shadow-md hover:scale-110 transition-transform border border-white"
+                  >
                     <Camera className="w-3 h-3" />
                   </button>
                 </div>
@@ -235,11 +301,11 @@ export const ProfilePage: React.FC = () => {
                     <span title="VIP Explorer">👑</span>
                   </div>
                   <p className="text-[11px] text-slate-500 font-medium flex items-center gap-1">
-                    <span>Pecinta alam & budaya Lampung 🌴</span>
+                    <span>{user.bio || 'Pecinta alam & budaya Lampung 🌴'}</span>
                   </p>
                   <p className="text-[11px] text-slate-400 font-sans flex items-center gap-1">
                     <MapPin className="w-3 h-3 text-[#0D9488] shrink-0" />
-                    <span>Bandar Lampung, Lampung, Indonesia</span>
+                    <span>{user.location || 'Bandar Lampung, Lampung, Indonesia'}</span>
                   </p>
                   <p className="text-[10px] text-slate-400 font-sans flex items-center gap-1 pt-0.5">
                     <Calendar className="w-3 h-3 text-slate-400 shrink-0" />
@@ -249,7 +315,10 @@ export const ProfilePage: React.FC = () => {
               </div>
 
               {/* Edit Profil Button */}
-              <button className="px-3.5 py-1.5 rounded-full border border-[#0D9488]/40 hover:bg-teal-50 text-[#0D9488] text-xs font-bold transition-all shrink-0 flex items-center gap-1">
+              <button
+                onClick={handleOpenEditModal}
+                className="px-3.5 py-1.5 rounded-full border border-[#0D9488]/40 hover:bg-teal-50 text-[#0D9488] text-xs font-bold transition-all shrink-0 flex items-center gap-1 shadow-2xs active:scale-95"
+              >
                 <Edit3 className="w-3.5 h-3.5" />
                 <span>Edit Profil</span>
               </button>
@@ -643,6 +712,164 @@ export const ProfilePage: React.FC = () => {
         </div>
 
       </div>
+
+      {/* ================================================================
+          EDIT PROFILE & FOTO PROFIL MODAL
+          ================================================================ */}
+      {isEditModalOpen && (
+        <div
+          className="fixed inset-0 z-50 glass-modal-backdrop flex items-center justify-center p-4 overflow-y-auto"
+          onClick={() => setIsEditModalOpen(false)}
+        >
+          <div
+            className="bg-white rounded-3xl p-6 sm:p-8 max-w-lg w-full shadow-2xl border border-slate-200 my-auto relative animate-in fade-in zoom-in-95 duration-200 space-y-6"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+              <div className="flex items-center gap-2">
+                <Edit3 className="w-5 h-5 text-[#0D9488]" />
+                <h3 className="text-lg font-extrabold font-display text-slate-900">Edit Profil & Foto</h3>
+              </div>
+              <button
+                onClick={() => setIsEditModalOpen(false)}
+                className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 flex items-center justify-center transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Form Content */}
+            <form onSubmit={handleSaveProfile} className="space-y-5">
+              {/* Avatar Upload Preview */}
+              <div className="flex flex-col items-center justify-center space-y-3">
+                <div className="relative group cursor-pointer" onClick={() => fileInputRef.current?.click()}>
+                  <div className="w-24 h-24 rounded-full overflow-hidden border-4 border-slate-100 shadow-md bg-[#0D9488] text-white flex items-center justify-center font-display font-extrabold text-3xl">
+                    {editAvatarUrl ? (
+                      <img
+                        src={editAvatarUrl}
+                        alt="Avatar Preview"
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          (e.target as HTMLElement).style.display = 'none';
+                        }}
+                      />
+                    ) : null}
+                    <span className="uppercase">{editFullName ? editFullName.charAt(0) : 'U'}</span>
+                  </div>
+                  <div className="absolute inset-0 rounded-full bg-slate-950/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-xs font-bold gap-1">
+                    <Upload className="w-4 h-4" />
+                    <span>Ubah</span>
+                  </div>
+                </div>
+
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  onChange={handleFileChange}
+                  accept="image/*"
+                  className="hidden"
+                />
+
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="px-4 py-1.5 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition-all flex items-center gap-1.5"
+                >
+                  <Upload className="w-3.5 h-3.5 text-[#0D9488]" />
+                  <span>Unggah Foto Komputer</span>
+                </button>
+
+                {/* Preset Avatars Selection */}
+                <div className="space-y-1 text-center pt-1">
+                  <p className="text-[10px] text-slate-400 font-semibold">Atau pilih avatar default:</p>
+                  <div className="flex items-center gap-2 justify-center">
+                    {[
+                      'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80',
+                      'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=400&q=80',
+                      'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=400&q=80',
+                      'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=400&q=80',
+                    ].map((presetUrl, idx) => (
+                      <button
+                        type="button"
+                        key={idx}
+                        onClick={() => setEditAvatarUrl(presetUrl)}
+                        className={`w-9 h-9 rounded-full overflow-hidden border-2 transition-all ${
+                          editAvatarUrl === presetUrl ? 'border-[#0D9488] ring-2 ring-[#0D9488]/30 scale-110' : 'border-white opacity-70 hover:opacity-100'
+                        }`}
+                      >
+                        <img src={presetUrl} alt={`Preset ${idx}`} className="w-full h-full object-cover" />
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* Form Input Fields */}
+              <div className="space-y-4">
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-slate-800">Nama Lengkap</label>
+                  <input
+                    type="text"
+                    value={editFullName}
+                    onChange={(e) => setEditFullName(e.target.value)}
+                    required
+                    placeholder="Nama lengkap kamu..."
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs text-slate-900 font-semibold focus:outline-none focus:border-[#0D9488]"
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-slate-800">Bio / Tagline Minat</label>
+                  <input
+                    type="text"
+                    value={editBio}
+                    onChange={(e) => setEditBio(e.target.value)}
+                    placeholder="Misal: Pecinta pantai & wisata budaya Lampung 🌴"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs text-slate-900 font-semibold focus:outline-none focus:border-[#0D9488]"
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-slate-800">Lokasi / Asal Kota</label>
+                  <input
+                    type="text"
+                    value={editLocation}
+                    onChange={(e) => setEditLocation(e.target.value)}
+                    placeholder="Misal: Bandar Lampung, Indonesia"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs text-slate-900 font-semibold focus:outline-none focus:border-[#0D9488]"
+                  />
+                </div>
+              </div>
+
+              {/* Modal Buttons */}
+              <div className="pt-2 flex items-center justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={() => setIsEditModalOpen(false)}
+                  className="px-5 py-2.5 rounded-full border border-slate-300 text-slate-700 text-xs font-bold hover:bg-slate-50 transition-all"
+                >
+                  Batal
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSavingProfile}
+                  className="px-6 py-2.5 rounded-full bg-[#0D9488] hover:bg-[#0F766E] text-white text-xs font-bold shadow-md shadow-[#0D9488]/20 transition-all flex items-center gap-2 disabled:opacity-50"
+                >
+                  {isSavingProfile ? (
+                    <>
+                      <RefreshCw className="w-4 h-4 animate-spin" />
+                      <span>Menyimpan...</span>
+                    </>
+                  ) : (
+                    <span>Simpan Perubahan</span>
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -6,6 +6,9 @@ interface User {
   email: string;
   fullName: string;
   role: string;
+  avatarUrl?: string;
+  bio?: string;
+  location?: string;
 }
 
 interface AuthContextType {
@@ -17,6 +20,7 @@ interface AuthContextType {
   openAuthModal: (mode?: 'login' | 'register') => void;
   closeAuthModal: () => void;
   setAuthData: (user: User, token: string) => void;
+  updateUserProfile: (data: { fullName?: string; bio?: string; location?: string; avatarUrl?: string }) => Promise<User | undefined>;
   logout: () => Promise<void>;
 }
 
@@ -66,6 +70,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     closeAuthModal();
   };
 
+  const updateUserProfile = async (data: { fullName?: string; bio?: string; location?: string; avatarUrl?: string }) => {
+    try {
+      const res = await apiClient.patch('/auth/profile', data);
+      if (res.data?.data?.user) {
+        setUser(res.data.data.user);
+        return res.data.data.user;
+      }
+    } catch (err: any) {
+      throw new Error(err.response?.data?.message || 'Gagal memperbarui profil');
+    }
+  };
+
   const logout = async () => {
     try {
       await apiClient.post('/auth/logout');
@@ -88,6 +104,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         openAuthModal,
         closeAuthModal,
         setAuthData,
+        updateUserProfile,
         logout,
       }}
     >

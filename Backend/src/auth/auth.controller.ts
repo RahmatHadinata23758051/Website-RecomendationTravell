@@ -2,6 +2,7 @@ import {
   Controller,
   Post,
   Get,
+  Patch,
   Body,
   Res,
   Req,
@@ -98,6 +99,24 @@ export class AuthController {
       message: 'User profile fetched successfully',
       data: {
         user: req['user'],
+      },
+    };
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Patch('profile')
+  @HttpCode(HttpStatus.OK)
+  async updateProfile(
+    @Req() req: Request,
+    @Body() body: { fullName?: string; bio?: string; location?: string; avatarUrl?: string },
+  ) {
+    const userId = (req as any).user.id;
+    const updatedUser = await this.authService.updateProfile(userId, body);
+    return {
+      statusCode: HttpStatus.OK,
+      message: 'Profile updated successfully',
+      data: {
+        user: updatedUser,
       },
     };
   }
