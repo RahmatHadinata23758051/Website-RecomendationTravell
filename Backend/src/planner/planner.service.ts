@@ -187,23 +187,47 @@ export class PlannerService {
     const daysResult = [];
     let totalCost = 0;
 
+    const regencyCoords: Record<string, { lat: number; lng: number }> = {
+      'Kota Bandar Lampung': { lat: -5.4129, lng: 105.2589 },
+      'Kabupaten Pesawaran': { lat: -5.5248, lng: 105.1500 },
+      'Kabupaten Pesisir Barat': { lat: -5.2130, lng: 103.9573 },
+      'Kabupaten Lampung Selatan': { lat: -5.6503, lng: 105.5189 },
+      'Kabupaten Lampung Barat': { lat: -5.0820, lng: 104.2164 },
+      'Kabupaten Tanggamus': { lat: -5.4680, lng: 104.6855 },
+      'Kabupaten Way Kanan': { lat: -4.5776, lng: 104.5609 },
+      'Kabupaten Lampung Timur': { lat: -5.2053, lng: 105.6165 },
+      'Kabupaten Lampung Tengah': { lat: -4.8840, lng: 105.2429 },
+      'Kabupaten Lampung Utara': { lat: -4.8609, lng: 104.7337 },
+      'Kota Metro': { lat: -5.1266, lng: 105.3099 },
+      'Kabupaten Pringsewu': { lat: -5.3761, lng: 104.9670 },
+      'Kabupaten Tulang Bawang': { lat: -4.3516, lng: 105.4805 },
+      'Kabupaten Tulang Bawang Barat': { lat: -4.4540, lng: 105.0930 },
+      'Kabupaten Mesuji': { lat: -4.0312, lng: 105.3776 },
+    };
+
+    const cleanKey = Object.keys(regencyCoords).find((k) =>
+      k.toLowerCase().includes(regency.toLowerCase().replace('kabupaten ', '').replace('kota ', '').trim())
+    );
+
+    const baseCoords = cleanKey ? regencyCoords[cleanKey] : { lat: -5.4292, lng: 105.2611 };
+
     const pool = [
       {
         canonicalId: 'fb-1',
-        name: `Pulau Pahawang & Snorkeling ${regency}`,
-        category: 'Pantai',
-        cost: 35000,
-        lat: -5.6823,
-        lng: 105.2141,
+        name: `Wisata Unggulan ${regency}`,
+        category: category !== 'Semua' ? category : 'Pantai',
+        cost: 25000,
+        lat: baseCoords.lat,
+        lng: baseCoords.lng,
         img: '/assets/images/heroes/hero-pahawang-bg.png',
       },
       {
         canonicalId: 'fb-2',
         name: `Resto Wisata Kuliner Khas ${regency}`,
         category: 'Kuliner',
-        cost: 40000,
-        lat: -5.4292,
-        lng: 105.2611,
+        cost: 35000,
+        lat: baseCoords.lat + 0.015,
+        lng: baseCoords.lng + 0.012,
         img: 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=800&q=80',
       },
       {
@@ -211,8 +235,8 @@ export class PlannerService {
         name: `Bukit Panorama Sunset ${regency}`,
         category: 'Alam',
         cost: 20000,
-        lat: -5.3842,
-        lng: 105.1954,
+        lat: baseCoords.lat - 0.018,
+        lng: baseCoords.lng - 0.014,
         img: 'https://images.unsplash.com/photo-1432405972618-c60b0225b8f9?auto=format&fit=crop&w=800&q=80',
       },
     ];

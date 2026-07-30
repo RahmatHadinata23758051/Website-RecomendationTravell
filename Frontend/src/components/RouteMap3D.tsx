@@ -46,15 +46,15 @@ export const RouteMap3D: React.FC<RouteMap3DProps> = ({
     if (validSlots.length > 0) {
       const bounds = L.latLngBounds(validSlots.map((s) => s.coords));
       if (bounds.isValid()) {
-        map.fitBounds(bounds, { padding: [50, 50], maxZoom: 14 });
+        map.fitBounds(bounds, { padding: [50, 50], maxZoom: 13 });
       }
     }
   };
 
+  // Initialize Leaflet Map Instance
   useEffect(() => {
     if (!mapRef.current) return;
 
-    // Check if Leaflet map container is attached
     if (leafletMapRef.current) {
       const container = leafletMapRef.current.getContainer();
       if (container !== mapRef.current) {
@@ -78,12 +78,14 @@ export const RouteMap3D: React.FC<RouteMap3DProps> = ({
       L.control.zoom({ position: 'topright' }).addTo(map);
       leafletMapRef.current = map;
     }
+  }, []);
 
+  // Update Markers & Polyline when slots or regency change
+  useEffect(() => {
     const map = leafletMapRef.current;
+    if (!map) return;
 
-    // Invalidate size to ensure clean canvas sizing
     setTimeout(() => map.invalidateSize(), 100);
-    setTimeout(() => map.invalidateSize(), 300);
 
     // Clear old markers & polyline
     markersRef.current.forEach((m) => m.remove());
@@ -102,7 +104,7 @@ export const RouteMap3D: React.FC<RouteMap3DProps> = ({
       const latLngs: [number, number][] = validSlots.map((s) => s.coords);
       const bounds = L.latLngBounds(latLngs);
 
-      // Draw Polyline Route Line using Theme Teal (#0D9488)
+      // Draw Polyline Route Line
       const routeLine = L.polyline(latLngs, {
         color: '#0D9488',
         weight: 5,
@@ -114,7 +116,7 @@ export const RouteMap3D: React.FC<RouteMap3DProps> = ({
 
       polylineRef.current = routeLine;
 
-      // Add Clean Numbered Teardrop Pins strictly matching Theme Teal & Slate Palette
+      // Add Pins
       validSlots.forEach((slot, index) => {
         const isSelected = selectedSlotIndex === index;
         const waypointNumber = index + 1;
@@ -132,7 +134,6 @@ export const RouteMap3D: React.FC<RouteMap3DProps> = ({
               transition: all 0.25s ease;
               z-index: ${isSelected ? '9999' : '100'};
             ">
-              <!-- Numbered Pin Head Circle (Signature Theme Teal Palette) -->
               <div style="
                 width: 32px;
                 height: 32px;
@@ -150,8 +151,6 @@ export const RouteMap3D: React.FC<RouteMap3DProps> = ({
               ">
                 ${waypointNumber}
               </div>
-
-              <!-- Teardrop Pointer (Matching Theme Teal Accent) -->
               <div style="
                 width: 0;
                 height: 0;
@@ -180,13 +179,9 @@ export const RouteMap3D: React.FC<RouteMap3DProps> = ({
 
         marker.on('click', () => {
           onSelectSlot(index);
-          map.panTo(slot.coords, { animate: true });
+          map.flyTo(slot.coords, 14, { animate: true, duration: 1.0 });
           marker.openPopup();
         });
-
-        if (isSelected) {
-          marker.openPopup();
-        }
 
         markersRef.current.push(marker);
       });
@@ -195,7 +190,21 @@ export const RouteMap3D: React.FC<RouteMap3DProps> = ({
         map.fitBounds(bounds, { padding: [50, 50], maxZoom: 13 });
       }
     }
-  }, [slots, selectedSlotIndex, onSelectSlot]);
+  }, [slots, regencyName]);
+
+  // Smooth FlyTo animation when selectedSlotIndex changes
+  useEffect(() => {
+    const map = leafletMapRef.current;
+    if (!map || selectedSlotIndex === null) return;
+    const targetSlot = slots[selectedSlotIndex];
+    if (targetSlot && targetSlot.coords && !isNaN(targetSlot.coords[0])) {
+      map.flyTo(targetSlot.coords, 14, { animate: true, duration: 1.0 });
+      const marker = markersRef.current[selectedSlotIndex];
+      if (marker) {
+        marker.openPopup();
+      }
+    }
+  }, [selectedSlotIndex, slots]);
 
   return (
     <div className="relative w-full h-[520px] sm:h-[580px] rounded-[28px] overflow-hidden shadow-lg border border-slate-200/90 bg-[#F8FAFC]">
@@ -209,7 +218,7 @@ export const RouteMap3D: React.FC<RouteMap3DProps> = ({
           <span className="truncate">{regencyName}</span>
         </div>
 
-        {/* Right Action Controls (Using Lucide React Icons, 0% Overlap) */}
+        {/* Right Action Controls */}
         <div className="pointer-events-auto flex items-center gap-1.5">
           <div className="flex items-center gap-1 bg-white/95 backdrop-blur-md p-1 rounded-full shadow-md border border-slate-200">
             <button
@@ -219,8 +228,8 @@ export const RouteMap3D: React.FC<RouteMap3DProps> = ({
                 is3D ? 'bg-[#0D9488] text-white shadow-sm' : 'text-slate-600 hover:text-slate-900'
               }`}
             >
-              <Layers className="w-3.5 h-3.5" />
-              <span>3D</span>
+              <Layers className="w-3 h-3" />
+              <span>3D Spasial</span>
             </button>
             <button
               type="button"
@@ -229,34 +238,30 @@ export const RouteMap3D: React.FC<RouteMap3DProps> = ({
                 !is3D ? 'bg-[#0D9488] text-white shadow-sm' : 'text-slate-600 hover:text-slate-900'
               }`}
             >
-              <Compass className="w-3.5 h-3.5" />
-              <span>2D</span>
+              <Compass className="w-3 h-3" />
+              <span>2D Rute</span>
             </button>
           </div>
 
           <button
             type="button"
             onClick={fitBoundsToSlots}
-            className="bg-white/95 backdrop-blur-md p-2 rounded-full shadow-md border border-slate-200 text-slate-700 hover:text-[#0D9488] transition-all active:scale-95 flex items-center justify-center"
-            title="Fit Rute"
+            className="p-2 rounded-full bg-white/95 backdrop-blur-md text-slate-700 hover:text-[#0D9488] shadow-md border border-slate-200 transition-all active:scale-95"
+            title="Fokus Ulang Peta Spasial"
           >
-            <Maximize2 className="w-3.5 h-3.5" />
+            <Maximize2 className="w-4 h-4" />
           </button>
         </div>
-
       </div>
 
-      {/* Oversized Inner Container for smooth tilt without black gaps or cutoff corners */}
+      {/* Map Canvas Container */}
       <div
-        className="absolute -top-[15%] -left-[15%] w-[130%] h-[130%] origin-center transition-all duration-500 ease-out bg-slate-100"
+        ref={mapRef}
+        className="w-full h-full z-10 transition-all duration-500"
         style={{
-          transform: is3D
-            ? 'perspective(1200px) rotateX(24deg) scale(1.06)'
-            : 'perspective(1200px) rotateX(0deg) scale(1)',
+          filter: is3D ? 'contrast(1.05) saturate(1.1)' : 'none',
         }}
-      >
-        <div ref={mapRef} className="w-full h-full" />
-      </div>
+      />
     </div>
   );
 };

@@ -140,55 +140,78 @@ export const PlannerPage: React.FC = () => {
       console.warn('Live API itinerary failed, using client fallback', err);
     }
 
+    const regencyCoordsMap: Record<string, { lat: number; lng: number }> = {
+      'Kota Bandar Lampung': { lat: -5.4129, lng: 105.2589 },
+      'Kabupaten Pesawaran': { lat: -5.5248, lng: 105.1500 },
+      'Kabupaten Pesisir Barat': { lat: -5.2130, lng: 103.9573 },
+      'Kabupaten Lampung Selatan': { lat: -5.6503, lng: 105.5189 },
+      'Kabupaten Lampung Barat': { lat: -5.0820, lng: 104.2164 },
+      'Kabupaten Tanggamus': { lat: -5.4680, lng: 104.6855 },
+      'Kabupaten Way Kanan': { lat: -4.5776, lng: 104.5609 },
+      'Kabupaten Lampung Timur': { lat: -5.2053, lng: 105.6165 },
+      'Kabupaten Lampung Tengah': { lat: -4.8840, lng: 105.2429 },
+      'Kabupaten Lampung Utara': { lat: -4.8609, lng: 104.7337 },
+      'Kota Metro': { lat: -5.1266, lng: 105.3099 },
+      'Kabupaten Pringsewu': { lat: -5.3761, lng: 104.9670 },
+      'Kabupaten Tulang Bawang': { lat: -4.3516, lng: 105.4805 },
+      'Kabupaten Tulang Bawang Barat': { lat: -4.4540, lng: 105.0930 },
+      'Kabupaten Mesuji': { lat: -4.0312, lng: 105.3776 },
+    };
+
+    const targetCoords = regencyCoordsMap[selectedRegency] || { lat: -5.4292, lng: 105.2611 };
+
     // Fallback Mock Result if Live API unavailable
     setTimeout(() => {
-      let mockResult: DaySchedule[] = [
-        {
-          dayNumber: 1,
-          title: `Eksplorasi Perdana ${selectedRegency}`,
+      let mockResult: DaySchedule[] = [];
+      const primaryCat = !selectedCategories.includes('Semua') ? selectedCategories[0] : 'Pantai';
+
+      for (let d = 1; d <= durationDays; d++) {
+        mockResult.push({
+          dayNumber: d,
+          title: `Hari ${d}: Jelajah Wisata ${selectedRegency}`,
           slots: [
             {
-              canonical_id: 'mock-1',
+              canonical_id: `mock-${d}-1`,
               time: '08:30 - 11:30 WIB',
-              activityTitle: `Wisata Bahari Ikonik ${selectedRegency}`,
-              category: !selectedCategories.includes('Semua') ? selectedCategories[0] : 'Pantai',
-              location: `Kawasan Pariwisata ${selectedRegency}`,
+              activityTitle: `Destinasi Wisata Unggulan ${selectedRegency}`,
+              category: primaryCat,
+              location: `Kawasan Wisata ${selectedRegency}`,
               estimatedCost: 'Rp 25.000 / orang',
               numericCost: 25000,
-              coords: [-5.4292, 105.2611],
+              coords: [targetCoords.lat + (d - 1) * 0.02, targetCoords.lng + (d - 1) * 0.015],
               image: '/assets/images/heroes/hero-pahawang-bg.png',
               aiTip: `Spot unggulan terpopuler di ${selectedRegency} dengan lanskap eksotik.`,
               travelTime: 'Lokasi awal hari',
             },
             {
-              canonical_id: 'mock-2',
+              canonical_id: `mock-${d}-2`,
               time: '12:00 - 14:00 WIB',
-              activityTitle: `Makan Siang Kuliner Khas ${selectedRegency}`,
+              activityTitle: `Makan Siang & Kuliner Khas ${selectedRegency}`,
               category: 'Kuliner',
               location: `Pusat Kuliner ${selectedRegency}`,
               estimatedCost: 'Rp 35.000 / orang',
               numericCost: 35000,
-              coords: [-5.4412, 105.2512],
+              coords: [targetCoords.lat + (d - 1) * 0.02 + 0.012, targetCoords.lng + (d - 1) * 0.015 + 0.01],
               image: 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=800&q=80',
               aiTip: `Mencicipi masakan khas Lampung otentik dengan racikan rempah istimewa.`,
               travelTime: '15 menit perjalanan',
             },
             {
-              canonical_id: 'mock-3',
+              canonical_id: `mock-${d}-3`,
               time: '15:30 - 18:30 WIB',
               activityTitle: `Pesona Sunset & Bukit Panorama ${selectedRegency}`,
               category: 'Alam',
               location: `Dataran Tinggi ${selectedRegency}`,
               estimatedCost: 'Rp 20.000 / orang',
               numericCost: 20000,
-              coords: [-5.3842, 105.1954],
+              coords: [targetCoords.lat + (d - 1) * 0.02 - 0.015, targetCoords.lng + (d - 1) * 0.015 - 0.012],
               image: 'https://images.unsplash.com/photo-1432405972618-c60b0225b8f9?auto=format&fit=crop&w=800&q=80',
               aiTip: `Spot foto matahari terbenam paling indah dan adem.`,
               travelTime: '20 menit perjalanan',
             },
           ],
-        },
-      ];
+        });
+      }
 
       setGeneratedItinerary(mockResult);
       setIsGenerating(false);
