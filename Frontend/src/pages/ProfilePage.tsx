@@ -30,6 +30,7 @@ import {
   Edit3,
   Upload,
   X,
+  Crown,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { apiClient } from '../lib/api';
@@ -298,7 +299,9 @@ export const ProfilePage: React.FC = () => {
                 <div className="space-y-1">
                   <div className="flex items-center gap-1.5">
                     <h2 className="text-base font-extrabold font-display text-slate-900">{user.fullName}</h2>
-                    <span title="VIP Explorer">👑</span>
+                    <span title="VIP Explorer">
+                      <Crown className="w-4 h-4 text-amber-500 shrink-0" />
+                    </span>
                   </div>
                   <p className="text-[11px] text-slate-500 font-medium flex items-center gap-1">
                     <span>{user.bio || 'Pecinta alam & budaya Lampung 🌴'}</span>
