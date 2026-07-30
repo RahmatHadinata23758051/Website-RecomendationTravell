@@ -121,6 +121,24 @@ export class AuthController {
     };
   }
 
+  @UseGuards(JwtAuthGuard)
+  @Patch('preferences')
+  @HttpCode(HttpStatus.OK)
+  async updatePreferences(
+    @Req() req: Request,
+    @Body() body: { preferences: string[] },
+  ) {
+    const userId = (req as any).user.id;
+    const updatedUser = await this.authService.updatePreferences(userId, body.preferences || []);
+    return {
+      statusCode: HttpStatus.OK,
+      message: 'Travel preferences updated successfully',
+      data: {
+        user: updatedUser,
+      },
+    };
+  }
+
   private setRefreshTokenCookie(res: Response, token: string) {
     res.cookie('refreshToken', token, {
       httpOnly: true,

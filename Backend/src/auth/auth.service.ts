@@ -46,6 +46,7 @@ export class AuthService {
           avatarUrl: true,
           bio: true,
           location: true,
+          preferences: true,
           role: true,
           createdAt: true,
         },
@@ -89,6 +90,7 @@ export class AuthService {
         avatarUrl: user.avatarUrl,
         bio: user.bio,
         location: user.location,
+        preferences: user.preferences,
         role: user.role,
         createdAt: user.createdAt,
       },
@@ -116,6 +118,27 @@ export class AuthService {
         avatarUrl: true,
         bio: true,
         location: true,
+        preferences: true,
+        role: true,
+        createdAt: true,
+      },
+    });
+
+    return user;
+  }
+
+  async updatePreferences(userId: string, preferences: string[]) {
+    const user = await this.prisma.user.update({
+      where: { id: userId },
+      data: { preferences },
+      select: {
+        id: true,
+        email: true,
+        fullName: true,
+        avatarUrl: true,
+        bio: true,
+        location: true,
+        preferences: true,
         role: true,
         createdAt: true,
       },
