@@ -11,6 +11,8 @@ import { PrismaService } from '../prisma/prisma.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 
+import { ActivityService } from '../activity/activity.service';
+
 @Injectable()
 export class AuthService {
   private readonly saltRounds = 12;
@@ -19,6 +21,7 @@ export class AuthService {
     private readonly prisma: PrismaService,
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
+    private readonly activityService: ActivityService,
   ) {}
 
   async register(registerDto: RegisterDto) {
@@ -127,6 +130,14 @@ export class AuthService {
         createdAt: true,
       },
     });
+
+    await this.activityService.logActivity(
+      userId,
+      'UPDATE_PROFILE',
+      'Memperbarui Foto & Biodata Profil',
+      'Mendapatkan +20 XP',
+      'user',
+    );
 
     return user;
   }

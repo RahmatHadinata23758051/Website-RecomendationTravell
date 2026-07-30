@@ -15,6 +15,8 @@ import { ReviewsModule } from './reviews/reviews.module';
 import { ChatbotModule } from './chatbot/chatbot.module';
 import { ItinerariesModule } from './itineraries/itineraries.module';
 
+import { ActivityModule } from './activity/activity.module';
+
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -36,6 +38,7 @@ import { ItinerariesModule } from './itineraries/itineraries.module';
     ReviewsModule,
     ChatbotModule,
     ItinerariesModule,
+    ActivityModule,
   ],
   controllers: [AppController],
   providers: [
