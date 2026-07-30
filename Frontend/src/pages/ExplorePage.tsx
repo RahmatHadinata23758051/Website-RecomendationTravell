@@ -24,6 +24,8 @@ import {
 } from 'lucide-react';
 import L from 'leaflet';
 import { fetchRealDestinations } from '../services/destinationsApi';
+import { useAuth } from '../context/AuthContext';
+import { apiClient } from '../lib/api';
 
 export interface Destination {
   id: string;
@@ -499,14 +501,35 @@ export const ExplorePage: React.FC = () => {
     setTimeout(() => setToastMessage(null), 3000);
   };
 
-  const toggleFavorite = (id: string, e: React.MouseEvent) => {
+  const { isAuthenticated, openAuthModal } = useAuth();
+
+  const toggleFavorite = async (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
+
+    if (!isAuthenticated) {
+      triggerToast('Silakan masuk terlebih dahulu untuk menyukai destinasi!');
+      openAuthModal('login');
+      return;
+    }
+
     if (favorites.includes(id)) {
-      setFavorites(favorites.filter((item) => item !== id));
+      const updated = favorites.filter((item) => item !== id);
+      setFavorites(updated);
       triggerToast('Dihapus dari daftar favorit');
+      try {
+        await apiClient.delete(`/favorites/${id}`);
+      } catch (err) {
+        // Fallback
+      }
     } else {
-      setFavorites([...favorites, id]);
+      const updated = [...favorites, id];
+      setFavorites(updated);
       triggerToast('Ditambahkan ke daftar favorit!');
+      try {
+        await apiClient.post('/favorites', { canonicalId: id });
+      } catch (err) {
+        // Fallback
+      }
     }
   };
 

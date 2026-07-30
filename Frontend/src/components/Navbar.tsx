@@ -136,17 +136,25 @@ export const Navbar: React.FC = () => {
               </button>
 
               {isProfileDropdownOpen && (
-                <div className="absolute right-0 mt-2 w-48 bg-white rounded-2xl shadow-xl border border-slate-200/80 py-2 z-50 animate-in fade-in zoom-in-95">
+                <div className="absolute right-0 mt-2 w-52 bg-white rounded-2xl shadow-xl border border-slate-200/80 py-2 z-50 animate-in fade-in zoom-in-95">
                   <div className="px-4 py-2 border-b border-slate-100">
                     <p className="text-xs font-bold text-slate-900">{user?.fullName}</p>
                     <p className="text-[10px] text-slate-500 truncate">{user?.email}</p>
                   </div>
+                  <Link
+                    to="/profile"
+                    onClick={() => setIsProfileDropdownOpen(false)}
+                    className="w-full text-left px-4 py-2 text-xs text-slate-700 hover:bg-slate-50 flex items-center gap-2 transition-colors"
+                  >
+                    <UserIcon className="w-3.5 h-3.5 text-[#0D9488]" />
+                    <span>Profil & Rute Saya</span>
+                  </Link>
                   <button
                     onClick={() => {
                       setIsProfileDropdownOpen(false);
                       logout();
                     }}
-                    className="w-full text-left px-4 py-2 text-xs text-red-600 hover:bg-red-50 flex items-center gap-2 transition-colors"
+                    className="w-full text-left px-4 py-2 text-xs text-red-600 hover:bg-red-50 flex items-center gap-2 transition-colors border-t border-slate-100"
                   >
                     <LogOut className="w-3.5 h-3.5" />
                     <span>Keluar</span>

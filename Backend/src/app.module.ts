@@ -13,6 +13,7 @@ import { FavoritesModule } from './favorites/favorites.module';
 import { PlannerModule } from './planner/planner.module';
 import { ReviewsModule } from './reviews/reviews.module';
 import { ChatbotModule } from './chatbot/chatbot.module';
+import { ItinerariesModule } from './itineraries/itineraries.module';
 
 @Module({
   imports: [
@@ -34,6 +35,7 @@ import { ChatbotModule } from './chatbot/chatbot.module';
     PlannerModule,
     ReviewsModule,
     ChatbotModule,
+    ItinerariesModule,
   ],
   controllers: [AppController],
   providers: [

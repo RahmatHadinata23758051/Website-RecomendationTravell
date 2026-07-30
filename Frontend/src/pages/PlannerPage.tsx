@@ -25,6 +25,8 @@ import {
 } from 'lucide-react';
 import { RouteMap3D, RouteSlot } from '../components/RouteMap3D';
 import { generateAiPlannerItinerary, swapPlannerSlotApi } from '../services/destinationsApi';
+import { useAuth } from '../context/AuthContext';
+import { apiClient } from '../lib/api';
 
 interface ItinerarySlot extends RouteSlot {
   canonical_id?: string;
@@ -60,6 +62,34 @@ export const PlannerPage: React.FC = () => {
   const [swapTargetInfo, setSwapTargetInfo] = useState<{ dayNumber: number; slotIndex: number; slot: ItinerarySlot } | null>(null);
   const [swapAlternatives, setSwapAlternatives] = useState<any[]>([]);
   const [isLoadingSwap, setIsLoadingSwap] = useState<boolean>(false);
+
+  // Auth & Saved Itinerary State
+  const { isAuthenticated, openAuthModal } = useAuth();
+  const [isSavingItinerary, setIsSavingItinerary] = useState<boolean>(false);
+
+  const handleSaveItinerary = async () => {
+    if (!isAuthenticated) {
+      triggerToast('Silakan masuk akun terlebih dahulu untuk menyimpan rute!');
+      openAuthModal('login');
+      return;
+    }
+
+    if (!generatedItinerary) return;
+
+    setIsSavingItinerary(true);
+    try {
+      await apiClient.post('/itineraries', {
+        title: `Liburan ${selectedRegency} (${durationDays} Hari)`,
+        daysJson: generatedItinerary,
+      });
+      triggerToast('Itinerary berhasil disimpan ke profil Anda!');
+    } catch (err: any) {
+      const msg = err.response?.data?.message || 'Gagal menyimpan itinerary';
+      triggerToast(msg);
+    } finally {
+      setIsSavingItinerary(false);
+    }
+  };
 
   const regenciesList = [
     'Kota Bandar Lampung',
@@ -592,11 +622,12 @@ export const PlannerPage: React.FC = () => {
                 </button>
                 <button
                   type="button"
-                  onClick={() => triggerToast('Itinerary Disimpan ke Menu Favorit!')}
-                  className="bg-white border border-slate-200 text-slate-700 hover:text-[#0D9488] px-4 py-2 rounded-xl text-xs font-bold transition-all shadow-sm flex items-center gap-1.5 active:scale-95"
+                  disabled={isSavingItinerary}
+                  onClick={handleSaveItinerary}
+                  className="bg-white border border-slate-200 text-slate-700 hover:text-[#0D9488] px-4 py-2 rounded-xl text-xs font-bold transition-all shadow-sm flex items-center gap-1.5 active:scale-95 disabled:opacity-50"
                 >
-                  <Bookmark className="w-4 h-4" />
-                  <span>Simpan Rute</span>
+                  <Bookmark className={`w-4 h-4 ${isSavingItinerary ? 'animate-spin text-[#0D9488]' : ''}`} />
+                  <span>{isSavingItinerary ? 'Menyimpan...' : 'Simpan Rute'}</span>
                 </button>
                 <button
                   type="button"

@@ -8,6 +8,7 @@ import { ExplorePage } from './pages/ExplorePage';
 import { PlannerPage } from './pages/PlannerPage';
 import { FavoritesPage } from './pages/FavoritesPage';
 import { PublicSharePage } from './pages/PublicSharePage';
+import { ProfilePage } from './pages/ProfilePage';
 
 export function App() {
   return (
@@ -20,6 +21,7 @@ export function App() {
             <Route path="/explore" element={<ExplorePage />} />
             <Route path="/planner" element={<PlannerPage />} />
             <Route path="/favorites" element={<FavoritesPage />} />
+            <Route path="/profile" element={<ProfilePage />} />
             <Route path="/share/:shareToken" element={<PublicSharePage />} />
           </Routes>
           <Footer />
