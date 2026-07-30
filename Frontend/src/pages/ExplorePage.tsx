@@ -26,6 +26,7 @@ import L from 'leaflet';
 import { fetchRealDestinations } from '../services/destinationsApi';
 import { useAuth } from '../context/AuthContext';
 import { apiClient } from '../lib/api';
+import { logUserActivity } from '../services/activitiesApi';
 
 export interface Destination {
   id: string;
@@ -547,6 +548,8 @@ export const ExplorePage: React.FC = () => {
       try {
         await apiClient.post('/favorites', { canonicalId: id });
         await addXp(15, 'save_favorite');
+        const destName = filteredDestinations.find((d) => d.id === id)?.name || 'destinasi';
+        await logUserActivity('SAVE_FAVORITE', `Menyimpan ${destName} ke wishlist`, '+15 XP', 'heart');
       } catch (err) {
         // Fallback
       }

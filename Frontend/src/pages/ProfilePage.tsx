@@ -37,6 +37,8 @@ import { apiClient } from '../lib/api';
 import { fetchRealDestinations } from '../services/destinationsApi';
 import { Destination, mockDestinations } from './ExplorePage';
 
+import { fetchUserActivities, UserActivity } from '../services/activitiesApi';
+
 interface SavedItinerary {
   id: string;
   title: string;
@@ -51,6 +53,8 @@ export const ProfilePage: React.FC = () => {
 
   const [savedTrips, setSavedTrips] = useState<SavedItinerary[]>([]);
   const [favoriteDestinations, setFavoriteDestinations] = useState<Destination[]>([]);
+  const [userActivities, setUserActivities] = useState<UserActivity[]>([]);
+  const [isActivitiesModalOpen, setIsActivitiesModalOpen] = useState<boolean>(false);
   const [isLoadingTrips, setIsLoadingTrips] = useState<boolean>(true);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
@@ -171,8 +175,21 @@ export const ProfilePage: React.FC = () => {
       }
     };
 
+    // Fetch Activities
+    const fetchActivities = async () => {
+      try {
+        const data = await fetchUserActivities();
+        if (isMounted) {
+          setUserActivities(data);
+        }
+      } catch (err) {
+        // Fallback
+      }
+    };
+
     fetchMyTrips();
     fetchFavorites();
+    fetchActivities();
 
     return () => {
       isMounted = false;
@@ -670,49 +687,82 @@ export const ProfilePage: React.FC = () => {
                   <Sparkles className="w-4 h-4 text-[#0D9488]" />
                   <h3 className="text-base font-extrabold font-display text-slate-900">Aktivitas Terbaru</h3>
                 </div>
-                <button className="text-xs font-bold text-[#0D9488] hover:text-[#0F766E] transition-colors">
-                  Lihat Semua &gt;
+                <button
+                  onClick={() => setIsActivitiesModalOpen(true)}
+                  className="text-xs font-bold text-[#0D9488] hover:text-[#0F766E] transition-colors"
+                >
+                  Lihat Semua (10) &gt;
                 </button>
               </div>
 
-              {/* Timeline Items */}
+              {/* Timeline Items (Display top 4 only on profile card) */}
               <div className="space-y-4">
-                {[
-                  {
-                    icon: Heart,
-                    color: 'text-red-500 bg-red-50',
-                    text: 'Menyimpan destinasi Pulau Pahawang ke dalam wishlist',
-                    time: '2 jam lalu',
-                  },
-                  {
-                    icon: Star,
-                    color: 'text-amber-500 bg-amber-50',
-                    text: 'Memberi ulasan untuk Seruit Lampung',
-                    time: '1 hari lalu',
-                  },
-                  {
-                    icon: Compass,
-                    color: 'text-teal-600 bg-teal-50',
-                    text: 'Membuat itinerary 3 Hari di Lampung',
-                    time: '2 hari lalu',
-                  },
-                  {
-                    icon: Camera,
-                    color: 'text-blue-500 bg-blue-50',
-                    text: 'Mengunggah foto di Pantai Gigi Hiu',
-                    time: '3 hari lalu',
-                  },
-                ].map((act, i) => (
-                  <div key={i} className="flex items-start gap-3">
-                    <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${act.color}`}>
-                      <act.icon className="w-4 h-4" />
+                {(userActivities.length > 0
+                  ? userActivities.slice(0, 4)
+                  : [
+                      {
+                        id: 'act-1',
+                        title: 'Menyimpan destinasi Pulau Pahawang ke wishlist',
+                        subtitle: '+15 XP',
+                        iconType: 'heart',
+                        createdAt: new Date().toISOString(),
+                      },
+                      {
+                        id: 'act-2',
+                        title: 'Membuat Rute Perjalanan AI Lampung',
+                        subtitle: '+50 XP',
+                        iconType: 'map',
+                        createdAt: new Date(Date.now() - 3600000 * 2).toISOString(),
+                      },
+                      {
+                        id: 'act-3',
+                        title: 'Memperbarui Foto & Biodata Profil',
+                        subtitle: '+20 XP',
+                        iconType: 'user',
+                        createdAt: new Date(Date.now() - 3600000 * 24).toISOString(),
+                      },
+                      {
+                        id: 'act-4',
+                        title: 'Memberi ulasan destinasi Seruit Lampung',
+                        subtitle: '+30 XP',
+                        iconType: 'star',
+                        createdAt: new Date(Date.now() - 3600000 * 48).toISOString(),
+                      },
+                    ]
+                ).map((act, i) => {
+                  let IconComp = Star;
+                  let colorClass = 'text-amber-500 bg-amber-50';
+                  if (act.iconType === 'heart') {
+                    IconComp = Heart;
+                    colorClass = 'text-red-500 bg-red-50';
+                  } else if (act.iconType === 'map') {
+                    IconComp = Compass;
+                    colorClass = 'text-teal-600 bg-teal-50';
+                  } else if (act.iconType === 'user') {
+                    IconComp = UserIcon;
+                    colorClass = 'text-blue-500 bg-blue-50';
+                  }
+
+                  return (
+                    <div key={act.id || i} className="flex items-start gap-3">
+                      <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${colorClass}`}>
+                        <IconComp className="w-4 h-4" />
+                      </div>
+                      <div className="flex-1 space-y-0.5">
+                        <p className="text-xs font-semibold text-slate-800 leading-snug">{act.title}</p>
+                        <div className="flex items-center justify-between text-[10px] text-slate-400 font-sans">
+                          <span>{act.subtitle || 'Aktivitas Explorer'}</span>
+                          <span>
+                            {new Date(act.createdAt).toLocaleDateString('id-ID', {
+                              day: 'numeric',
+                              month: 'short',
+                            })}
+                          </span>
+                        </div>
+                      </div>
                     </div>
-                    <div className="flex-1 space-y-0.5">
-                      <p className="text-xs font-semibold text-slate-800 leading-snug">{act.text}</p>
-                      <p className="text-[10px] text-slate-400 font-sans">{act.time}</p>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
 
@@ -916,6 +966,119 @@ export const ProfilePage: React.FC = () => {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* ================================================================
+          10 AKTIVITAS TERBARU MODAL
+          ================================================================ */}
+      {isActivitiesModalOpen && (
+        <div
+          className="fixed inset-0 z-50 glass-modal-backdrop flex items-center justify-center p-4 overflow-y-auto"
+          onClick={() => setIsActivitiesModalOpen(false)}
+        >
+          <div
+            className="bg-white rounded-3xl p-6 sm:p-8 max-w-lg w-full shadow-2xl border border-slate-200 my-auto relative animate-in fade-in zoom-in-95 duration-200 space-y-6"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+              <div className="flex items-center gap-2">
+                <Sparkles className="w-5 h-5 text-[#0D9488]" />
+                <div>
+                  <h3 className="text-lg font-extrabold font-display text-slate-900">Riwayat 10 Aktivitas Terbaru</h3>
+                  <p className="text-xs text-slate-500 font-sans">Aktivitas penjelajahan & perolehan XP kamu</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setIsActivitiesModalOpen(false)}
+                className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Activities List (Max 10) */}
+            <div className="space-y-3.5 max-h-[60vh] overflow-y-auto pr-1">
+              {(userActivities.length > 0
+                ? userActivities
+                : [
+                    {
+                      id: 'act-1',
+                      title: 'Menyimpan destinasi Pulau Pahawang ke wishlist',
+                      subtitle: '+15 XP',
+                      iconType: 'heart',
+                      createdAt: new Date().toISOString(),
+                    },
+                    {
+                      id: 'act-2',
+                      title: 'Membuat Rute Perjalanan AI Lampung',
+                      subtitle: '+50 XP',
+                      iconType: 'map',
+                      createdAt: new Date(Date.now() - 3600000 * 2).toISOString(),
+                    },
+                    {
+                      id: 'act-3',
+                      title: 'Memperbarui Foto & Biodata Profil',
+                      subtitle: '+20 XP',
+                      iconType: 'user',
+                      createdAt: new Date(Date.now() - 3600000 * 24).toISOString(),
+                    },
+                    {
+                      id: 'act-4',
+                      title: 'Memberi ulasan destinasi Seruit Lampung',
+                      subtitle: '+30 XP',
+                      iconType: 'star',
+                      createdAt: new Date(Date.now() - 3600000 * 48).toISOString(),
+                    },
+                  ]
+              ).map((act, i) => {
+                let IconComp = Star;
+                let colorClass = 'text-amber-500 bg-amber-50';
+                if (act.iconType === 'heart') {
+                  IconComp = Heart;
+                  colorClass = 'text-red-500 bg-red-50';
+                } else if (act.iconType === 'map') {
+                  IconComp = Compass;
+                  colorClass = 'text-teal-600 bg-teal-50';
+                } else if (act.iconType === 'user') {
+                  IconComp = UserIcon;
+                  colorClass = 'text-blue-500 bg-blue-50';
+                }
+
+                return (
+                  <div key={act.id || i} className="flex items-start gap-3 p-3 rounded-2xl bg-slate-50 border border-slate-100">
+                    <div className={`w-9 h-9 rounded-full flex items-center justify-center shrink-0 ${colorClass}`}>
+                      <IconComp className="w-4 h-4" />
+                    </div>
+                    <div className="flex-1 space-y-0.5">
+                      <p className="text-xs font-bold text-slate-800 leading-snug">{act.title}</p>
+                      <div className="flex items-center justify-between text-[10px] text-slate-400 font-sans">
+                        <span className="font-semibold text-teal-700">{act.subtitle || 'Aktivitas Explorer'}</span>
+                        <span>
+                          {new Date(act.createdAt).toLocaleString('id-ID', {
+                            day: 'numeric',
+                            month: 'short',
+                            hour: '2-digit',
+                            minute: '2-digit',
+                          })}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            <div className="pt-2 border-t border-slate-100 flex justify-end">
+              <button
+                onClick={() => setIsActivitiesModalOpen(false)}
+                className="px-5 py-2 rounded-full bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold transition-all"
+              >
+                Tutup
+              </button>
+            </div>
           </div>
         </div>
       )}
