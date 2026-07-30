@@ -5,6 +5,9 @@ import { firstValueFrom } from 'rxjs';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateReviewDto } from './dto/create-review.dto';
 
+import { ActivityService } from '../activity/activity.service';
+import { AuthService } from '../auth/auth.service';
+
 @Injectable()
 export class ReviewsService {
   private readonly logger = new Logger(ReviewsService.name);
@@ -13,6 +16,8 @@ export class ReviewsService {
     private readonly prisma: PrismaService,
     private readonly httpService: HttpService,
     private readonly configService: ConfigService,
+    private readonly activityService: ActivityService,
+    private readonly authService: AuthService,
   ) {}
 
   async createReview(userId: string, dto: CreateReviewDto) {
@@ -86,6 +91,16 @@ export class ReviewsService {
         },
       },
     });
+
+    // Award +30 XP & log activity
+    await this.authService.addXp(userId, 30);
+    await this.activityService.logActivity(
+      userId,
+      'WRITE_REVIEW',
+      `Memberi ulasan ${rating}★ untuk destinasi`,
+      '+30 XP',
+      'star',
+    );
 
     return {
       status: 'success',
