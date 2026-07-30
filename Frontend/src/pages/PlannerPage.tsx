@@ -20,6 +20,8 @@ import {
   Car,
   RotateCw,
   RefreshCw,
+  Zap,
+  Sun,
 } from 'lucide-react';
 import { RouteMap3D, RouteSlot } from '../components/RouteMap3D';
 import { generateAiPlannerItinerary, swapPlannerSlotApi } from '../services/destinationsApi';
@@ -264,7 +266,7 @@ export const PlannerPage: React.FC = () => {
     generatedItinerary?.find((day) => day.dayNumber === activeDayTab)?.slots || [];
 
   const mascotMessages = [
-    'Tabik Pun! 🐘 Mau liburan seru di Lampung? Pilih Kabupaten & beberapa Kategori favoritmu yuk!',
+    'Tabik Pun! Mau liburan seru di Lampung? Pilih Kabupaten & beberapa Kategori favoritmu yuk!',
     'Raden Gajah & Muli Lampung siap menyusun rute peta spasial 3D harian untukmu!',
     'Mau budget Ekonomis, Standar, atau Mewah? Semua bisa disesuaikan!',
     'Tips: Wisata bahari Pesawaran & Pesisir Barat paling pas dikunjungi pagi hari lho!',
@@ -457,7 +459,7 @@ export const PlannerPage: React.FC = () => {
             </div>
 
             {/* 5. PACE STYLE */}
-            <div className="space-y-2 lg:col-span-5 flex items-center justify-between border-t border-slate-100 pt-4">
+            <div className="space-y-2 lg:col-span-5 flex flex-col sm:flex-row sm:items-center justify-between border-t border-slate-100 pt-4 gap-3">
               <div className="space-y-1">
                 <label className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
                   <Clock className="w-4 h-4 text-[#0D9488]" />
@@ -470,24 +472,27 @@ export const PlannerPage: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setSelectedPace('Santai')}
-                  className={`px-4 py-2 rounded-2xl text-xs font-bold transition-all ${
+                  className={`px-4 py-2 rounded-2xl text-xs font-bold transition-all flex items-center gap-2 ${
                     selectedPace === 'Santai'
                       ? 'bg-[#0D9488] text-white shadow-md'
                       : 'bg-slate-100 text-slate-600 hover:text-slate-900'
                   }`}
                 >
-                  🌴 Santai (3 Slot/Hari)
+                  <Sun className="w-3.5 h-3.5 text-amber-300" />
+                  <span>Santai (3 Slot/Hari)</span>
                 </button>
+
                 <button
                   type="button"
                   onClick={() => setSelectedPace('Padat')}
-                  className={`px-4 py-2 rounded-2xl text-xs font-bold transition-all ${
+                  className={`px-4 py-2 rounded-2xl text-xs font-bold transition-all flex items-center gap-2 ${
                     selectedPace === 'Padat'
                       ? 'bg-[#0D9488] text-white shadow-md'
                       : 'bg-slate-100 text-slate-600 hover:text-slate-900'
                   }`}
                 >
-                  ⚡ Padat Wisata (4-5 Slot/Hari)
+                  <Zap className="w-3.5 h-3.5 text-amber-300" />
+                  <span>Padat Wisata (4-5 Slot/Hari)</span>
                 </button>
               </div>
             </div>

@@ -5,13 +5,9 @@ import {
   MapPin,
   Sparkles,
   Heart,
-  Filter,
   X,
   Star,
-  Clock,
-  Tag,
   ChevronRight,
-  ExternalLink,
   Palmtree,
   Mountain,
   Landmark,
@@ -49,7 +45,7 @@ export const mockDestinations: Destination[] = [
     id: 'dest-001',
     name: 'Pulau Pahawang',
     location: 'Kec. Mawa, Pesawaran',
-    regency: 'Pesawaran',
+    regency: 'Kabupaten Pesawaran',
     category: 'Pantai',
     rating: 4.8,
     reviews: 320,
@@ -69,7 +65,7 @@ export const mockDestinations: Destination[] = [
     id: 'dest-002',
     name: 'Air Terjun Putri Malu',
     location: 'Banjit, Way Kanan',
-    regency: 'Way Kanan',
+    regency: 'Kabupaten Way Kanan',
     category: 'Alam',
     rating: 4.7,
     reviews: 210,
@@ -88,7 +84,7 @@ export const mockDestinations: Destination[] = [
     id: 'dest-003',
     name: 'Museum Lampung (Ruwa Jurai)',
     location: 'Rajabasa, Bandar Lampung',
-    regency: 'Bandar Lampung',
+    regency: 'Kota Bandar Lampung',
     category: 'Budaya',
     rating: 4.6,
     reviews: 180,
@@ -99,104 +95,9 @@ export const mockDestinations: Destination[] = [
     image: 'https://images.unsplash.com/photo-1566127444979-b3d2b654e3d7?auto=format&fit=crop&w=800&q=80',
     coords: [-5.3789, 105.2536],
     description:
-      'Pusat edukasi dan pelestarian warisan kebudayaan suku Lampung, menyajikan artefak bersejarah, kain tapis kuno, pakaian adat, dan miniatur rumah panggung tradisional.',
-    facilities: ['Ruang Pameran Ber-AC', 'Mushola', 'Area Parkir Luas', 'Toko Souvenir', 'Toilet'],
-    aiReason: 'Sangat direkomendasikan untuk keluarga dan pelajar yang ingin memahami sejarah kain tapis serta kebudayaan asli Lampung.',
-  },
-  {
-    id: 'dest-004',
-    name: 'Kuliner Seruit Khas Lampung',
-    location: 'Pusat Kota Bandar Lampung',
-    regency: 'Bandar Lampung',
-    category: 'Kuliner',
-    rating: 4.9,
-    reviews: 290,
-    price: 'Rp 35.000 / porsi',
-    numericPrice: 35000,
-    duration: '1 jam',
-    hours: '10:00 - 22:00 WIB',
-    image: 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=800&q=80',
-    coords: [-5.4292, 105.2611],
-    description:
-      'Hidangan tradisional khas suku Lampung berupa ikan bakar yang diaduk bersama sambal terasi, tempoyak (durian fermentasi), dan lalapan segar.',
-    facilities: ['Area Lesehan', 'Parkir Luas', 'WiFi Gratis', 'Ruang Ber-AC'],
-    aiReason: 'Kuliner wajib coba bagi peminat eksplorasi cita rasa kuliner tradisional nusantara yang otentik.',
-  },
-  {
-    id: 'dest-005',
-    name: 'Gunung Anak Krakatau',
-    location: 'Selat Sunda, Lampung Selatan',
-    regency: 'Lampung Selatan',
-    category: 'Adventure',
-    rating: 4.8,
-    reviews: 150,
-    price: 'Rp 350.000 / orang',
-    numericPrice: 350000,
-    duration: '3-4 jam',
-    hours: '05:00 - 17:00 WIB',
-    image: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=800&q=80',
-    coords: [-6.1021, 105.4230],
-    description:
-      'Eksplorasi gunung berapi legendaris di tengah laut Selat Sunda dengan pemandangan lanskap vulkanik eksotis dan pasir hitam khas.',
-    facilities: ['Speedboat', 'Pemandu Profesional', 'Pelampung Keselamatan', 'Izin Simaksi'],
-    aiReason: 'Pengalaman sekali seumur hidup bagi petualang yang ingin menyaksikan aktivitas geologi vulkanik dunia.',
-  },
-  {
-    id: 'dest-006',
-    name: 'Pantai Gigi Hiu (Pegadungan)',
-    location: 'Kelumbayan, Tanggamus',
-    regency: 'Tanggamus',
-    category: 'Pantai',
-    rating: 4.9,
-    reviews: 240,
-    price: 'Rp 20.000 / orang',
-    numericPrice: 20000,
-    duration: '2 jam',
-    hours: '24 Jam',
-    image: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=800&q=80',
-    coords: [-5.7531, 105.0215],
-    description:
-      'Gugusan karang tajam menjulang menyerupai gigi hiu raksasa yang dihantam ombak Samudra Hindia, menjadi lokasi favorit para fotografer profesional.',
-    facilities: ['Spot Fotografi', 'Gazebo Istirahat', 'Warung Kopi', 'Area Parkir'],
-    aiReason: 'Destinasi lanskap ikonik paling dramatis di Sumatera untuk lanskap sunset dan astrofotografi malam.',
-  },
-  {
-    id: 'dest-007',
-    name: 'Taman Nasional Way Kambas',
-    location: 'Labuhan Ratu, Lampung Timur',
-    regency: 'Lampung Timur',
-    category: 'Alam',
-    rating: 4.8,
-    reviews: 410,
-    price: 'Rp 25.000 / orang',
-    numericPrice: 25000,
-    duration: '3 jam',
-    hours: '08:00 - 16:00 WIB',
-    image: 'https://images.unsplash.com/photo-1534567153574-2b12153a87f0?auto=format&fit=crop&w=800&q=80',
-    coords: [-5.0833, 105.7500],
-    description:
-      'Pusat konservasi dan pelatihan gajah Sumatera tertua di Indonesia, habitat asli harimau Sumatera dan badak Sumatera yang dilindungi.',
-    facilities: ['Pusat Konservasi Gajah', 'Jungle Safari', 'Pemandu Wisata', 'Pusat Informasi'],
-    aiReason: 'Sangat direkomendasikan untuk keanekaragaman hayati dan edukasi konservasi satwa dilindungi.',
-  },
-  {
-    id: 'dest-008',
-    name: 'Pantai Mandiri Krui',
-    location: 'Krui, Pesisir Barat',
-    regency: 'Pesisir Barat',
-    category: 'Adventure',
-    rating: 4.9,
-    reviews: 310,
-    price: 'Gratis (Parkir Rp 5.000)',
-    numericPrice: 0,
-    duration: '2-4 jam',
-    hours: '24 Jam',
-    image: 'https://images.unsplash.com/photo-1502680390469-be75c86b636f?auto=format&fit=crop&w=800&q=80',
-    coords: [-5.2158, 103.9214],
-    description:
-      'Garis pantai pasir hitam berkilau yang terkenal di kalangan peselancar mancanegara dengan ombak kelas dunia dan pemandangan sunset memukau.',
-    facilities: ['Spot Surfing', 'Cafe Pantai', 'Penyewaan Papan Selancar', 'Homestay Cafe'],
-    aiReason: 'Surga bagi peselancar profesional maupun penikmat sunset dengan suasana pantai tropis yang santai.',
+      'Museum kebanggaan masyarakat Lampung yang menyimpan 4.000+ koleksi benda bersejarah, etnografi, kain tapis emas, dan numismatika legendaris.',
+    facilities: ['Ruang AC', 'Pemandu Museum', 'Perpustakaan', 'Area Parkir', 'Toilet'],
+    aiReason: 'Sangat bagus untuk wisata edukasi keluarga dan memahami sejarah akulturasi budaya Lampung.',
   },
 ];
 
@@ -215,43 +116,43 @@ const REGENCY_CARDS: RegencyCardInfo[] = [
     image: '/assets/images/regencies/bandar-lampung.jpg',
   },
   {
-    name: 'Pesawaran',
+    name: 'Kabupaten Pesawaran',
     tagline: 'Surga Bahari & Island Hopping Tropis',
     highlight: 'Pulau Pahawang, Pantai Sari Ringgung, Pulau Kelagian, Mutun',
     image: '/assets/images/regencies/pesawaran.jpg',
   },
   {
-    name: 'Lampung Selatan',
+    name: 'Kabupaten Lampung Selatan',
     tagline: 'Monumen Siger, Pantai Eksotis & Krakatau',
     highlight: 'Menara Siger, Pantai Marina Kalianda, Pantai Minang Rua, Grand Elty',
     image: '/assets/images/regencies/lampung-selatan.jpg',
   },
   {
-    name: 'Pesisir Barat',
+    name: 'Kabupaten Pesisir Barat',
     tagline: 'Ombak Dolar Internasional & Surfing Krui',
     highlight: 'Labuhan Jukung Krui, Pantai Tanjung Setia, Pulau Pisang',
     image: '/assets/images/regencies/pesisir-barat.jpg',
   },
   {
-    name: 'Tanggamus',
+    name: 'Kabupaten Tanggamus',
     tagline: 'Teluk Kiluan, Gigi Hiu & Keindahan Tropis',
     highlight: 'Pantai Gigi Hiu (Pegadungan), Lumba-lumba Teluk Kiluan',
     image: '/assets/images/regencies/tanggamus.jpg',
   },
   {
-    name: 'Lampung Timur',
+    name: 'Kabupaten Lampung Timur',
     tagline: 'Konservasi Gajah Sumatera & Way Kambas',
     highlight: 'Taman Nasional Way Kambas, Pusat Latihan Gajah',
     image: '/assets/images/regencies/lampung-timur.jpg',
   },
   {
-    name: 'Lampung Barat',
+    name: 'Kabupaten Lampung Barat',
     tagline: 'Negeri di Atas Awan & Kawah Suoh',
     highlight: 'Kawah Keramikan Suoh, Danau Ranau, Kebun Kopi Liwa',
     image: '/assets/images/regencies/lampung-barat.jpg',
   },
   {
-    name: 'Way Kanan',
+    name: 'Kabupaten Way Kanan',
     tagline: 'Negeri Seribu Air Terjun & Arung Jeram',
     highlight: 'Air Terjun Putri Malu, Air Terjun Gangsa',
     image: '/assets/images/regencies/way-kanan.jpg',
@@ -263,19 +164,19 @@ const REGENCY_CARDS: RegencyCardInfo[] = [
     image: '/assets/images/regencies/metro.jpg',
   },
   {
-    name: 'Pringsewu',
+    name: 'Kabupaten Pringsewu',
     tagline: 'Rest Area Bambu & Bukit Panorama',
     highlight: 'Bukit Bintang Pringsewu, Taman Bambu',
     image: '/assets/images/regencies/pringsewu.jpg',
   },
   {
-    name: 'Tulang Bawang Barat',
+    name: 'Kabupaten Tulang Bawang Barat',
     tagline: 'Arsitektur Ikonik & Islamic Center Tubaba',
     highlight: 'Masjid 99 Cahaya Islamic Center Tubaba, Rumah Adat',
     image: '/assets/images/regencies/tulang-bawang-barat.jpg',
   },
   {
-    name: 'Lampung Utara',
+    name: 'Kabupaten Lampung Utara',
     tagline: 'Tugu Payan Mas & Wisata Alam',
     highlight: 'Tugu Payan Mas Kotabumi, Air Terjun Curup Selendang',
     image: '/assets/images/regencies/lampung-utara.jpg',
@@ -286,7 +187,7 @@ export const ExplorePage: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const [searchKeyword, setSearchKeyword] = useState<string>(searchParams.get('search') || '');
   const [selectedCategory, setSelectedCategory] = useState<string>('Semua');
-  const [selectedRegency, setSelectedRegency] = useState<string>('PILIH');
+  const [selectedRegency, setSelectedRegency] = useState<string>('Semua');
   const [sortBy, setSortBy] = useState<'popular' | 'rating' | 'price'>('popular');
   const [selectedDestination, setSelectedDestination] = useState<Destination | null>(null);
   const [hoveredDestinationId, setHoveredDestinationId] = useState<string | null>(null);
@@ -301,36 +202,38 @@ export const ExplorePage: React.FC = () => {
   const markersRef = useRef<{ [key: string]: L.Marker }>({});
 
   const regencies = [
-    'PILIH',
     'Semua',
     'Kota Bandar Lampung',
-    'Pesawaran',
-    'Lampung Selatan',
-    'Tanggamus',
-    'Lampung Timur',
-    'Way Kanan',
-    'Pesisir Barat',
-    'Lampung Barat',
-    'Lampung Tengah',
-    'Lampung Utara',
     'Kota Metro',
-    'Pringsewu',
-    'Tulang Bawang',
+    'Kabupaten Pesawaran',
+    'Kabupaten Lampung Selatan',
+    'Kabupaten Pesisir Barat',
+    'Kabupaten Tanggamus',
+    'Kabupaten Lampung Barat',
+    'Kabupaten Lampung Timur',
+    'Kabupaten Lampung Tengah',
+    'Kabupaten Lampung Utara',
+    'Kabupaten Way Kanan',
+    'Kabupaten Pringsewu',
+    'Kabupaten Tulang Bawang',
+    'Kabupaten Tulang Bawang Barat',
+    'Kabupaten Mesuji',
   ];
 
-  // Sync search input with URL params
+  // Sync search & regency input with URL params
   useEffect(() => {
-    const query = searchParams.get('search');
-    if (query !== null && query.trim()) {
-      setSearchKeyword(query);
-      setSelectedRegency('Semua');
+    const regParam = searchParams.get('regency') || searchParams.get('city_or_regency');
+    const searchParam = searchParams.get('search');
+    if (regParam) {
+      setSelectedRegency(regParam);
+    }
+    if (searchParam) {
+      setSearchKeyword(searchParam);
     }
   }, [searchParams]);
 
   // Fetch Live Real Data from Backend / FastAPI / Public Data JSON
   useEffect(() => {
-    if (selectedRegency === 'PILIH' && !searchKeyword) return;
-
     let isMounted = true;
     setIsLoadingRealData(true);
     setLoadingProgress(15);
@@ -344,19 +247,19 @@ export const ExplorePage: React.FC = () => {
 
     fetchRealDestinations({
       category: selectedCategory,
-      city_or_regency: selectedRegency === 'PILIH' ? 'Semua' : selectedRegency,
+      city_or_regency: selectedRegency,
       search: searchKeyword,
-      limit: 100,
+      limit: 120,
     }).then((data) => {
       if (isMounted) {
         setLoadingProgress(100);
         setTimeout(() => {
           if (isMounted) {
-            setRealDestinations(data || []);
+            setRealDestinations(data && data.length > 0 ? data : mockDestinations);
             setIsLoadingRealData(false);
             clearInterval(progressInterval);
           }
-        }, 250);
+        }, 200);
       }
     });
 
@@ -383,7 +286,6 @@ export const ExplorePage: React.FC = () => {
       return;
     }
 
-    // Ensure Leaflet instance matches current DOM element
     if (leafletInstanceRef.current) {
       const container = leafletInstanceRef.current.getContainer();
       if (container !== mapRef.current) {
@@ -404,49 +306,41 @@ export const ExplorePage: React.FC = () => {
         maxZoom: 18,
       }).addTo(map);
 
-      L.control.zoom({ position: 'topright' }).addTo(map);
+      L.control.zoom({ position: 'bottomright' }).addTo(map);
       leafletInstanceRef.current = map;
     }
 
     const map = leafletInstanceRef.current;
 
-    // Multiple invalidateSize calls to ensure map tiles render properly after DOM layout transitions
-    setTimeout(() => map.invalidateSize(), 50);
-    setTimeout(() => map.invalidateSize(), 200);
-    setTimeout(() => map.invalidateSize(), 500);
-
     // Clear existing markers
-    Object.values(markersRef.current).forEach((marker) => marker.remove());
+    Object.values(markersRef.current).forEach((m) => map.removeLayer(m));
     markersRef.current = {};
 
-    // Limit map pin markers to top 20 destinations to avoid map pin overlap clutter
-    const mapDestinations = filteredDestinations.slice(0, 20);
-
-    if (mapDestinations.length > 0) {
+    if (filteredDestinations.length > 0) {
       const bounds = L.latLngBounds([]);
 
-      mapDestinations.forEach((dest) => {
-        if (dest.coords && Array.isArray(dest.coords) && dest.coords.length === 2 && !isNaN(dest.coords[0]) && !isNaN(dest.coords[1])) {
+      filteredDestinations.forEach((dest) => {
+        if (dest.coords && dest.coords.length === 2 && !isNaN(dest.coords[0]) && !isNaN(dest.coords[1])) {
           bounds.extend(dest.coords);
+
           const isSelected = selectedDestination?.id === dest.id;
           const isHovered = hoveredDestinationId === dest.id;
 
-          // Sleek Compact Custom Map Pin
           const customIcon = L.divIcon({
-            className: 'custom-map-clean-pin',
+            className: 'custom-map-marker',
             html: `
               <div style="
-                display: inline-flex;
-                align-items: center;
-                gap: 5px;
-                background: ${isSelected ? '#0D9488' : isHovered ? '#115E59' : '#FFFFFF'};
-                color: ${isSelected || isHovered ? '#FFFFFF' : '#0F172A'};
+                background: ${isSelected ? '#0D9488' : isHovered ? '#0F766E' : '#0F2937'};
+                color: #FFFFFF;
                 padding: 4px 10px;
-                border-radius: 9999px;
-                border: 2px solid ${isSelected ? '#F59E0B' : '#0D9488'};
-                box-shadow: 0 4px 12px -2px rgba(15, 23, 42, 0.2);
-                font-family: sans-serif;
+                border-radius: 999px;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+                border: 2px solid ${isSelected ? '#F59E0B' : '#2DD4BF'};
+                display: flex;
+                items-center;
+                gap: 4px;
                 font-size: 11px;
+                font-family: sans-serif;
                 font-weight: 700;
                 cursor: pointer;
                 white-space: nowrap;
@@ -480,14 +374,12 @@ export const ExplorePage: React.FC = () => {
         }
       });
 
-      // Fit bounds with comfortable padding
       if (bounds.isValid()) {
         map.fitBounds(bounds, { padding: [50, 50], maxZoom: 12 });
       }
     }
   }, [filteredDestinations, selectedDestination, hoveredDestinationId, selectedRegency]);
 
-  // Handle Toast
   const triggerToast = (msg: string) => {
     setToastMessage(msg);
     setTimeout(() => setToastMessage(null), 3000);
@@ -514,70 +406,47 @@ export const ExplorePage: React.FC = () => {
         </div>
       )}
 
-      {/* Mascot Loading Overlay (Matching Mockup Screenshot) */}
+      {/* Mascot Loading Overlay */}
       {isLoadingRealData && (
         <div className="fixed inset-0 z-50 bg-slate-950/40 backdrop-blur-md flex items-center justify-center p-4 sm:p-6 animate-in fade-in duration-200">
           <div className="bg-white rounded-[32px] p-8 sm:p-10 max-w-md w-full shadow-[0_20px_60px_-15px_rgba(13,148,136,0.25)] border border-slate-100/80 relative flex flex-col items-center text-center space-y-5 overflow-hidden">
             
-            {/* Mascot Container with Circular Aura & Sparkles */}
-            <div className="relative w-44 h-44 flex items-center justify-center">
-              {/* Circular Aura Layers */}
-              <div className="absolute inset-2 rounded-full border border-teal-100 bg-gradient-to-b from-teal-50/80 to-teal-100/30 animate-pulse" />
-              <div className="absolute inset-6 rounded-full border border-teal-200/60 bg-teal-50/40" />
-
-              {/* Sparkle Stars around mascot */}
-              <span className="absolute top-2 right-6 text-teal-400 text-lg animate-pulse">✦</span>
-              <span className="absolute bottom-4 left-4 text-amber-400 text-base animate-ping" style={{ animationDuration: '3s' }}>✦</span>
-              <span className="absolute top-8 left-6 text-teal-300 text-xs">✨</span>
-              <span className="absolute bottom-8 right-6 text-teal-400 text-sm">✨</span>
-
-              {/* Mascot Image */}
+            <div className="relative w-28 h-28 flex items-center justify-center">
+              <div className="absolute inset-0 rounded-full bg-[#0D9488]/15 animate-ping" />
+              <div className="absolute inset-2 rounded-full bg-teal-50 border-2 border-teal-200 animate-pulse" />
               <img
                 src="/assets/images/mascot/muli-lampung-mascot.png"
-                alt="Muli Lampung Mascot"
-                className="w-36 h-36 object-contain relative z-10 filter drop-shadow-md transition-transform duration-300 hover:scale-105"
+                alt="AI Mascot Searching"
+                className="w-24 h-24 object-contain relative z-10 animate-bounce"
               />
-              {/* Mascot Ground Shadow */}
-              <div className="absolute bottom-1 w-20 h-2.5 rounded-full bg-teal-900/10 blur-sm" />
             </div>
 
-            {/* Title with Animated Teal Dots */}
-            <div className="space-y-2">
-              <h3 className="text-xl sm:text-2xl font-extrabold text-slate-900 font-display flex items-center justify-center gap-1">
-                <span>Memuat Destinasi {selectedRegency !== 'PILIH' ? selectedRegency : 'Wisata'}</span>
-                <span className="inline-flex gap-1 ml-1 text-[#0D9488]">
-                  <span className="animate-bounce font-bold" style={{ animationDelay: '0ms' }}>.</span>
-                  <span className="animate-bounce font-bold" style={{ animationDelay: '150ms' }}>.</span>
-                  <span className="animate-bounce font-bold" style={{ animationDelay: '300ms' }}>.</span>
-                </span>
+            <div className="space-y-1.5 max-w-xs">
+              <h3 className="text-lg sm:text-xl font-bold font-display text-slate-900 tracking-tight">
+                Mencari Destinasi {selectedRegency !== 'Semua' ? selectedRegency : 'Lampung'}...
               </h3>
-              <p className="text-xs text-slate-500 font-sans max-w-xs leading-relaxed mx-auto">
-                Muli Lampung sedang menyiapkan tempat wisata terbaik & lokasi peta spasial untukmu.
+              <p className="text-xs text-slate-500 font-sans leading-relaxed">
+                Raden Gajah & AI Spasial sedang menyaring {filteredDestinations.length || 3100}+ tempat wisata resmi di Lampung.
               </p>
             </div>
 
-            {/* Badge Pill */}
-            <div className="inline-flex items-center gap-2 px-5 py-2 rounded-full bg-teal-50/90 border border-teal-200/80 text-[#0D9488] text-xs font-bold shadow-sm">
-              <Compass className="w-4 h-4 animate-spin text-[#0D9488]" />
-              <span>Menyusun Peta Spasial Lampung</span>
-            </div>
-
-            {/* Animated Progress Bar & Percentage */}
-            <div className="w-full max-w-xs space-y-1.5 pt-1">
-              <div className="flex items-center justify-between gap-3">
-                <div className="flex-1 h-3 rounded-full bg-teal-50 border border-teal-100 overflow-hidden relative">
-                  <div
-                    className="h-full rounded-full bg-gradient-to-r from-[#0D9488] via-[#2DD4BF] to-[#0D9488] transition-all duration-300 shadow-sm"
-                    style={{ width: `${loadingProgress}%` }}
-                  />
-                </div>
-                <span className="text-xs font-extrabold text-[#0D9488] min-w-[32px] text-right font-mono">
-                  {loadingProgress}%
+            {/* Progress Bar Container */}
+            <div className="w-full space-y-2 pt-2">
+              <div className="flex items-center justify-between text-[11px] font-bold text-slate-700">
+                <span className="flex items-center gap-1.5">
+                  <Sparkles className="w-3.5 h-3.5 text-[#0D9488] animate-spin" />
+                  <span>Memuat Database Spasial...</span>
                 </span>
+                <span className="font-mono text-[#0D9488] font-extrabold">{loadingProgress}%</span>
+              </div>
+              <div className="w-full h-2.5 bg-slate-100 rounded-full overflow-hidden p-0.5 border border-slate-200/80">
+                <div
+                  className="h-full bg-gradient-to-r from-[#0D9488] via-[#0F766E] to-siger-500 rounded-full transition-all duration-200"
+                  style={{ width: `${loadingProgress}%` }}
+                />
               </div>
             </div>
 
-            {/* Footer Quote */}
             <div className="flex items-center gap-1.5 text-[11px] text-slate-400 font-medium pt-1">
               <MapPin className="w-3.5 h-3.5 text-amber-500 shrink-0" />
               <span>Menjelajahi keindahan Lampung untukmu...</span>
@@ -587,12 +456,11 @@ export const ExplorePage: React.FC = () => {
         </div>
       )}
 
-      {/* FULL-WIDTH CONTAINER (Extends beyond Navbar limits to edge of screen) */}
+      {/* FULL-WIDTH CONTAINER */}
       <div className="w-full max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-10 space-y-6">
 
         {/* HEADER & FILTER BAR SECTION */}
         <div className="glass-card-container rounded-[28px] p-5 sm:p-6 space-y-5">
-          {/* Top Title & Search Bar */}
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div className="space-y-1">
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-teal-50 border border-teal-200">
@@ -600,9 +468,6 @@ export const ExplorePage: React.FC = () => {
                 <span className="text-[11px] font-semibold text-[#0D9488]">
                   Eksplorasi Wisata Lampung (3.130+ Data Real)
                 </span>
-                {isLoadingRealData && (
-                  <span className="w-2 h-2 rounded-full bg-[#0D9488] animate-ping" />
-                )}
               </div>
               <h1 className="text-2xl sm:text-3xl font-display font-extrabold text-slate-900 tracking-tight">
                 Jelajah Destinasi & Peta Spasial
@@ -636,100 +501,116 @@ export const ExplorePage: React.FC = () => {
             </div>
           </div>
 
-          {/* Filter Pills & Dropdown Row (ONLY SHOWN WHEN A REGENCY IS SELECTED OR SEARCHING) */}
-          {(selectedRegency !== 'PILIH' || searchKeyword) && (
-            <div className="flex flex-wrap items-center justify-between gap-4 pt-2 border-t border-slate-200/60">
-              {/* Category Filter Pills */}
-              <div className="flex flex-wrap items-center gap-2">
-                {[
-                  { label: 'Semua', icon: Sparkles },
-                  { label: 'Pantai', icon: Palmtree },
-                  { label: 'Alam', icon: Mountain },
-                  { label: 'Budaya', icon: Landmark },
-                  { label: 'Kuliner', icon: Utensils },
-                  { label: 'Adventure', icon: Footprints },
-                ].map(({ label, icon: Icon }) => (
+          {/* Filter Pills & Dropdown Row */}
+          <div className="flex flex-wrap items-center justify-between gap-4 pt-2 border-t border-slate-200/60">
+            {/* Category Filter Pills */}
+            <div className="flex flex-wrap items-center gap-2">
+              {[
+                { label: 'Semua', icon: Sparkles },
+                { label: 'Pantai', icon: Palmtree },
+                { label: 'Alam', icon: Mountain },
+                { label: 'Budaya', icon: Landmark },
+                { label: 'Kuliner', icon: Utensils },
+                { label: 'Adventure', icon: Footprints },
+              ].map((cat) => {
+                const Icon = cat.icon;
+                const isSelected = selectedCategory === cat.label;
+                return (
                   <button
-                    key={label}
-                    onClick={() => setSelectedCategory(label)}
-                    className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold transition-all ${
-                      selectedCategory === label
-                        ? 'bg-[#0D9488] text-white shadow-md shadow-[#0D9488]/20'
-                        : 'bg-slate-100 hover:bg-slate-200 text-slate-600'
+                    key={cat.label}
+                    onClick={() => setSelectedCategory(cat.label)}
+                    className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all flex items-center gap-1.5 ${
+                      isSelected
+                        ? 'bg-[#0D9488] text-white shadow-sm'
+                        : 'bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-700'
                     }`}
                   >
                     <Icon className="w-3.5 h-3.5" />
-                    <span>{label}</span>
+                    <span>{cat.label}</span>
                   </button>
-                ))}
+                );
+              })}
+            </div>
+
+            {/* Regency Dropdown & Sort Controls */}
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-1.5 text-xs text-slate-500 font-medium">
+                <MapPin className="w-3.5 h-3.5 text-[#0D9488]" />
+                <span>Kabupaten:</span>
+                <select
+                  value={selectedRegency}
+                  onChange={(e) => {
+                    setSelectedRegency(e.target.value);
+                    if (e.target.value !== 'Semua') {
+                      setSearchParams({ regency: e.target.value });
+                    } else {
+                      setSearchParams({});
+                    }
+                  }}
+                  className="bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1 text-xs text-slate-900 font-bold focus:outline-none focus:border-[#0D9488]"
+                >
+                  {regencies.map((reg) => (
+                    <option key={reg} value={reg}>
+                      {reg}
+                    </option>
+                  ))}
+                </select>
               </div>
 
-              {/* Region Select & Sort Dropdowns */}
-              <div className="flex items-center gap-3">
-                <div className="flex items-center gap-1.5 text-xs text-slate-500 font-medium">
-                  <MapPin className="w-3.5 h-3.5 text-[#0D9488]" />
-                  <span>Kabupaten/Kota:</span>
-                  <select
-                    value={selectedRegency}
-                    onChange={(e) => setSelectedRegency(e.target.value)}
-                    className="bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1 text-xs text-slate-900 font-semibold focus:outline-none focus:border-[#0D9488]"
-                  >
-                    {regencies.map((reg) => (
-                      <option key={reg} value={reg}>
-                        {reg}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div className="flex items-center gap-1.5 text-xs text-slate-500 font-medium">
-                  <SlidersHorizontal className="w-3.5 h-3.5 text-siger-500" />
-                  <span>Urutkan:</span>
-                  <select
-                    value={sortBy}
-                    onChange={(e) => setSortBy(e.target.value as any)}
-                    className="bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1 text-xs text-slate-900 font-semibold focus:outline-none focus:border-[#0D9488]"
-                  >
-                    <option value="popular">Populer</option>
-                    <option value="rating">Rating Tertinggi</option>
-                    <option value="price">Harga Termurah</option>
-                  </select>
-                </div>
+              <div className="flex items-center gap-1.5 text-xs text-slate-500 font-medium">
+                <SlidersHorizontal className="w-3.5 h-3.5 text-siger-500" />
+                <span>Urutkan:</span>
+                <select
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value as any)}
+                  className="bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1 text-xs text-slate-900 font-semibold focus:outline-none focus:border-[#0D9488]"
+                >
+                  <option value="popular">Populer</option>
+                  <option value="rating">Rating Tertinggi</option>
+                  <option value="price">Harga Termurah</option>
+                </select>
               </div>
             </div>
-          )}
+          </div>
         </div>
 
-        {/* REGENCY SELECTION GRID VIEW (WHEN USER HAS NOT SELECTED A REGENCY YET) */}
-        {selectedRegency === 'PILIH' && !searchKeyword ? (
-          <div className="space-y-6">
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-gradient-to-r from-[#0F2937] via-[#0D9488] to-[#0F766E] p-6 sm:p-8 rounded-[28px] text-white shadow-xl">
-              <div className="space-y-1.5 max-w-2xl">
-                <span className="px-3 py-1 rounded-full text-[10px] font-extrabold bg-siger-400 text-slate-950 uppercase tracking-wider">
-                  Langkah 1: Pilih Kabupaten / Kota
-                </span>
-                <h2 className="text-xl sm:text-2xl font-display font-extrabold tracking-tight">
-                  Mau Jelajah Wisata di Mana Hari Ini?
-                </h2>
-                <p className="text-xs text-slate-100 font-sans leading-relaxed">
-                  Pilih wilayah di Provinsi Lampung di bawah ini untuk menampilkan daftar destinasi wisata resmi, lokasi presisi, dan peta interaktifnya.
-                </p>
-              </div>
+        {/* REGENCY SELECTION QUICK CARDS BAR */}
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <h2 className="text-sm font-extrabold font-display text-slate-900 flex items-center gap-2">
+              <Compass className="w-4 h-4 text-[#0D9488]" />
+              <span>Pilih Kabupaten / Kota Lampung ({selectedRegency})</span>
+            </h2>
+            {selectedRegency !== 'Semua' && (
               <button
-                onClick={() => setSelectedRegency('Semua')}
-                className="px-6 py-3 rounded-full bg-white text-slate-900 hover:bg-siger-400 hover:text-slate-950 text-xs font-bold shadow-lg transition-all shrink-0 self-start md:self-auto flex items-center gap-2"
+                onClick={() => {
+                  setSelectedRegency('Semua');
+                  setSearchParams({});
+                }}
+                className="text-xs font-bold text-[#0D9488] hover:underline flex items-center gap-1"
               >
-                <span>Lihat Semua Kabupaten (1.590+ Data)</span>
-                <ArrowUpRight className="w-4 h-4" />
+                <span>Tampilkan Semua Wilayah</span>
+                <ArrowUpRight className="w-3.5 h-3.5" />
               </button>
-            </div>
+            )}
+          </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
-              {REGENCY_CARDS.map((card) => (
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
+            {REGENCY_CARDS.map((card) => {
+              const isSelected = selectedRegency === card.name;
+
+              return (
                 <div
                   key={card.name}
-                  onClick={() => setSelectedRegency(card.name)}
-                  className="group relative rounded-3xl overflow-hidden bg-slate-900 shadow-md hover:shadow-2xl transition-all duration-300 cursor-pointer border border-slate-200/50 aspect-[4/3] flex flex-col justify-between p-5"
+                  onClick={() => {
+                    setSelectedRegency(card.name);
+                    setSearchParams({ regency: card.name });
+                  }}
+                  className={`group relative rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 cursor-pointer border aspect-[4/3] flex flex-col justify-end p-3 ${
+                    isSelected
+                      ? 'border-[#0D9488] ring-4 ring-[#0D9488]/30 scale-105'
+                      : 'border-slate-200 hover:scale-102'
+                  }`}
                 >
                   <img
                     src={card.image}
@@ -737,318 +618,189 @@ export const ExplorePage: React.FC = () => {
                     onError={(e) => {
                       (e.target as HTMLImageElement).src = '/assets/images/heroes/hero-pahawang-bg.png';
                     }}
-                    className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                    className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-slate-950/95 via-slate-950/40 to-slate-950/20 group-hover:via-slate-950/60 transition-colors" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/30 to-transparent" />
 
-                  <div className="relative z-10 flex items-center justify-between">
-                    <span className="px-3 py-1 rounded-full text-[10px] font-extrabold bg-[#0D9488] text-white shadow-md">
-                      Provinsi Lampung
-                    </span>
-                    <span className="w-8 h-8 rounded-full bg-white/20 text-white group-hover:bg-[#0D9488] flex items-center justify-center backdrop-blur-md transition-all group-hover:scale-110 text-xs">
-                      →
-                    </span>
-                  </div>
-
-                  <div className="relative z-10 space-y-1 text-white">
-                    <h3 className="text-base font-extrabold font-display leading-tight group-hover:text-siger-400 transition-colors">
+                  <div className="relative z-10 text-white space-y-0.5">
+                    <h3 className="text-xs font-extrabold font-display leading-tight truncate group-hover:text-siger-400">
                       {card.name}
                     </h3>
-                    <p className="text-[11px] text-siger-300 font-semibold">{card.tagline}</p>
-                    <p className="text-[9px] text-slate-300 line-clamp-1">{card.highlight}</p>
+                    <p className="text-[9px] text-slate-300 line-clamp-1">{card.tagline}</p>
                   </div>
                 </div>
-              ))}
-            </div>
+              );
+            })}
           </div>
-        ) : (
-          /* CONTENT SPLIT VIEW GRID (DESTINATION LIST & INTERACTIVE MAP) */
-          <div className="space-y-4">
-            {/* Top Navigation Bar when inside a specific Regency */}
-            <div className="flex items-center justify-between bg-slate-100/80 p-3 rounded-2xl border border-slate-200/70">
-              <button
-                onClick={() => setSelectedRegency('PILIH')}
-                className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white text-slate-700 hover:bg-[#0D9488] hover:text-white border border-slate-300 text-xs font-bold transition-all shadow-sm"
-              >
-                <span>← Pilih Kabupaten Lain</span>
-              </button>
-              <div className="text-xs font-semibold text-slate-600">
-                Wilayah Aktif: <span className="font-extrabold text-[#0D9488]">{selectedRegency}</span>
-              </div>
-            </div>
+        </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        {/* MAIN TWO-COLUMN SPLIT: LEFT LISTING (7 COLS), RIGHT 3D LEAFLET MAP (5 COLS) */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
 
-          {/* LEFT: DESTINATIONS CARDS LIST (7 Cols - 2 Cards Per Row) */}
+          {/* LEFT 7 COLS: DESTINATIONS CARDS LIST */}
           <div className="lg:col-span-7 space-y-4">
-            <div className="flex items-center justify-between px-1">
-              <p className="text-xs text-slate-500 font-medium">
-                Menampilkan <span className="font-bold text-slate-900">{filteredDestinations.length}</span> destinasi di Lampung
-              </p>
+
+            {/* Results Count Bar */}
+            <div className="flex items-center justify-between px-2">
+              <span className="text-xs font-bold text-slate-700 font-sans">
+                Menampilkan <span className="text-[#0D9488]">{filteredDestinations.length}</span> Destinasi Wisata di <span className="font-extrabold">{selectedRegency}</span>
+              </span>
+              <span className="text-[11px] text-slate-500 font-medium">Data Terverifikasi Real</span>
             </div>
 
+            {/* Destination Items List */}
             {filteredDestinations.length === 0 ? (
               <div className="glass-card-container rounded-3xl p-12 text-center space-y-3">
-                <Filter className="w-10 h-10 text-slate-300 mx-auto" />
-                <h3 className="text-base font-bold text-slate-800">Tidak ada destinasi ditemukan</h3>
-                <p className="text-xs text-slate-500">Coba atur ulang kata kunci pencarian atau filter kategori kamu.</p>
-                <button
-                  onClick={() => {
-                    setSearchKeyword('');
-                    setSelectedCategory('Semua');
-                    setSelectedRegency('Semua');
-                    setSearchParams({});
-                  }}
-                  className="px-4 py-2 bg-[#0D9488] text-white text-xs font-bold rounded-full hover:bg-[#0F766E] transition-colors"
-                >
-                  Reset Semua Filter
-                </button>
+                <Compass className="w-10 h-10 text-slate-400 mx-auto" />
+                <h3 className="text-base font-bold text-slate-800">Destinasi Tidak Ditemukan</h3>
+                <p className="text-xs text-slate-500">
+                  Coba ubah kata kunci atau ganti filter Kabupaten/Kategori.
+                </p>
               </div>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {filteredDestinations.map((item) => (
-                  <div
-                    key={item.id}
-                    onMouseEnter={() => setHoveredDestinationId(item.id)}
-                    onMouseLeave={() => setHoveredDestinationId(null)}
-                    onClick={() => {
-                      setSelectedDestination(item);
-                      if (leafletInstanceRef.current) {
-                        leafletInstanceRef.current.panTo(item.coords, { animate: true });
-                      }
-                    }}
-                    className={`group glass-card-container rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 cursor-pointer border flex flex-col justify-between ${
-                      selectedDestination?.id === item.id || hoveredDestinationId === item.id
-                        ? 'border-[#0D9488] ring-2 ring-[#0D9488]/20 bg-white'
-                        : 'border-slate-200/80 hover:border-slate-300'
-                    }`}
-                  >
-                    {/* Card Image Header */}
-                    <div className="relative aspect-[16/10] overflow-hidden bg-slate-100">
-                      <img
-                        src={item.image}
-                        alt={item.name}
-                        onError={(e) => {
-                          (e.target as HTMLImageElement).src = '/assets/images/heroes/hero-pahawang-bg.png';
-                        }}
-                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                      />
-                      <div className="absolute inset-0 bg-gradient-to-t from-slate-950/60 via-transparent to-transparent" />
+                {filteredDestinations.map((dest) => {
+                  const isFav = favorites.includes(dest.id);
+                  const isSelected = selectedDestination?.id === dest.id;
 
-                      {/* Top Category Badge & Heart button */}
-                      <div className="absolute top-3 left-3 right-3 flex items-center justify-between">
-                        <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-[#0D9488] text-white shadow-md">
-                          {item.category}
-                        </span>
-                        <button
-                          onClick={(e) => toggleFavorite(item.id, e)}
-                          className={`w-7 h-7 rounded-full flex items-center justify-center backdrop-blur-md transition-colors ${
-                            favorites.includes(item.id)
-                              ? 'bg-red-500 text-white'
-                              : 'bg-slate-900/40 text-white hover:bg-slate-900/70'
-                          }`}
-                        >
-                          <Heart className={`w-3.5 h-3.5 ${favorites.includes(item.id) ? 'fill-current' : ''}`} />
-                        </button>
-                      </div>
+                  return (
+                    <div
+                      key={dest.id}
+                      onClick={() => {
+                        setSelectedDestination(dest);
+                        if (leafletInstanceRef.current && dest.coords) {
+                          leafletInstanceRef.current.panTo(dest.coords, { animate: true });
+                        }
+                      }}
+                      onMouseEnter={() => setHoveredDestinationId(dest.id)}
+                      onMouseLeave={() => setHoveredDestinationId(null)}
+                      className={`glass-card-container rounded-3xl overflow-hidden border shadow-sm hover:shadow-md transition-all duration-300 cursor-pointer flex flex-col justify-between p-4 space-y-3 group ${
+                        isSelected
+                          ? 'border-[#0D9488] ring-2 ring-[#0D9488]/20 bg-teal-50/40'
+                          : 'border-slate-200'
+                      }`}
+                    >
+                      {/* Top Thumbnail */}
+                      <div className="relative rounded-2xl overflow-hidden aspect-[16/10]">
+                        <img
+                          src={dest.image}
+                          alt={dest.name}
+                          onError={(e) => {
+                            (e.target as HTMLImageElement).src = '/assets/images/heroes/hero-pahawang-bg.png';
+                          }}
+                          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-slate-950/60 via-transparent to-transparent" />
 
-                      {/* Bottom Info on Image */}
-                      <div className="absolute bottom-2.5 left-3 right-3 text-white flex items-center justify-between">
-                        <div className="flex items-center gap-1 text-siger-400 font-bold text-xs">
-                          <Star className="w-3.5 h-3.5 fill-current" />
-                          <span>{item.rating}</span>
-                          <span className="text-slate-300 text-[10px] font-normal">({item.reviews})</span>
+                        {/* Top Badges */}
+                        <div className="absolute top-2.5 left-2.5 right-2.5 flex items-center justify-between">
+                          <span className="px-2.5 py-1 rounded-full text-[10px] font-extrabold bg-slate-950/80 backdrop-blur-md text-white border border-white/20">
+                            {dest.category}
+                          </span>
+
+                          <button
+                            onClick={(e) => toggleFavorite(dest.id, e)}
+                            className="p-1.5 rounded-full bg-white/90 backdrop-blur-md text-slate-700 hover:text-red-500 shadow-sm transition-all active:scale-95"
+                          >
+                            <Heart
+                              className={`w-3.5 h-3.5 ${
+                                isFav ? 'fill-red-500 text-red-500' : ''
+                              }`}
+                            />
+                          </button>
                         </div>
-                        <span className="text-[10px] bg-slate-900/60 px-2 py-0.5 rounded-md backdrop-blur-sm text-slate-200">
-                          {item.regency}
-                        </span>
-                      </div>
-                    </div>
 
-                    {/* Card Content Body */}
-                    <div className="p-4 space-y-2 flex-1 flex flex-col justify-between">
-                      <div className="space-y-1">
-                        <h3 className="text-sm font-bold font-display text-slate-900 group-hover:text-[#0D9488] transition-colors leading-snug">
-                          {item.name}
-                        </h3>
-                        <p className="text-[11px] text-slate-500 font-sans flex items-center gap-1 line-clamp-1">
-                          <MapPin className="w-3 h-3 text-[#0D9488] shrink-0" />
-                          <span>{item.location}</span>
+                        {/* Rating Badge */}
+                        <div className="absolute bottom-2.5 left-2.5 flex items-center gap-1 px-2.5 py-1 rounded-full bg-amber-500 text-white font-mono text-[10px] font-extrabold shadow-sm">
+                          <Star className="w-3 h-3 fill-white" />
+                          <span>{dest.rating}</span>
+                          <span className="opacity-80">({dest.reviews})</span>
+                        </div>
+                      </div>
+
+                      {/* Info Content */}
+                      <div className="space-y-1.5">
+                        <div className="flex items-start justify-between gap-2">
+                          <h3 className="text-sm font-bold font-display text-slate-900 leading-snug group-hover:text-[#0D9488] transition-colors">
+                            {dest.name}
+                          </h3>
+                        </div>
+
+                        <p className="text-xs text-slate-500 font-sans flex items-center gap-1 truncate">
+                          <MapPin className="w-3.5 h-3.5 text-[#0D9488] shrink-0" />
+                          <span>{dest.location}</span>
+                        </p>
+
+                        <p className="text-[11px] text-slate-600 line-clamp-2 leading-relaxed pt-1">
+                          {dest.description}
                         </p>
                       </div>
 
+                      {/* Footer Row */}
                       <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-xs">
-                        <div>
-                          <p className="text-[10px] text-slate-400">Estimasi Tiket</p>
-                          <p className="text-xs font-extrabold text-[#0D9488]">{item.price}</p>
-                        </div>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setSelectedDestination(item);
-                          }}
-                          className="px-3 py-1.5 rounded-xl bg-teal-50 hover:bg-[#0D9488] text-[#0D9488] hover:text-white text-[11px] font-bold transition-all flex items-center gap-1"
-                        >
-                          <span>Detail</span>
+                        <span className="font-extrabold text-[#0D9488]">{dest.price}</span>
+                        <span className="text-[10px] text-slate-400 flex items-center gap-1 font-semibold group-hover:text-[#0D9488]">
+                          <span>Lihat di Peta</span>
                           <ChevronRight className="w-3.5 h-3.5" />
-                        </button>
+                        </span>
                       </div>
+
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
+
           </div>
 
-          {/* RIGHT: INTERACTIVE SPATIAL MAP (5 Cols - Sticky Container) */}
-          <div className="lg:col-span-5 sticky top-24">
-            <div className="glass-card-container rounded-[28px] overflow-hidden shadow-lg border border-slate-200/80 flex flex-col h-[600px]">
-              {/* Map Header */}
-              <div className="px-5 py-3.5 bg-white border-b border-slate-200/80 flex items-center justify-between shrink-0">
+          {/* RIGHT 5 COLS: INTERACTIVE STICKY MAP */}
+          <div className="lg:col-span-5 sticky top-28 space-y-4">
+            <div className="glass-card-container rounded-[28px] overflow-hidden border border-slate-200/80 shadow-lg p-2 space-y-2">
+              
+              <div className="px-3 py-2 border-b border-slate-100 flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <div className="w-2.5 h-2.5 rounded-full bg-siger-500 animate-pulse" />
-                  <span className="text-xs font-bold text-slate-900">Map Spasial Interaktif Lampung</span>
+                  <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping" />
+                  <span className="text-xs font-bold text-slate-800">Peta Spasial Real-time ({selectedRegency})</span>
                 </div>
-                <span className="text-[10px] text-slate-500 font-medium bg-slate-100 px-2 py-0.5 rounded-md">
-                  {filteredDestinations.length} Pin Aktif
-                </span>
+                <span className="text-[10px] text-slate-400 font-medium">3D Spasial Engine</span>
               </div>
 
-              {/* Leaflet Map Canvas */}
-              <div ref={mapRef} className="flex-1 w-full h-full z-10 bg-slate-100" />
-            </div>
-          </div>
-        </div>
-      </div>
-    )}
-
-      </div>
-
-      {/* QUICK DETAIL DRAWER / MODAL */}
-      {selectedDestination && (
-        <div
-          className="fixed inset-0 z-50 glass-modal-backdrop flex items-center justify-center p-4 sm:p-6 overflow-y-auto"
-          onClick={() => setSelectedDestination(null)}
-        >
-          <div
-            className="bg-white w-full max-w-2xl rounded-3xl overflow-hidden shadow-2xl border border-slate-200 my-auto relative animate-in fade-in zoom-in-95 duration-200"
-            onClick={(e) => e.stopPropagation()}
-          >
-            {/* Close Button */}
-            <button
-              onClick={() => setSelectedDestination(null)}
-              className="absolute top-4 right-4 z-20 w-9 h-9 rounded-full bg-slate-900/60 hover:bg-slate-900 text-white flex items-center justify-center backdrop-blur-md transition-colors"
-              aria-label="Tutup Detail"
-            >
-              <X className="w-4 h-4" />
-            </button>
-
-            {/* Modal Image Header */}
-            <div className="relative aspect-[16/9] w-full overflow-hidden bg-slate-900">
-              <img
-                src={selectedDestination.image}
-                alt={selectedDestination.name}
-                className="w-full h-full object-cover"
+              {/* Map Container */}
+              <div
+                ref={mapRef}
+                className="w-full h-[520px] rounded-2xl overflow-hidden z-10 border border-slate-200"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-slate-950/20 to-transparent" />
 
-              <div className="absolute bottom-4 left-6 right-6 text-white space-y-1">
-                <div className="flex items-center gap-2">
-                  <span className="px-3 py-0.5 rounded-full text-xs font-bold bg-[#0D9488]">
-                    {selectedDestination.category}
-                  </span>
-                  <span className="text-xs bg-slate-900/60 px-2.5 py-0.5 rounded-full text-slate-200 border border-white/20">
-                    {selectedDestination.regency}
-                  </span>
+              {/* Active Selected Destination Preview Drawer */}
+              {selectedDestination && (
+                <div className="p-3 bg-teal-50/60 border border-teal-200/80 rounded-2xl flex items-center justify-between gap-3 animate-in slide-in-from-bottom-2">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <img
+                      src={selectedDestination.image}
+                      alt={selectedDestination.name}
+                      className="w-12 h-12 rounded-xl object-cover shrink-0 shadow-sm"
+                    />
+                    <div className="min-w-0 space-y-0.5">
+                      <span className="text-[9px] font-extrabold text-[#0D9488] uppercase">{selectedDestination.category}</span>
+                      <h4 className="text-xs font-bold text-slate-900 truncate font-display">{selectedDestination.name}</h4>
+                      <p className="text-[10px] text-slate-500 truncate">{selectedDestination.location}</p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => setSelectedDestination(null)}
+                    className="p-1 rounded-full text-slate-400 hover:text-slate-600"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
                 </div>
-                <h2 className="text-2xl font-display font-extrabold">{selectedDestination.name}</h2>
-                <p className="text-xs text-slate-300 flex items-center gap-1">
-                  <MapPin className="w-3.5 h-3.5 text-[#2DD4BF]" />
-                  <span>{selectedDestination.location}</span>
-                </p>
-              </div>
-            </div>
+              )}
 
-            {/* Modal Body Info */}
-            <div className="p-6 space-y-6 max-h-[60vh] overflow-y-auto">
-              {/* Quick Info Grid */}
-              <div className="grid grid-cols-3 gap-3 text-center bg-slate-50 rounded-2xl p-3 border border-slate-200/60">
-                <div className="space-y-0.5">
-                  <p className="text-[10px] text-slate-400 font-medium">Rating Pengguna</p>
-                  <p className="text-xs font-bold text-slate-900 flex items-center justify-center gap-1 text-siger-500">
-                    <Star className="w-3.5 h-3.5 fill-current" />
-                    <span>{selectedDestination.rating} ({selectedDestination.reviews})</span>
-                  </p>
-                </div>
-                <div className="space-y-0.5 border-x border-slate-200">
-                  <p className="text-[10px] text-slate-400 font-medium">Jam Operasional</p>
-                  <p className="text-xs font-bold text-slate-900 flex items-center justify-center gap-1">
-                    <Clock className="w-3.5 h-3.5 text-[#0D9488]" />
-                    <span>{selectedDestination.hours}</span>
-                  </p>
-                </div>
-                <div className="space-y-0.5">
-                  <p className="text-[10px] text-slate-400 font-medium">Estimasi Tiket</p>
-                  <p className="text-xs font-extrabold text-[#0D9488]">{selectedDestination.price}</p>
-                </div>
-              </div>
-
-              {/* Description */}
-              <div className="space-y-1.5">
-                <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider">Tentang Destinasi</h4>
-                <p className="text-xs text-slate-600 leading-relaxed font-sans">{selectedDestination.description}</p>
-              </div>
-
-              {/* AI Recommendation Reason */}
-              <div className="bg-teal-50/70 border border-teal-200/80 rounded-2xl p-4 space-y-1">
-                <div className="flex items-center gap-2">
-                  <Sparkles className="w-4 h-4 text-siger-500" />
-                  <h4 className="text-xs font-bold text-slate-900">Rekomendasi AI Raden Gajah</h4>
-                </div>
-                <p className="text-xs text-slate-700 font-sans leading-relaxed">{selectedDestination.aiReason}</p>
-              </div>
-
-              {/* Facilities List */}
-              <div className="space-y-2">
-                <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider">Fasilitas & Layanan</h4>
-                <div className="flex flex-wrap gap-2">
-                  {selectedDestination.facilities.map((fac) => (
-                    <span key={fac} className="px-3 py-1 rounded-xl bg-slate-100 text-slate-700 text-xs font-medium flex items-center gap-1.5">
-                      <Tag className="w-3 h-3 text-[#0D9488]" />
-                      <span>{fac}</span>
-                    </span>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            {/* Modal Actions */}
-            <div className="p-4 bg-slate-50 border-t border-slate-200/80 flex flex-wrap items-center justify-between gap-3">
-              <button
-                onClick={(e) => toggleFavorite(selectedDestination.id, e)}
-                className={`px-4 py-2.5 rounded-full text-xs font-bold flex items-center gap-2 transition-all ${
-                  favorites.includes(selectedDestination.id)
-                    ? 'bg-red-500 text-white'
-                    : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-100'
-                }`}
-              >
-                <Heart className={`w-3.5 h-3.5 ${favorites.includes(selectedDestination.id) ? 'fill-current' : ''}`} />
-                <span>{favorites.includes(selectedDestination.id) ? 'Tersimpan' : 'Simpan Favorit'}</span>
-              </button>
-
-              <a
-                href={`https://www.google.com/maps/search/?api=1&query=${selectedDestination.coords[0]},${selectedDestination.coords[1]}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="px-5 py-2.5 rounded-full bg-[#0D9488] hover:bg-[#0F766E] text-white text-xs font-bold shadow-md shadow-[#0D9488]/20 flex items-center gap-2 transition-all"
-              >
-                <span>Buka di Google Maps</span>
-                <ExternalLink className="w-3.5 h-3.5" />
-              </a>
             </div>
           </div>
+
         </div>
-      )}
+
+      </div>
     </div>
   );
 };
