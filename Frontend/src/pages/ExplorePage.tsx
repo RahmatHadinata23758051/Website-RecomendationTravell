@@ -27,6 +27,11 @@ import { fetchRealDestinations } from '../services/destinationsApi';
 import { useAuth } from '../context/AuthContext';
 import { apiClient } from '../lib/api';
 import { logUserActivity } from '../services/activitiesApi';
+import {
+  fetchDestinationReviews,
+  createDestinationReview,
+  ReviewSummary,
+} from '../services/reviewsApi';
 
 export interface Destination {
   id: string;
@@ -299,6 +304,59 @@ export const ExplorePage: React.FC = () => {
   const [realDestinations, setRealDestinations] = useState<Destination[]>([]);
   const [isLoadingRealData, setIsLoadingRealData] = useState<boolean>(false);
   const [loadingProgress, setLoadingProgress] = useState<number>(0);
+
+  // Reviews State
+  const [reviewsData, setReviewsData] = useState<ReviewSummary | null>(null);
+  const [isLoadingReviews, setIsLoadingReviews] = useState<boolean>(false);
+  const [isWriteReviewModalOpen, setIsWriteReviewModalOpen] = useState<boolean>(false);
+  const [reviewRating, setReviewRating] = useState<number>(5);
+  const [reviewText, setReviewText] = useState<string>('');
+  const [isSubmittingReview, setIsSubmittingReview] = useState<boolean>(false);
+
+  useEffect(() => {
+    if (selectedDestination) {
+      setIsLoadingReviews(true);
+      fetchDestinationReviews(selectedDestination.id).then((data) => {
+        setReviewsData(data);
+        setIsLoadingReviews(false);
+      });
+    }
+  }, [selectedDestination]);
+
+  const handleReviewSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!isAuthenticated) {
+      triggerToast('Silakan masuk terlebih dahulu untuk memberi ulasan!');
+      openAuthModal('login');
+      return;
+    }
+
+    if (!selectedDestination || !reviewText.trim()) return;
+
+    setIsSubmittingReview(true);
+    try {
+      await createDestinationReview(selectedDestination.id, reviewRating, reviewText);
+      await addXp(30, 'write_review');
+      await logUserActivity(
+        'WRITE_REVIEW',
+        `Memberi ulasan ${reviewRating}★ untuk ${selectedDestination.name}`,
+        '+30 XP',
+        'star',
+      );
+      triggerToast('Ulasan berhasil dikirim! (+30 XP 🎉)');
+
+      // Refresh reviews
+      const updated = await fetchDestinationReviews(selectedDestination.id);
+      setReviewsData(updated);
+
+      setReviewText('');
+      setIsWriteReviewModalOpen(false);
+    } catch (err: any) {
+      triggerToast('Gagal mengirim ulasan');
+    } finally {
+      setIsSubmittingReview(false);
+    }
+  };
 
   const mapRef = useRef<HTMLDivElement | null>(null);
   const leafletInstanceRef = useRef<L.Map | null>(null);
@@ -1095,6 +1153,75 @@ export const ExplorePage: React.FC = () => {
                   ))}
                 </div>
               </div>
+
+              {/* Ulasan & Rating Section */}
+              <div className="space-y-3 pt-2 border-t border-slate-100">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider">Ulasan & Rating Penjelajah</h4>
+                    <p className="text-[10px] text-slate-500 font-sans">Didukung AI IndoBERT Sentiment Inferencing</p>
+                  </div>
+                  <button
+                    onClick={() => setIsWriteReviewModalOpen(true)}
+                    className="px-3.5 py-1.5 rounded-full bg-[#0D9488] hover:bg-[#0F766E] text-white text-xs font-bold shadow-xs transition-all flex items-center gap-1.5"
+                  >
+                    <Star className="w-3.5 h-3.5 fill-current text-amber-300" />
+                    <span>+ Tulis Ulasan (+30 XP)</span>
+                  </button>
+                </div>
+
+                {/* Reviews List */}
+                <div className="space-y-2.5">
+                  {isLoadingReviews ? (
+                    <div className="p-4 text-center text-xs text-slate-400">Memuat ulasan penjelajah...</div>
+                  ) : reviewsData && reviewsData.reviews.length > 0 ? (
+                    reviewsData.reviews.map((rev) => (
+                      <div key={rev.id} className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200/70 space-y-1.5">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <div className="w-6 h-6 rounded-full bg-teal-100 text-[#0D9488] font-bold text-[10px] flex items-center justify-center">
+                              {rev.user?.fullName?.charAt(0) || 'U'}
+                            </div>
+                            <span className="text-xs font-bold text-slate-900">{rev.user?.fullName || 'Penjelajah Kelana'}</span>
+                          </div>
+
+                          {/* Sentiment Badge */}
+                          <span
+                            className={`px-2 py-0.5 rounded-full text-[9px] font-extrabold ${
+                              rev.sentimentLabel === 'POSITIVE'
+                                ? 'bg-emerald-100 text-emerald-800'
+                                : rev.sentimentLabel === 'NEGATIVE'
+                                ? 'bg-rose-100 text-rose-800'
+                                : 'bg-slate-200 text-slate-700'
+                            }`}
+                          >
+                            {rev.sentimentLabel === 'POSITIVE' ? 'Sentimen Positif ✨' : rev.sentimentLabel === 'NEGATIVE' ? 'Perlu Perbaikan ⚠️' : 'Sentimen Netral 💬'}
+                          </span>
+                        </div>
+
+                        <div className="flex items-center gap-1 text-amber-400">
+                          {[1, 2, 3, 4, 5].map((star) => (
+                            <Star
+                              key={star}
+                              className={`w-3 h-3 ${star <= rev.rating ? 'fill-current text-amber-400' : 'text-slate-300'}`}
+                            />
+                          ))}
+                          <span className="text-[10px] text-slate-400 font-sans ml-1">
+                            {new Date(rev.createdAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })}
+                          </span>
+                        </div>
+
+                        <p className="text-xs text-slate-700 font-sans leading-relaxed">{rev.reviewText}</p>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/60 text-center space-y-1">
+                      <p className="text-xs font-semibold text-slate-700">Belum ada ulasan untuk destinasi ini</p>
+                      <p className="text-[10px] text-slate-500">Jadilah penjelajah pertama yang memberi ulasan dan dapatkan +30 XP!</p>
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
 
             {/* Modal Actions */}
@@ -1120,6 +1247,95 @@ export const ExplorePage: React.FC = () => {
                 <ExternalLink className="w-3.5 h-3.5" />
               </a>
             </div>
+          </div>
+        </div>
+      )}
+      {/* WRITE REVIEW MODAL */}
+      {isWriteReviewModalOpen && selectedDestination && (
+        <div
+          className="fixed inset-0 z-50 glass-modal-backdrop flex items-center justify-center p-4 overflow-y-auto"
+          onClick={() => setIsWriteReviewModalOpen(false)}
+        >
+          <div
+            className="bg-white rounded-3xl p-6 max-w-md w-full shadow-2xl border border-slate-200 my-auto relative animate-in fade-in zoom-in-95 duration-200 space-y-5"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div>
+                <h3 className="text-base font-extrabold font-display text-slate-900">Beri Ulasan Destinasi</h3>
+                <p className="text-xs text-slate-500 font-sans">{selectedDestination.name}</p>
+              </div>
+              <button
+                onClick={() => setIsWriteReviewModalOpen(false)}
+                className="w-7 h-7 rounded-full bg-slate-100 text-slate-600 flex items-center justify-center"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <form onSubmit={handleReviewSubmit} className="space-y-4">
+              {/* Star Rating Select */}
+              <div className="space-y-1.5 text-center">
+                <label className="text-xs font-bold text-slate-700">Pilih Rating Bintang</label>
+                <div className="flex items-center justify-center gap-2">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <button
+                      key={star}
+                      type="button"
+                      onClick={() => setReviewRating(star)}
+                      className="p-1.5 transition-transform hover:scale-125 focus:outline-none"
+                    >
+                      <Star
+                        className={`w-7 h-7 ${star <= reviewRating ? 'fill-amber-400 text-amber-400' : 'text-slate-300'}`}
+                      />
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Review Text */}
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-slate-700">Pengalaman Kunjungan Kamu</label>
+                <textarea
+                  rows={4}
+                  required
+                  value={reviewText}
+                  onChange={(e) => setReviewText(e.target.value)}
+                  placeholder="Ceritakan pengalaman unik, kebersihan, akses jalan, atau kuliner favoritmu di destinasi ini..."
+                  className="w-full rounded-2xl border border-slate-200 p-3 text-xs text-slate-800 placeholder-slate-400 focus:border-[#0D9488] focus:ring-2 focus:ring-[#0D9488]/20 outline-none transition-all resize-none font-sans"
+                />
+              </div>
+
+              <div className="bg-amber-50 rounded-xl p-3 border border-amber-200/60 flex items-center gap-2 text-[11px] text-amber-800 font-medium">
+                <Sparkles className="w-4 h-4 text-amber-600 shrink-0" />
+                <span>Kirim ulasan untuk mendapatkan +30 XP & analisis sentimen AI!</span>
+              </div>
+
+              {/* Submit Buttons */}
+              <div className="pt-2 flex items-center justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => setIsWriteReviewModalOpen(false)}
+                  className="px-4 py-2 rounded-full border border-slate-300 text-slate-700 text-xs font-bold hover:bg-slate-50 transition-all"
+                >
+                  Batal
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSubmittingReview || !reviewText.trim()}
+                  className="px-5 py-2 rounded-full bg-[#0D9488] hover:bg-[#0F766E] text-white text-xs font-bold shadow-md transition-all flex items-center gap-1.5 disabled:opacity-50"
+                >
+                  {isSubmittingReview ? (
+                    <span>Mengirim...</span>
+                  ) : (
+                    <>
+                      <span>Kirim Ulasan (+30 XP)</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
