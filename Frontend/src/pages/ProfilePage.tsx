@@ -28,6 +28,7 @@ import {
   Bookmark,
   ExternalLink,
   Edit3,
+  Share2,
   Upload,
   X,
   Crown,
@@ -55,6 +56,8 @@ export const ProfilePage: React.FC = () => {
   const [favoriteDestinations, setFavoriteDestinations] = useState<Destination[]>([]);
   const [userActivities, setUserActivities] = useState<UserActivity[]>([]);
   const [isActivitiesModalOpen, setIsActivitiesModalOpen] = useState<boolean>(false);
+  const [selectedTripForModal, setSelectedTripForModal] = useState<SavedItinerary | null>(null);
+  const [isTripDetailModalOpen, setIsTripDetailModalOpen] = useState<boolean>(false);
   const [isLoadingTrips, setIsLoadingTrips] = useState<boolean>(true);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
@@ -622,14 +625,18 @@ export const ProfilePage: React.FC = () => {
                   {savedTrips.map((trip) => (
                     <div
                       key={trip.id}
-                      className="flex items-center justify-between gap-4 p-4 rounded-2xl bg-slate-50 border border-slate-200/70 hover:border-[#0D9488]/60 transition-all group"
+                      onClick={() => {
+                        setSelectedTripForModal(trip);
+                        setIsTripDetailModalOpen(true);
+                      }}
+                      className="flex items-center justify-between gap-4 p-4 rounded-2xl bg-slate-50 border border-slate-200/70 hover:border-[#0D9488]/60 hover:shadow-md transition-all group cursor-pointer"
                     >
                       <div className="flex items-center gap-4">
                         <div className="w-14 h-14 rounded-xl bg-slate-900 overflow-hidden shrink-0 relative">
                           <img
                             src="/assets/images/heroes/hero-pahawang-bg.png"
                             alt="Trip Thumbnail"
-                            className="w-full h-full object-cover"
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform"
                           />
                         </div>
 
@@ -644,27 +651,42 @@ export const ProfilePage: React.FC = () => {
                             </span>
                             <span className="flex items-center gap-1">
                               <Calendar className="w-3 h-3 text-slate-400" />
-                              <span>{Array.isArray(trip.daysJson) ? `${trip.daysJson.length} Hari 2 Malam` : '3 Hari'}</span>
+                              <span>{Array.isArray(trip.daysJson) ? `${trip.daysJson.length} Hari` : '3 Hari'}</span>
                             </span>
                           </div>
                         </div>
                       </div>
 
-                      <div className="flex items-center gap-3 shrink-0">
-                        <span className="px-3 py-1 rounded-full text-[10px] font-bold bg-teal-100 text-[#0D9488]">
-                          Selesai
+                      <div className="flex items-center gap-2 shrink-0">
+                        <span className="hidden sm:inline-block px-3 py-1 rounded-full text-[10px] font-bold bg-teal-100 text-[#0D9488]">
+                          Tersimpan
                         </span>
-                        <Link
-                          to={`/share/${trip.shareToken}`}
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            navigator.clipboard.writeText(`${window.location.origin}/share/${trip.shareToken}`);
+                            triggerToast('Link rute perjalanan berhasil disalin!');
+                          }}
+                          className="p-2 rounded-full hover:bg-teal-50 text-slate-500 hover:text-[#0D9488] transition-colors"
+                          title="Bagikan Link Rute"
+                        >
+                          <Share2 className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedTripForModal(trip);
+                            setIsTripDetailModalOpen(true);
+                          }}
                           className="p-2 rounded-full hover:bg-slate-200 text-slate-600 transition-colors"
-                          title="Lihat Detail"
+                          title="Lihat Detail Rute"
                         >
                           <ExternalLink className="w-4 h-4" />
-                        </Link>
+                        </button>
                         <button
                           onClick={(e) => handleDeleteTrip(trip.id, trip.title, e)}
                           className="p-2 rounded-full hover:bg-red-100 text-slate-400 hover:text-red-600 transition-colors"
-                          title="Hapus"
+                          title="Hapus Rute"
                         >
                           <Trash2 className="w-4 h-4" />
                         </button>
@@ -1074,6 +1096,106 @@ export const ProfilePage: React.FC = () => {
             <div className="pt-2 border-t border-slate-100 flex justify-end">
               <button
                 onClick={() => setIsActivitiesModalOpen(false)}
+                className="px-5 py-2 rounded-full bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold transition-all"
+              >
+                Tutup
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ================================================================
+          FULL ITINERARY ROUTE DETAIL MODAL
+          ================================================================ */}
+      {isTripDetailModalOpen && selectedTripForModal && (
+        <div
+          className="fixed inset-0 z-50 glass-modal-backdrop flex items-center justify-center p-4 overflow-y-auto"
+          onClick={() => setIsTripDetailModalOpen(false)}
+        >
+          <div
+            className="bg-white rounded-3xl p-6 sm:p-8 max-w-2xl w-full shadow-2xl border border-slate-200 my-auto relative animate-in fade-in zoom-in-95 duration-200 space-y-6"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-teal-50 text-[#0D9488] flex items-center justify-center font-bold">
+                  <Compass className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-extrabold font-display text-slate-900">{selectedTripForModal.title}</h3>
+                  <p className="text-xs text-slate-500 font-sans">
+                    Dibuat pada {new Date(selectedTripForModal.createdAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setIsTripDetailModalOpen(false)}
+                className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Days Schedule List */}
+            <div className="space-y-6 max-h-[60vh] overflow-y-auto pr-2">
+              {Array.isArray(selectedTripForModal.daysJson) && selectedTripForModal.daysJson.length > 0 ? (
+                selectedTripForModal.daysJson.map((dayData: any, dayIdx: number) => (
+                  <div key={dayIdx} className="space-y-3">
+                    <div className="flex items-center gap-2 pb-1 border-b border-teal-100">
+                      <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-[#0D9488] text-white">
+                        Hari {dayData.day || dayIdx + 1}
+                      </span>
+                      <h4 className="text-xs font-bold text-slate-800">
+                        {dayData.title || `Jadwal Hari Ke-${dayIdx + 1}`}
+                      </h4>
+                    </div>
+
+                    <div className="space-y-2 pl-2 border-l-2 border-teal-200">
+                      {(dayData.slots || dayData.destinations || []).map((slot: any, slotIdx: number) => (
+                        <div key={slotIdx} className="p-3 rounded-2xl bg-slate-50 border border-slate-100 space-y-1">
+                          <div className="flex items-center justify-between">
+                            <h5 className="text-xs font-bold text-slate-900">{slot.name || slot.title || `Destinasi ${slotIdx + 1}`}</h5>
+                            {slot.time && (
+                              <span className="text-[10px] font-mono font-semibold text-teal-700 bg-teal-50 px-2 py-0.5 rounded-full">
+                                ⏱ {slot.time}
+                              </span>
+                            )}
+                          </div>
+                          {slot.description && (
+                            <p className="text-[11px] text-slate-600 font-sans leading-relaxed">{slot.description}</p>
+                          )}
+                          {slot.estimated_cost && (
+                            <p className="text-[10px] text-amber-700 font-bold">Estimasi Tiket: {slot.estimated_cost}</p>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="p-6 text-center text-xs text-slate-500">
+                  Detail rute itinerary tersedia di link bagikan.
+                </div>
+              )}
+            </div>
+
+            {/* Modal Actions */}
+            <div className="pt-3 border-t border-slate-100 flex items-center justify-between">
+              <button
+                onClick={() => {
+                  navigator.clipboard.writeText(`${window.location.origin}/share/${selectedTripForModal.shareToken}`);
+                  triggerToast('Link rute perjalanan berhasil disalin!');
+                }}
+                className="px-4 py-2 rounded-full border border-teal-300 text-[#0D9488] hover:bg-teal-50 text-xs font-bold transition-all flex items-center gap-1.5"
+              >
+                <Share2 className="w-3.5 h-3.5" />
+                <span>Bagikan Rute</span>
+              </button>
+
+              <button
+                onClick={() => setIsTripDetailModalOpen(false)}
                 className="px-5 py-2 rounded-full bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold transition-all"
               >
                 Tutup
