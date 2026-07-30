@@ -111,21 +111,21 @@ export const ProfilePage: React.FC = () => {
 
       <div className="max-w-6xl mx-auto w-full px-4 sm:px-6 lg:px-8 space-y-8">
         {/* HERO USER PROFILE CARD */}
-        <div className="glass-card-container rounded-[32px] p-6 sm:p-8 flex flex-col md:flex-row md:items-center justify-between gap-6 relative overflow-hidden">
-          <div className="flex items-center gap-4 relative z-10">
-            <div className="w-16 sm:w-20 h-16 sm:h-20 rounded-2xl bg-gradient-to-br from-[#0D9488] to-[#0F2937] text-white flex items-center justify-center font-display font-extrabold text-2xl sm:text-3xl shadow-lg border-2 border-white">
+        <div className="glass-card-container rounded-[32px] p-6 sm:p-8 flex flex-col md:flex-row md:items-center justify-between gap-6 relative overflow-hidden bg-gradient-to-br from-white via-slate-50/50 to-teal-50/20 border border-slate-200/80 shadow-sm">
+          <div className="flex items-center gap-5 relative z-10">
+            <div className="w-16 sm:w-20 h-16 sm:h-20 rounded-2xl bg-gradient-to-br from-slate-900 via-[#0F766E] to-slate-950 text-white flex items-center justify-center font-display font-extrabold text-2xl sm:text-3xl shadow-xl shadow-[#0D9488]/15 border-2 border-white ring-4 ring-slate-100/80 shrink-0">
               {user.fullName ? user.fullName.charAt(0).toUpperCase() : 'U'}
             </div>
 
-            <div className="space-y-1">
-              <div className="flex items-center gap-2">
-                <h1 className="text-xl sm:text-2xl font-display font-extrabold text-slate-900">{user.fullName}</h1>
-                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-teal-100 text-[#0D9488] border border-teal-200 uppercase tracking-wider flex items-center gap-1">
-                  <ShieldCheck className="w-3 h-3" />
+            <div className="space-y-1.5">
+              <div className="flex items-center gap-2.5 flex-wrap">
+                <h1 className="text-2xl sm:text-3xl font-display font-extrabold text-slate-900 tracking-tight">{user.fullName}</h1>
+                <span className="px-3 py-0.5 rounded-full text-[10px] font-extrabold bg-slate-900 text-teal-300 border border-slate-700/80 shadow-sm uppercase tracking-wider flex items-center gap-1.5">
+                  <ShieldCheck className="w-3.5 h-3.5 text-teal-400" />
                   <span>{user.role}</span>
                 </span>
               </div>
-              <p className="text-xs text-slate-500 font-sans flex items-center gap-1.5">
+              <p className="text-xs text-slate-500 font-sans flex items-center gap-1.5 font-medium">
                 <Mail className="w-3.5 h-3.5 text-slate-400" />
                 <span>{user.email}</span>
               </p>
