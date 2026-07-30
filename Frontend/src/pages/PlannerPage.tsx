@@ -372,17 +372,17 @@ export const PlannerPage: React.FC = () => {
               
               {/* Left Column: Text & Title */}
               <div className="lg:col-span-7 space-y-3">
-                <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/90 border border-amber-300 shadow-sm">
-                  <Sparkles className="w-4 h-4 text-siger-500" />
-                  <span className="text-xs font-extrabold text-slate-800">
+                <div className="inline-flex items-center gap-1.5 rounded-full border border-amber-300/70 bg-amber-50 px-3.5 py-1 text-amber-800">
+                  <Sparkles className="w-3.5 h-3.5 text-amber-600" />
+                  <span className="font-sans text-[10px] font-extrabold uppercase tracking-wider sm:text-[11px]">
                     AI Itinerary Generator &bull; Raden Gajah Engine
                   </span>
                 </div>
 
-                <h1 className="text-3xl sm:text-5xl font-display font-extrabold text-slate-900 tracking-tight leading-tight">
+                <h1 className="font-display text-2xl font-extrabold leading-tight tracking-tight text-[#0F172A] sm:text-3xl lg:text-[2.1rem]">
                   Perencana Liburan Multi-Hari AI
                 </h1>
-                <p className="text-xs sm:text-base text-slate-600 font-sans leading-relaxed">
+                <p className="max-w-xl font-sans text-xs leading-relaxed text-slate-600 sm:text-sm">
                   Pilih Kabupaten/Kota & beberapa kategori impianmu di Lampung, lalu biarkan AI menyusun rute peta spasial 3D & jadwal perjalanan harian secara akurat!
                 </p>
               </div>

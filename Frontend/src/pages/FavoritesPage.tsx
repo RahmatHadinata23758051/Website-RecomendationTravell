@@ -135,16 +135,16 @@ export const FavoritesPage: React.FC = () => {
         {/* HERO HEADER */}
         <div className="glass-card-container rounded-[28px] p-6 sm:p-8 flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div className="space-y-2">
-            <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-red-50 border border-red-200">
+            <div className="inline-flex items-center gap-1.5 rounded-full border border-red-200/70 bg-red-50 px-3.5 py-1 text-red-700">
               <Heart className="w-3.5 h-3.5 text-red-500 fill-current" />
-              <span className="text-[11px] font-semibold text-red-700">
+              <span className="font-sans text-[10px] font-extrabold uppercase tracking-wider sm:text-[11px]">
                 Koleksi Pribadi Wisata Lampung
               </span>
             </div>
-            <h1 className="text-3xl sm:text-4xl font-display font-extrabold text-slate-900 tracking-tight">
+            <h1 className="font-display text-2xl font-extrabold leading-tight tracking-tight text-[#0F172A] sm:text-3xl lg:text-[2.1rem]">
               Destinasi & Itinerary Favorit Saya
             </h1>
-            <p className="text-xs sm:text-sm text-slate-600 font-sans max-w-xl">
+            <p className="max-w-xl font-sans text-xs leading-relaxed text-slate-600 sm:text-sm">
               Simpan dan kelola destinasi impianmu agar mudah diakses saat merencanakan liburan di Lampung.
             </p>
           </div>
