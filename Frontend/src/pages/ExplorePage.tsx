@@ -641,73 +641,97 @@ export const ExplorePage: React.FC = () => {
         {/* ================================================================
             EXPLORE BANNER "Mau Jelajah Wisata di Mana Hari Ini?" (Matching Reference Image)
             ================================================================ */}
-        <div
-          className="relative rounded-[32px] py-6 sm:py-8 lg:py-10 pr-6 sm:pr-8 lg:pr-10 pl-16 sm:pl-24 lg:pl-28 shadow-sm border border-amber-200/40 overflow-hidden bg-cover bg-center bg-no-repeat space-y-6"
-          style={{
-            backgroundImage: "url('/assets/images/banners/banner-explore-lampung-bg.png')",
-          }}
-        >
-          <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
-            <div className="space-y-3 max-w-3xl">
-              {/* Badge Step */}
-              <div className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-[#E6F4F1] border border-teal-200/60 text-[#0F766E]">
-                <Compass className="w-3.5 h-3.5 text-[#0F766E]" />
-                <span className="text-[10px] sm:text-[11px] font-extrabold tracking-wider uppercase font-sans">
+        <section className="relative isolate min-h-[210px] overflow-hidden rounded-[28px] border border-[#E9D7A5]/80 bg-[#FFFCF7] shadow-[0_12px_36px_rgba(15,23,42,0.06)]">
+          {/* Ornamen Tapis & Peta Topografi Layer Terpisah */}
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_78%_48%,rgba(245,158,11,0.08),transparent_34%),linear-gradient(105deg,#FFFEFB_0%,#FFFCF7_55%,#FFF9EF_100%)]"
+          />
+
+          <img
+            src="/assets/images/banners/explore-banner-ornament.png"
+            alt=""
+            aria-hidden="true"
+            className="pointer-events-none absolute left-5 top-1/2 hidden h-[86%] w-auto -translate-y-1/2 select-none sm:block"
+          />
+
+          <img
+            src="/assets/images/banners/explore-banner-map.png"
+            alt=""
+            aria-hidden="true"
+            className="pointer-events-none absolute right-[2%] top-1/2 hidden w-[48%] max-w-[720px] -translate-y-1/2 select-none opacity-[0.28] lg:block"
+          />
+
+          {/* Fade lembut agar peta tidak mengganggu keterbacaan teks dan form */}
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-y-0 left-0 w-[58%] bg-gradient-to-r from-[#FFFCF7] via-[#FFFCF7]/94 to-transparent"
+          />
+
+          <div className="relative z-10 grid min-h-[210px] grid-cols-1 items-center gap-6 px-6 py-7 sm:pl-24 sm:pr-8 lg:grid-cols-[minmax(0,1fr)_auto] lg:gap-10 lg:pl-28 lg:pr-10">
+            <div className="max-w-3xl space-y-3">
+              <div className="inline-flex items-center gap-1.5 rounded-full border border-teal-200/70 bg-[#ECF8F5]/90 px-3.5 py-1 text-[#0F766E]">
+                <Compass className="h-3.5 w-3.5" />
+                <span className="font-sans text-[10px] font-extrabold uppercase tracking-wider sm:text-[11px]">
                   LANGKAH 1: PILIH KABUPATEN / KOTA
                 </span>
               </div>
 
-              {/* Title */}
-              <h2 className="text-2xl sm:text-3xl lg:text-4xl font-display font-extrabold text-[#0F172A] tracking-tight leading-tight">
+              <h2 className="font-display text-2xl font-extrabold leading-tight tracking-tight text-[#0F172A] sm:text-3xl lg:text-[2.15rem]">
                 Mau Jelajah Wisata di Mana Hari Ini?
               </h2>
 
-              {/* Subtext */}
-              <p className="text-xs sm:text-sm text-slate-600 font-sans leading-relaxed max-w-xl">
+              <p className="max-w-xl font-sans text-xs leading-relaxed text-slate-600 sm:text-sm">
                 Pilih wilayah di Provinsi Lampung di bawah ini untuk menampilkan daftar destinasi wisata resmi, lokasi presisi, dan peta interaktifnya.
               </p>
             </div>
 
-            {/* Right Action Button & Search */}
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 shrink-0">
-              <div className="relative w-full sm:w-64">
-                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+            <div className="flex w-full flex-col items-stretch gap-3 sm:flex-row sm:items-center lg:w-auto">
+              <div className="relative w-full sm:w-64 lg:w-[270px]">
+                <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
                 <input
-                  type="text"
+                  type="search"
                   value={searchKeyword}
                   onChange={(e) => {
-                    setSearchKeyword(e.target.value);
-                    setSearchParams(e.target.value ? { search: e.target.value } : {});
+                    const value = e.target.value;
+                    setSearchKeyword(value);
+                    setSearchParams(value ? { search: value } : {});
                   }}
                   placeholder="Cari pantai, museum..."
-                  className="w-full bg-white/90 backdrop-blur-md border border-slate-200 rounded-2xl pl-10 pr-8 py-2.5 text-xs text-slate-900 focus:outline-none focus:border-[#0D9488]"
+                  aria-label="Cari destinasi wisata"
+                  className="w-full rounded-xl border border-slate-200/90 bg-white/95 py-3 pl-10 pr-9 font-sans text-xs text-slate-900 shadow-sm outline-none transition placeholder:text-slate-400 focus:border-[#0D9488] focus:ring-4 focus:ring-[#0D9488]/10"
                 />
+
                 {searchKeyword && (
                   <button
+                    type="button"
                     onClick={() => {
                       setSearchKeyword('');
                       setSearchParams({});
                     }}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 transition hover:text-slate-700"
+                    aria-label="Hapus pencarian"
                   >
-                    <X className="w-3.5 h-3.5" />
+                    <X className="h-3.5 w-3.5" />
                   </button>
                 )}
               </div>
 
               <button
+                type="button"
                 onClick={() => {
                   setSelectedRegency('Semua');
                   setSearchKeyword('');
+                  setSearchParams({});
                 }}
-                className="bg-[#0D9488] hover:bg-[#0F766E] text-white px-5 py-3 rounded-2xl font-extrabold text-xs shadow-md shadow-[#0D9488]/20 transition-all flex items-center justify-center gap-1.5 shrink-0"
+                className="inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-xl bg-[#0D9488] px-5 py-3 font-sans text-xs font-bold text-white shadow-[0_8px_18px_rgba(13,148,136,0.18)] transition hover:-translate-y-0.5 hover:bg-[#0F766E] hover:shadow-[0_10px_22px_rgba(13,148,136,0.22)] active:translate-y-0"
               >
                 <span>Lihat Semua Kabupaten (1.590+ Data)</span>
-                <ArrowUpRight className="w-4 h-4" />
+                <ArrowUpRight className="h-4 w-4" />
               </button>
             </div>
           </div>
-        </div>
+        </section>
 
           {/* Filter Pills & Dropdown Row (ONLY SHOWN WHEN A REGENCY IS SELECTED OR SEARCHING) */}
           {(selectedRegency !== 'PILIH' || searchKeyword) && (
