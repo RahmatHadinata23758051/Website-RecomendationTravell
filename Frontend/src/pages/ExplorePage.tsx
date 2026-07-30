@@ -634,51 +634,76 @@ export const ExplorePage: React.FC = () => {
       {/* FULL-WIDTH CONTAINER (Extends beyond Navbar limits to edge of screen) */}
       <div className="w-full max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-10 space-y-6">
 
-        {/* HEADER & FILTER BAR SECTION */}
-        <div className="glass-card-container rounded-[28px] p-5 sm:p-6 space-y-5">
-          {/* Top Title & Search Bar */}
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-            <div className="space-y-1">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-teal-50 border border-teal-200">
-                <Compass className="w-3.5 h-3.5 text-[#0D9488]" />
-                <span className="text-[11px] font-semibold text-[#0D9488]">
-                  Eksplorasi Wisata Lampung (3.130+ Data Real)
+        {/* ================================================================
+            EXPLORE BANNER "Mau Jelajah Wisata di Mana Hari Ini?" (Matching Reference Image)
+            ================================================================ */}
+        <div
+          className="relative rounded-[32px] p-6 sm:p-8 lg:p-10 shadow-sm border border-amber-200/40 overflow-hidden bg-cover bg-center bg-no-repeat space-y-6"
+          style={{
+            backgroundImage: "url('/assets/images/banners/banner-explore-lampung-bg.png')",
+          }}
+        >
+          <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
+            <div className="space-y-3 max-w-3xl">
+              {/* Badge Step */}
+              <div className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-[#E6F4F1] border border-teal-200/60 text-[#0F766E]">
+                <Compass className="w-3.5 h-3.5 text-[#0F766E]" />
+                <span className="text-[10px] sm:text-[11px] font-extrabold tracking-wider uppercase font-sans">
+                  LANGKAH 1: PILIH KABUPATEN / KOTA
                 </span>
-                {isLoadingRealData && (
-                  <span className="w-2 h-2 rounded-full bg-[#0D9488] animate-ping" />
-                )}
               </div>
-              <h1 className="text-2xl sm:text-3xl font-display font-extrabold text-slate-900 tracking-tight">
-                Jelajah Destinasi & Peta Spasial
-              </h1>
+
+              {/* Title */}
+              <h2 className="text-2xl sm:text-3xl lg:text-4xl font-display font-extrabold text-[#0F172A] tracking-tight leading-tight">
+                Mau Jelajah Wisata di Mana Hari Ini?
+              </h2>
+
+              {/* Subtext */}
+              <p className="text-xs sm:text-sm text-slate-600 font-sans leading-relaxed max-w-xl">
+                Pilih wilayah di Provinsi Lampung di bawah ini untuk menampilkan daftar destinasi wisata resmi, lokasi presisi, dan peta interaktifnya.
+              </p>
             </div>
 
-            {/* Search Bar Input */}
-            <div className="relative w-full md:w-96">
-              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-              <input
-                type="text"
-                value={searchKeyword}
-                onChange={(e) => {
-                  setSearchKeyword(e.target.value);
-                  setSearchParams(e.target.value ? { search: e.target.value } : {});
-                }}
-                placeholder="Cari pantai, air terjun, museum..."
-                className="w-full bg-slate-50 border border-slate-200 rounded-full pl-10 pr-9 py-2 text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#0D9488]/40 focus:border-[#0D9488]"
-              />
-              {searchKeyword && (
-                <button
-                  onClick={() => {
-                    setSearchKeyword('');
-                    setSearchParams({});
+            {/* Right Action Button & Search */}
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 shrink-0">
+              <div className="relative w-full sm:w-64">
+                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                <input
+                  type="text"
+                  value={searchKeyword}
+                  onChange={(e) => {
+                    setSearchKeyword(e.target.value);
+                    setSearchParams(e.target.value ? { search: e.target.value } : {});
                   }}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
-                >
-                  <X className="w-3.5 h-3.5" />
-                </button>
-              )}
+                  placeholder="Cari pantai, museum..."
+                  className="w-full bg-white/90 backdrop-blur-md border border-slate-200 rounded-2xl pl-10 pr-8 py-2.5 text-xs text-slate-900 focus:outline-none focus:border-[#0D9488]"
+                />
+                {searchKeyword && (
+                  <button
+                    onClick={() => {
+                      setSearchKeyword('');
+                      setSearchParams({});
+                    }}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                )}
+              </div>
+
+              <button
+                onClick={() => {
+                  setSelectedRegency('Semua');
+                  setSearchKeyword('');
+                }}
+                className="bg-[#0D9488] hover:bg-[#0F766E] text-white px-5 py-3 rounded-2xl font-extrabold text-xs shadow-md shadow-[#0D9488]/20 transition-all flex items-center justify-center gap-1.5 shrink-0"
+              >
+                <span>Lihat Semua Kabupaten (1.590+ Data)</span>
+                <ArrowUpRight className="w-4 h-4" />
+              </button>
             </div>
           </div>
+        </div>
 
           {/* Filter Pills & Dropdown Row (ONLY SHOWN WHEN A REGENCY IS SELECTED OR SEARCHING) */}
           {(selectedRegency !== 'PILIH' || searchKeyword) && (
@@ -742,7 +767,6 @@ export const ExplorePage: React.FC = () => {
               </div>
             </div>
           )}
-        </div>
 
         {/* REGENCY SELECTION GRID VIEW (WHEN USER HAS NOT SELECTED A REGENCY YET) */}
         {selectedRegency === 'PILIH' && !searchKeyword ? (
@@ -975,8 +999,7 @@ export const ExplorePage: React.FC = () => {
         </div>
       </div>
     )}
-
-      </div>
+  </div>
 
       {/* QUICK DETAIL DRAWER / MODAL */}
       {selectedDestination && (
