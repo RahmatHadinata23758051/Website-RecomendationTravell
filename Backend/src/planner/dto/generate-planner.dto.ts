@@ -15,6 +15,11 @@ export class GeneratePlannerDto {
   city_or_regency: string;
 
   @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  categories?: string[];
+
+  @IsOptional()
   @IsString()
   primary_category?: string;
 

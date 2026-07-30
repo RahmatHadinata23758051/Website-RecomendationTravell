@@ -39,7 +39,7 @@ export const PlannerPage: React.FC = () => {
   // Wizard Input State
   const [selectedRegency, setSelectedRegency] = useState<string>('Kota Bandar Lampung');
   const [durationDays, setDurationDays] = useState<number>(3);
-  const [selectedCategory, setSelectedCategory] = useState<string>('Semua');
+  const [selectedCategories, setSelectedCategories] = useState<string[]>(['Semua']);
   const [selectedBudget, setSelectedBudget] = useState<string>('Standar');
   const [selectedPace, setSelectedPace] = useState<string>('Santai');
 
@@ -86,6 +86,21 @@ export const PlannerPage: React.FC = () => {
     { name: 'Adventure', icon: Footprints },
   ];
 
+  const handleToggleCategory = (catName: string) => {
+    if (catName === 'Semua') {
+      setSelectedCategories(['Semua']);
+      return;
+    }
+    let updated = selectedCategories.filter((c) => c !== 'Semua');
+    if (updated.includes(catName)) {
+      updated = updated.filter((c) => c !== catName);
+      if (updated.length === 0) updated = ['Semua'];
+    } else {
+      updated.push(catName);
+    }
+    setSelectedCategories(updated);
+  };
+
   const triggerToast = (msg: string) => {
     setToastMessage(msg);
     setTimeout(() => setToastMessage(null), 3000);
@@ -98,10 +113,15 @@ export const PlannerPage: React.FC = () => {
     setGeneratedItinerary(null);
     setSelectedSlotIndex(null);
 
+    const catsPayload = selectedCategories.includes('Semua')
+      ? []
+      : selectedCategories;
+
     try {
       const response = await generateAiPlannerItinerary({
         city_or_regency: selectedRegency,
-        primary_category: selectedCategory,
+        categories: catsPayload,
+        primary_category: catsPayload.join(','),
         budget_level: selectedBudget,
         pace_style: selectedPace,
         duration_days: durationDays,
@@ -129,7 +149,7 @@ export const PlannerPage: React.FC = () => {
               canonical_id: 'mock-1',
               time: '08:30 - 11:30 WIB',
               activityTitle: `Wisata Bahari Ikonik ${selectedRegency}`,
-              category: selectedCategory !== 'Semua' ? selectedCategory : 'Pantai',
+              category: !selectedCategories.includes('Semua') ? selectedCategories[0] : 'Pantai',
               location: `Kawasan Pariwisata ${selectedRegency}`,
               estimatedCost: 'Rp 25.000 / orang',
               numericCost: 25000,
@@ -182,7 +202,7 @@ export const PlannerPage: React.FC = () => {
     setIsLoadingSwap(true);
 
     const currentExcludeIds = generatedItinerary
-      ? generatedItinerary.flatMap((d) => d.slots.map((s) => s.canonical_id).filter(Boolean)) as string[]
+      ? (generatedItinerary.flatMap((d) => d.slots.map((s) => s.canonical_id).filter(Boolean)) as string[])
       : [];
 
     const alternatives = await swapPlannerSlotApi({
@@ -244,7 +264,7 @@ export const PlannerPage: React.FC = () => {
     generatedItinerary?.find((day) => day.dayNumber === activeDayTab)?.slots || [];
 
   const mascotMessages = [
-    'Tabik Pun! 🐘 Mau liburan seru di Lampung? Pilih Kabupaten impianmu di bawah yuk!',
+    'Tabik Pun! 🐘 Mau liburan seru di Lampung? Pilih Kabupaten & beberapa Kategori favoritmu yuk!',
     'Raden Gajah & Muli Lampung siap menyusun rute peta spasial 3D harian untukmu!',
     'Mau budget Ekonomis, Standar, atau Mewah? Semua bisa disesuaikan!',
     'Tips: Wisata bahari Pesawaran & Pesisir Barat paling pas dikunjungi pagi hari lho!',
@@ -299,7 +319,7 @@ export const PlannerPage: React.FC = () => {
                   Perencana Liburan Multi-Hari AI
                 </h1>
                 <p className="text-xs sm:text-base text-slate-600 font-sans leading-relaxed">
-                  Pilih Kabupaten/Kota impianmu di Lampung, lalu biarkan AI menyusun rute peta spasial 3D & jadwal perjalanan harian dari jam ke jam secara akurat!
+                  Pilih Kabupaten/Kota & beberapa kategori impianmu di Lampung, lalu biarkan AI menyusun rute peta spasial 3D & jadwal perjalanan harian secara akurat!
                 </p>
               </div>
 
@@ -385,23 +405,38 @@ export const PlannerPage: React.FC = () => {
               </select>
             </div>
 
-            {/* 3. CATEGORY PREFERENCE */}
-            <div className="space-y-2">
-              <label className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
-                <Sparkles className="w-4 h-4 text-[#0D9488]" />
-                <span>Kategori Utama</span>
+            {/* 3. MULTI-SELECT CATEGORY PREFERENCE */}
+            <div className="space-y-2 lg:col-span-2">
+              <label className="text-xs font-bold text-slate-800 flex items-center justify-between">
+                <span className="flex items-center gap-1.5">
+                  <Sparkles className="w-4 h-4 text-[#0D9488]" />
+                  <span>Kategori Wisata (Multi-Pilih)</span>
+                </span>
+                <span className="text-[10px] text-slate-500 font-normal">Pilih &gt;1 kategori</span>
               </label>
-              <select
-                value={selectedCategory}
-                onChange={(e) => setSelectedCategory(e.target.value)}
-                className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-3.5 py-2.5 text-xs font-bold text-slate-900 focus:outline-none focus:border-[#0D9488]"
-              >
-                {categories.map((cat) => (
-                  <option key={cat.name} value={cat.name}>
-                    {cat.name}
-                  </option>
-                ))}
-              </select>
+
+              <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
+                {categories.map((cat) => {
+                  const Icon = cat.icon;
+                  const isSelected = selectedCategories.includes(cat.name);
+
+                  return (
+                    <button
+                      key={cat.name}
+                      type="button"
+                      onClick={() => handleToggleCategory(cat.name)}
+                      className={`px-3 py-1.5 rounded-full text-xs font-bold transition-all flex items-center gap-1.5 active:scale-95 ${
+                        isSelected
+                          ? 'bg-[#0D9488] text-white shadow-sm ring-2 ring-[#0D9488]/30'
+                          : 'bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-700'
+                      }`}
+                    >
+                      <Icon className={`w-3.5 h-3.5 ${isSelected ? 'text-amber-300' : 'text-slate-500'}`} />
+                      <span>{cat.name}</span>
+                    </button>
+                  );
+                })}
+              </div>
             </div>
 
             {/* 4. BUDGET LEVEL */}
@@ -422,19 +457,39 @@ export const PlannerPage: React.FC = () => {
             </div>
 
             {/* 5. PACE STYLE */}
-            <div className="space-y-2">
-              <label className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
-                <Clock className="w-4 h-4 text-[#0D9488]" />
-                <span>Ritme Liburan</span>
-              </label>
-              <select
-                value={selectedPace}
-                onChange={(e) => setSelectedPace(e.target.value)}
-                className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-3.5 py-2.5 text-xs font-bold text-slate-900 focus:outline-none focus:border-[#0D9488]"
-              >
-                <option value="Santai">Santai (3 Spot Utama / Hari)</option>
-                <option value="Padat">Padat Wisata (4-5 Spot / Hari)</option>
-              </select>
+            <div className="space-y-2 lg:col-span-5 flex items-center justify-between border-t border-slate-100 pt-4">
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                  <Clock className="w-4 h-4 text-[#0D9488]" />
+                  <span>Ritme Liburan (Pace)</span>
+                </label>
+                <p className="text-[11px] text-slate-500">Tentukan kepadatan jam kunjungan destinasi harianmu</p>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setSelectedPace('Santai')}
+                  className={`px-4 py-2 rounded-2xl text-xs font-bold transition-all ${
+                    selectedPace === 'Santai'
+                      ? 'bg-[#0D9488] text-white shadow-md'
+                      : 'bg-slate-100 text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  🌴 Santai (3 Slot/Hari)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSelectedPace('Padat')}
+                  className={`px-4 py-2 rounded-2xl text-xs font-bold transition-all ${
+                    selectedPace === 'Padat'
+                      ? 'bg-[#0D9488] text-white shadow-md'
+                      : 'bg-slate-100 text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  ⚡ Padat Wisata (4-5 Slot/Hari)
+                </button>
+              </div>
             </div>
 
           </div>
@@ -477,7 +532,7 @@ export const PlannerPage: React.FC = () => {
                 Meracik Rute Wisata Terbaik di {selectedRegency}...
               </h3>
               <p className="text-xs text-slate-500 font-sans max-w-md mx-auto">
-                AI Raden Gajah & Model Spasial sedang mengelompokkan tempat terdekat, menyisipkan kuliner khas, dan menghitung estimasi perjalanan harianmu.
+                AI Raden Gajah sedang menyesuaikan {selectedCategories.join(', ')} di {selectedRegency}, menyisipkan kuliner khas, dan menghitung urutan jarak spasial terpendek.
               </p>
             </div>
           </div>
@@ -494,7 +549,7 @@ export const PlannerPage: React.FC = () => {
                   Rencana Liburan {selectedRegency} ({durationDays} Hari)
                 </h3>
                 <p className="text-xs text-slate-500 font-sans mt-0.5">
-                  Estimasi Total Biaya Tiket & Kuliner: <span className="font-extrabold text-[#0D9488] text-sm">Rp {calculateTotalCost().toLocaleString('id-ID')}</span> / orang
+                  Kategori Terpilih: <span className="font-bold text-[#0D9488]">{selectedCategories.join(', ')}</span> &bull; Estimasi Total Biaya: <span className="font-extrabold text-[#0D9488] text-sm">Rp {calculateTotalCost().toLocaleString('id-ID')}</span> / orang
                 </p>
               </div>
 

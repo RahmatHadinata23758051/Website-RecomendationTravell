@@ -14,6 +14,16 @@ export interface DestinationsQuery {
 // In-memory cache for static public destinations dataset
 let staticDestinationsCache: any[] | null = null;
 
+const cleanRegency = (str?: string): string => {
+  if (!str) return '';
+  return String(str)
+    .toLowerCase()
+    .replace('kabupaten ', '')
+    .replace('kota ', '')
+    .replace('kab. ', '')
+    .trim();
+};
+
 export const fetchRealDestinations = async (query: DestinationsQuery = {}): Promise<Destination[]> => {
   const page = query.page || 1;
   const limit = query.limit || 60;
@@ -60,7 +70,7 @@ export const fetchRealDestinations = async (query: DestinationsQuery = {}): Prom
     // Silent fallback
   }
 
-  // 3. Fallback to local static JSON dataset
+  // 3. Fallback to local static JSON dataset with Robust Regency Matching
   try {
     if (!staticDestinationsCache) {
       const staticRes = await fetch('/assets/data/public_destinations.json');
@@ -78,8 +88,14 @@ export const fetchRealDestinations = async (query: DestinationsQuery = {}): Prom
       }
 
       if (query.city_or_regency && query.city_or_regency !== 'Semua') {
-        const regLow = query.city_or_regency.toLowerCase();
-        filtered = filtered.filter((d) => String(d.city_or_regency || '').toLowerCase().includes(regLow));
+        const cleanQueryReg = cleanRegency(query.city_or_regency);
+        if (cleanQueryReg) {
+          filtered = filtered.filter((d) => {
+            const targetReg = cleanRegency(d.city_or_regency);
+            const targetAddr = String(d.address || '').toLowerCase();
+            return targetReg.includes(cleanQueryReg) || targetAddr.includes(cleanQueryReg);
+          });
+        }
       }
 
       if (query.search) {
@@ -157,6 +173,7 @@ export const mapApiToDestination = (item: any): Destination => {
 
 export interface GeneratePlannerPayload {
   city_or_regency: string;
+  categories?: string[];
   primary_category?: string;
   budget_level?: string;
   pace_style?: string;
@@ -170,7 +187,6 @@ export interface SwapSlotPayload {
 }
 
 export const generateAiPlannerItinerary = async (payload: GeneratePlannerPayload): Promise<any> => {
-  // 1. Try NestJS Backend API
   try {
     const response = await axios.post(`${API_BASE_URL}/planner/generate`, payload, { timeout: 4500 });
     if (response.data && (response.data.status === 'success' || response.data.itinerary)) {
@@ -180,7 +196,6 @@ export const generateAiPlannerItinerary = async (payload: GeneratePlannerPayload
     // Silent fallback
   }
 
-  // 2. Try FastAPI ML API Direct
   try {
     const fastApiRes = await axios.post('http://localhost:8000/api/v1/planner/generate', payload, { timeout: 4500 });
     if (fastApiRes.data && (fastApiRes.data.status === 'success' || fastApiRes.data.itinerary)) {
