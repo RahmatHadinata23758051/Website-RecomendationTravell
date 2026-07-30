@@ -32,6 +32,7 @@ import {
   createDestinationReview,
   ReviewSummary,
 } from '../services/reviewsApi';
+import { WeatherWidget } from '../components/WeatherWidget';
 
 export interface Destination {
   id: string;
@@ -787,6 +788,11 @@ export const ExplorePage: React.FC = () => {
           </div>
         </section>
 
+        {/* FASE 9: WEATHER & SEASON ALERT WIDGET */}
+        <div className="w-full pt-1">
+          <WeatherWidget />
+        </div>
+
         {/* Filter Pills & Dropdown Row (ONLY SHOWN WHEN A REGENCY IS SELECTED OR SEARCHING) */}
         {(selectedRegency !== 'PILIH' || searchKeyword) && (
           <div className="flex flex-wrap items-center justify-between gap-4 pt-2 border-t border-slate-200/60">
@@ -1130,6 +1136,22 @@ export const ExplorePage: React.FC = () => {
               <div className="space-y-1.5">
                 <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider">Tentang Destinasi</h4>
                 <p className="text-xs text-slate-600 leading-relaxed font-sans">{selectedDestination.description}</p>
+              </div>
+
+              {/* FASE 9: Season & Weather Advisory Banner */}
+              <div className="bg-gradient-to-r from-teal-50/80 via-white to-amber-50/80 rounded-2xl p-3.5 border border-teal-200/80 space-y-1.5 shadow-2xs">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-[11px] font-extrabold text-[#0D9488] flex items-center gap-1.5">
+                    <Compass className="w-4 h-4" />
+                    Rekomendasi Musim & Cuaca AI:
+                  </span>
+                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-[#0D9488] text-white">
+                    Mei - Oktober (Cerah Ideal) ☀️
+                  </span>
+                </div>
+                <p className="text-xs text-slate-700 font-sans leading-relaxed">
+                  Visibilitas udara & cuaca laut di wilayah <strong>{selectedDestination.regency}</strong> sedang sangat baik untuk aktivitas outing, fotografi, dan jalan-jalan!
+                </p>
               </div>
 
               {/* AI Recommendation Reason */}

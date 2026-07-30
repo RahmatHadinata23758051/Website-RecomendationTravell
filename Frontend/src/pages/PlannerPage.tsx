@@ -28,6 +28,7 @@ import { generateAiPlannerItinerary, swapPlannerSlotApi } from '../services/dest
 import { useAuth } from '../context/AuthContext';
 import { apiClient } from '../lib/api';
 import { logUserActivity } from '../services/activitiesApi';
+import { WeatherWidget } from '../components/WeatherWidget';
 
 interface ItinerarySlot extends RouteSlot {
   canonical_id?: string;
@@ -414,6 +415,9 @@ export const PlannerPage: React.FC = () => {
 
       {/* Main Container */}
       <div className="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 space-y-8">
+
+        {/* FASE 9: WEATHER & SEASON ALERT WIDGET */}
+        <WeatherWidget />
 
         {/* AI WIZARD FORM INPUT */}
         <form
