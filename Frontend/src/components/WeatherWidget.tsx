@@ -153,6 +153,43 @@ export const WeatherWidget: React.FC = () => {
     return { condition: temp > 28 ? 'Cerah ☀️' : 'Berawan 🌤️', icon: 'cloud-sun' };
   };
 
+  const generateDynamicAdvisory = (
+    temp: number,
+    humidity: number,
+    windSpeed: number,
+    uv: number,
+    wmoIcon: string,
+    wmoCondition: string,
+    regencyName: string,
+    defaultAdvisory: string
+  ): string => {
+    // 1. Hujan / Hujan Petir
+    if (wmoIcon === 'cloud-rain') {
+      return `🌧️ Terdeteksi ${wmoCondition} di ${regencyName} (${temp}°C, Kelembapan ${humidity}%). Hati-hati jalanan licin & visibilitas terbatas. Disarankan mengutamakan wisata indoor (museum, pusat oleh-oleh, cafe) serta membawa jas hujan/payung.`;
+    }
+
+    // 2. Cuaca Terik / UV Ekstrem
+    if (temp >= 32 || uv >= 8) {
+      return `☀️ Terik Matahari & UV Tinggi (${temp}°C, Indeks UV ${uv}). Terik matahari menyengat di ${regencyName}. Disarankan memakai sunscreen SPF 30+, kacamata hitam, topi, & menjaga hidrasi air minum.`;
+    }
+
+    // 3. Angin Kencang
+    if (windSpeed >= 15) {
+      if (regencyName.includes('Pesisir Barat')) {
+        return `🏄‍♂️ Angin Kencang & Ombak Maksimal (${windSpeed} km/j, ${temp}°C). Kondisi angin laut sangat ideal bagi para peselancar (surfer) di pantai Krui & Tanjung Setia!`;
+      }
+      return `🌬️ Hembusan Angin Cukup Kencang (${windSpeed} km/j). Berhati-hati di area wahana tinggi atau perbukitan terbuka. ${defaultAdvisory}`;
+    }
+
+    // 4. Cuaca Sejuk Pegunungan (misal Lampung Barat / Liwa)
+    if (temp <= 25) {
+      return `🍃 Udara Sejuk Pegunungan (${temp}°C, Kelembapan ${humidity}%). Suasana sejuk & nyaman di ${regencyName}. Sangat pas untuk menikmati kopi hangat khas Lampung & menjelajahi perkebunan. Disarankan membawa jaket ringan.`;
+    }
+
+    // 5. Cuaca Cerah / Ideal
+    return `✨ Kondisi Wisata Sempurna: Cuaca ${wmoCondition.toLowerCase()} dengan suhu ${temp}°C & angin ${windSpeed} km/j. ${defaultAdvisory}`;
+  };
+
   const fetchLiveWeather = async (lat: number, lng: number) => {
     setIsLoading(true);
     try {
@@ -167,12 +204,16 @@ export const WeatherWidget: React.FC = () => {
       const uv = Math.round(current.uv_index ?? 6);
       const wmo = parseWmoCode(current.weather_code ?? 1, temp);
 
-      let advisoryText = activeRegency.defaultAdvisory;
-      if (wmo.icon === 'cloud-rain') {
-        advisoryText = 'Waspada hujan lokal. Disarankan membawa payung/jas hujan ringan saat outing outdoor.';
-      } else if (uv >= 8) {
-        advisoryText = 'Indeks UV tinggi. Gunakan tabir surya (sunscreen) & topi saat beraktivitas outdoor.';
-      }
+      const advisoryText = generateDynamicAdvisory(
+        temp,
+        humidity,
+        windSpeed,
+        uv,
+        wmo.icon,
+        wmo.condition,
+        activeRegency.regency,
+        activeRegency.defaultAdvisory
+      );
 
       setWeatherData({
         temp,
