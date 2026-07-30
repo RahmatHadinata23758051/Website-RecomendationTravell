@@ -285,7 +285,7 @@ const REGENCY_CARDS: RegencyCardInfo[] = [
 ];
 
 export const ExplorePage: React.FC = () => {
-  const { isAuthenticated, openAuthModal } = useAuth();
+  const { user, isAuthenticated, openAuthModal } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
   const [searchKeyword, setSearchKeyword] = useState<string>(searchParams.get('search') || '');
   const [selectedCategory, setSelectedCategory] = useState<string>('Semua');
@@ -391,11 +391,15 @@ export const ExplorePage: React.FC = () => {
     };
   }, [selectedCategory, selectedRegency, searchKeyword]);
 
-  // Sort Filtered Destinations logic
+  // Sort Filtered Destinations logic (+25% ML Score Boost for user preferences)
   const filteredDestinations = [...realDestinations].sort((a, b) => {
-    if (sortBy === 'rating') return b.rating - a.rating;
+    const userPrefs = user?.preferences || [];
+    const aMatch = userPrefs.includes(a.category) ? 1.25 : 1.0;
+    const bMatch = userPrefs.includes(b.category) ? 1.25 : 1.0;
+
+    if (sortBy === 'rating') return (b.rating * bMatch) - (a.rating * aMatch);
     if (sortBy === 'price') return a.numericPrice - b.numericPrice;
-    return b.reviews - a.reviews; // Default: popular
+    return (b.reviews * bMatch) - (a.reviews * aMatch);
   });
 
   // Initialize Leaflet Map
@@ -884,9 +888,17 @@ export const ExplorePage: React.FC = () => {
 
                       {/* Top Category Badge & Heart button */}
                       <div className="absolute top-3 left-3 right-3 flex items-center justify-between">
-                        <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-[#0D9488] text-white shadow-md">
-                          {item.category}
-                        </span>
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-[#0D9488] text-white shadow-md">
+                            {item.category}
+                          </span>
+                          {(user?.preferences || []).includes(item.category) && (
+                            <span className="px-2 py-0.5 rounded-full text-[9px] font-extrabold bg-amber-500 text-white shadow-md flex items-center gap-0.5 animate-pulse">
+                              <Sparkles className="w-2.5 h-2.5" />
+                              <span>Sesuai Minatmu</span>
+                            </span>
+                          )}
+                        </div>
                         <button
                           onClick={(e) => toggleFavorite(item.id, e)}
                           className={`w-7 h-7 rounded-full flex items-center justify-center backdrop-blur-md transition-colors ${

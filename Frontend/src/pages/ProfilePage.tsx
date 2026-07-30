@@ -46,7 +46,7 @@ interface SavedItinerary {
 }
 
 export const ProfilePage: React.FC = () => {
-  const { user, isAuthenticated, logout, openAuthModal, updateUserProfile } = useAuth();
+  const { user, isAuthenticated, logout, openAuthModal, updateUserProfile, updateUserPreferences } = useAuth();
   const navigate = useNavigate();
 
   const [savedTrips, setSavedTrips] = useState<SavedItinerary[]>([]);
@@ -62,6 +62,20 @@ export const ProfilePage: React.FC = () => {
   const [editAvatarUrl, setEditAvatarUrl] = useState<string>('');
   const [isSavingProfile, setIsSavingProfile] = useState<boolean>(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+  const handleTogglePreference = async (categoryName: string) => {
+    const currentPrefs = user?.preferences || [];
+    const updatedPrefs = currentPrefs.includes(categoryName)
+      ? currentPrefs.filter((p) => p !== categoryName)
+      : [...currentPrefs, categoryName];
+
+    try {
+      await updateUserPreferences(updatedPrefs);
+      triggerToast(`Preferensi ${categoryName} diperbarui!`);
+    } catch (err: any) {
+      triggerToast('Gagal memperbarui preferensi');
+    }
+  };
 
   const handleOpenEditModal = () => {
     setEditFullName(user?.fullName || '');
@@ -382,25 +396,31 @@ export const ProfilePage: React.FC = () => {
                   { name: 'Budaya', icon: Landmark },
                   { name: 'Alam', icon: Mountain },
                   { name: 'Adventure', icon: Footprints },
-                ].map(({ name, icon: Icon }) => (
-                  <div
-                    key={name}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-2xl bg-slate-50 border border-slate-200/80 text-xs font-bold text-slate-700 shadow-2xs"
-                  >
-                    <Icon className="w-3.5 h-3.5 text-[#0D9488]" />
-                    <span>{name}</span>
-                  </div>
-                ))}
+                ].map(({ name, icon: Icon }) => {
+                  const isActive = (user?.preferences || []).includes(name);
+                  return (
+                    <button
+                      key={name}
+                      type="button"
+                      onClick={() => handleTogglePreference(name)}
+                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-2xl text-xs font-bold transition-all border cursor-pointer active:scale-95 ${
+                        isActive
+                          ? 'bg-[#0D9488] text-white border-[#0D9488] shadow-md shadow-[#0D9488]/20'
+                          : 'bg-slate-50 hover:bg-slate-100 border-slate-200/80 text-slate-700'
+                      }`}
+                    >
+                      <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-white' : 'text-[#0D9488]'}`} />
+                      <span>{name}</span>
+                      {isActive && <CheckCircle2 className="w-3 h-3 text-teal-200 ml-0.5" />}
+                    </button>
+                  );
+                })}
               </div>
             </div>
 
-            <button
-              onClick={() => navigate('/explore')}
-              className="text-xs font-bold text-[#0D9488] hover:text-[#0F766E] transition-colors flex items-center gap-1 pt-2 self-start"
-            >
-              <span>Kelola Preferensi</span>
-              <ChevronRight className="w-3.5 h-3.5" />
-            </button>
+            <p className="text-[10px] text-slate-400 font-sans pt-1">
+              Klik kategori di atas untuk mengaktifkan filter preferensi personalmu.
+            </p>
           </div>
 
           {/* CARD 3 (3 COLS): LEVEL KEANGGOTAAN EXPLORER CARD */}
