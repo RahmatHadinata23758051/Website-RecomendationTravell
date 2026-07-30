@@ -346,7 +346,7 @@ export const ExplorePage: React.FC = () => {
             setFavorites(res.data.data.map((fav: any) => fav.canonicalId));
           }
         })
-        .catch(() => {});
+        .catch(() => { });
     } else {
       setFavorites([]);
     }
@@ -566,7 +566,7 @@ export const ExplorePage: React.FC = () => {
       {isLoadingRealData && (
         <div className="fixed inset-0 z-50 bg-slate-950/40 backdrop-blur-md flex items-center justify-center p-4 sm:p-6 animate-in fade-in duration-200">
           <div className="bg-white rounded-[32px] p-8 sm:p-10 max-w-md w-full shadow-[0_20px_60px_-15px_rgba(13,148,136,0.25)] border border-slate-100/80 relative flex flex-col items-center text-center space-y-5 overflow-hidden">
-            
+
             {/* Mascot Container with Circular Aura & Sparkles */}
             <div className="relative w-44 h-44 flex items-center justify-center">
               {/* Circular Aura Layers */}
@@ -641,43 +641,34 @@ export const ExplorePage: React.FC = () => {
         {/* ================================================================
             EXPLORE BANNER "Mau Jelajah Wisata di Mana Hari Ini?" (Matching Reference Image)
             ================================================================ */}
-        <section className="relative isolate min-h-[210px] overflow-hidden rounded-[28px] border border-[#E9D7A5]/80 bg-[#FFFCF7] shadow-[0_12px_36px_rgba(15,23,42,0.06)]">
-          {/* Ornamen Tapis & Peta Topografi Layer Terpisah */}
-          <div
-            aria-hidden="true"
-            className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_78%_48%,rgba(245,158,11,0.08),transparent_34%),linear-gradient(105deg,#FFFEFB_0%,#FFFCF7_55%,#FFF9EF_100%)]"
-          />
-
+        <section className="relative isolate min-h-[180px] overflow-hidden rounded-[28px] border border-[#EBE0C9] bg-[#FFFDF8] shadow-sm">
+          {/* Left Tapis Gold Ornament */}
           <img
             src="/assets/images/banners/explore-banner-ornament.png"
             alt=""
             aria-hidden="true"
-            className="pointer-events-none absolute left-5 top-1/2 hidden h-[86%] w-auto -translate-y-1/2 select-none sm:block"
+            className="pointer-events-none absolute left-4 top-1/2 hidden h-[84%] w-auto -translate-y-1/2 select-none sm:block"
           />
 
+          {/* Right Topography Map (Seamless, No Cuts) */}
           <img
             src="/assets/images/banners/explore-banner-map.png"
             alt=""
             aria-hidden="true"
-            className="pointer-events-none absolute right-[2%] top-1/2 hidden w-[48%] max-w-[720px] -translate-y-1/2 select-none opacity-[0.28] lg:block"
+            className="pointer-events-none absolute right-4 top-1/2 hidden h-[85%] max-w-[55%] -translate-y-1/2 select-none object-contain opacity-40 lg:block"
           />
 
-          {/* Fade lembut agar peta tidak mengganggu keterbacaan teks dan form */}
-          <div
-            aria-hidden="true"
-            className="pointer-events-none absolute inset-y-0 left-0 w-[58%] bg-gradient-to-r from-[#FFFCF7] via-[#FFFCF7]/94 to-transparent"
-          />
-
-          <div className="relative z-10 grid min-h-[210px] grid-cols-1 items-center gap-6 px-6 py-7 sm:pl-24 sm:pr-8 lg:grid-cols-[minmax(0,1fr)_auto] lg:gap-10 lg:pl-28 lg:pr-10">
-            <div className="max-w-3xl space-y-3">
-              <div className="inline-flex items-center gap-1.5 rounded-full border border-teal-200/70 bg-[#ECF8F5]/90 px-3.5 py-1 text-[#0F766E]">
-                <Compass className="h-3.5 w-3.5" />
+          {/* Banner Content Container */}
+          <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6 px-6 py-7 sm:pl-24 sm:pr-8 lg:pl-28 lg:pr-10">
+            <div className="max-w-2xl space-y-2.5">
+              <div className="inline-flex items-center gap-1.5 rounded-full border border-teal-200/70 bg-[#E6F4F1] px-3.5 py-1 text-[#0F766E]">
+                <Compass className="h-3.5 w-3.5 text-[#0F766E]" />
                 <span className="font-sans text-[10px] font-extrabold uppercase tracking-wider sm:text-[11px]">
                   LANGKAH 1: PILIH KABUPATEN / KOTA
                 </span>
               </div>
 
-              <h2 className="font-display text-2xl font-extrabold leading-tight tracking-tight text-[#0F172A] sm:text-3xl lg:text-[2.15rem]">
+              <h2 className="font-display text-2xl font-extrabold leading-tight tracking-tight text-[#0F172A] sm:text-3xl lg:text-[2.1rem]">
                 Mau Jelajah Wisata di Mana Hari Ini?
               </h2>
 
@@ -686,8 +677,9 @@ export const ExplorePage: React.FC = () => {
               </p>
             </div>
 
-            <div className="flex w-full flex-col items-stretch gap-3 sm:flex-row sm:items-center lg:w-auto">
-              <div className="relative w-full sm:w-64 lg:w-[270px]">
+            {/* Right Side Controls */}
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 shrink-0">
+              <div className="relative w-full sm:w-60">
                 <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
                 <input
                   type="search"
@@ -699,7 +691,7 @@ export const ExplorePage: React.FC = () => {
                   }}
                   placeholder="Cari pantai, museum..."
                   aria-label="Cari destinasi wisata"
-                  className="w-full rounded-xl border border-slate-200/90 bg-white/95 py-3 pl-10 pr-9 font-sans text-xs text-slate-900 shadow-sm outline-none transition placeholder:text-slate-400 focus:border-[#0D9488] focus:ring-4 focus:ring-[#0D9488]/10"
+                  className="w-full rounded-2xl border border-slate-200 bg-white/90 py-2.5 pl-10 pr-9 font-sans text-xs text-slate-900 shadow-sm outline-none transition placeholder:text-slate-400 focus:border-[#0D9488]"
                 />
 
                 {searchKeyword && (
@@ -724,7 +716,7 @@ export const ExplorePage: React.FC = () => {
                   setSearchKeyword('');
                   setSearchParams({});
                 }}
-                className="inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-xl bg-[#0D9488] px-5 py-3 font-sans text-xs font-bold text-white shadow-[0_8px_18px_rgba(13,148,136,0.18)] transition hover:-translate-y-0.5 hover:bg-[#0F766E] hover:shadow-[0_10px_22px_rgba(13,148,136,0.22)] active:translate-y-0"
+                className="inline-flex items-center justify-center gap-2 rounded-2xl bg-[#0D9488] hover:bg-[#0F766E] px-5 py-3 font-sans text-xs font-extrabold text-white shadow-md shadow-[#0D9488]/20 transition-all shrink-0 active:scale-95"
               >
                 <span>Lihat Semua Kabupaten (1.590+ Data)</span>
                 <ArrowUpRight className="h-4 w-4" />
@@ -733,68 +725,67 @@ export const ExplorePage: React.FC = () => {
           </div>
         </section>
 
-          {/* Filter Pills & Dropdown Row (ONLY SHOWN WHEN A REGENCY IS SELECTED OR SEARCHING) */}
-          {(selectedRegency !== 'PILIH' || searchKeyword) && (
-            <div className="flex flex-wrap items-center justify-between gap-4 pt-2 border-t border-slate-200/60">
-              {/* Category Filter Pills */}
-              <div className="flex flex-wrap items-center gap-2">
-                {[
-                  { label: 'Semua', icon: Sparkles },
-                  { label: 'Pantai', icon: Palmtree },
-                  { label: 'Alam', icon: Mountain },
-                  { label: 'Budaya', icon: Landmark },
-                  { label: 'Kuliner', icon: Utensils },
-                  { label: 'Adventure', icon: Footprints },
-                ].map(({ label, icon: Icon }) => (
-                  <button
-                    key={label}
-                    onClick={() => setSelectedCategory(label)}
-                    className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold transition-all ${
-                      selectedCategory === label
-                        ? 'bg-[#0D9488] text-white shadow-md shadow-[#0D9488]/20'
-                        : 'bg-slate-100 hover:bg-slate-200 text-slate-600'
+        {/* Filter Pills & Dropdown Row (ONLY SHOWN WHEN A REGENCY IS SELECTED OR SEARCHING) */}
+        {(selectedRegency !== 'PILIH' || searchKeyword) && (
+          <div className="flex flex-wrap items-center justify-between gap-4 pt-2 border-t border-slate-200/60">
+            {/* Category Filter Pills */}
+            <div className="flex flex-wrap items-center gap-2">
+              {[
+                { label: 'Semua', icon: Sparkles },
+                { label: 'Pantai', icon: Palmtree },
+                { label: 'Alam', icon: Mountain },
+                { label: 'Budaya', icon: Landmark },
+                { label: 'Kuliner', icon: Utensils },
+                { label: 'Adventure', icon: Footprints },
+              ].map(({ label, icon: Icon }) => (
+                <button
+                  key={label}
+                  onClick={() => setSelectedCategory(label)}
+                  className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold transition-all ${selectedCategory === label
+                    ? 'bg-[#0D9488] text-white shadow-md shadow-[#0D9488]/20'
+                    : 'bg-slate-100 hover:bg-slate-200 text-slate-600'
                     }`}
-                  >
-                    <Icon className="w-3.5 h-3.5" />
-                    <span>{label}</span>
-                  </button>
-                ))}
+                >
+                  <Icon className="w-3.5 h-3.5" />
+                  <span>{label}</span>
+                </button>
+              ))}
+            </div>
+
+            {/* Region Select & Sort Dropdowns */}
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-1.5 text-xs text-slate-500 font-medium">
+                <MapPin className="w-3.5 h-3.5 text-[#0D9488]" />
+                <span>Kabupaten/Kota:</span>
+                <select
+                  value={selectedRegency}
+                  onChange={(e) => setSelectedRegency(e.target.value)}
+                  className="bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1 text-xs text-slate-900 font-semibold focus:outline-none focus:border-[#0D9488]"
+                >
+                  {regencies.map((reg) => (
+                    <option key={reg} value={reg}>
+                      {reg}
+                    </option>
+                  ))}
+                </select>
               </div>
 
-              {/* Region Select & Sort Dropdowns */}
-              <div className="flex items-center gap-3">
-                <div className="flex items-center gap-1.5 text-xs text-slate-500 font-medium">
-                  <MapPin className="w-3.5 h-3.5 text-[#0D9488]" />
-                  <span>Kabupaten/Kota:</span>
-                  <select
-                    value={selectedRegency}
-                    onChange={(e) => setSelectedRegency(e.target.value)}
-                    className="bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1 text-xs text-slate-900 font-semibold focus:outline-none focus:border-[#0D9488]"
-                  >
-                    {regencies.map((reg) => (
-                      <option key={reg} value={reg}>
-                        {reg}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div className="flex items-center gap-1.5 text-xs text-slate-500 font-medium">
-                  <SlidersHorizontal className="w-3.5 h-3.5 text-siger-500" />
-                  <span>Urutkan:</span>
-                  <select
-                    value={sortBy}
-                    onChange={(e) => setSortBy(e.target.value as any)}
-                    className="bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1 text-xs text-slate-900 font-semibold focus:outline-none focus:border-[#0D9488]"
-                  >
-                    <option value="popular">Populer</option>
-                    <option value="rating">Rating Tertinggi</option>
-                    <option value="price">Harga Termurah</option>
-                  </select>
-                </div>
+              <div className="flex items-center gap-1.5 text-xs text-slate-500 font-medium">
+                <SlidersHorizontal className="w-3.5 h-3.5 text-siger-500" />
+                <span>Urutkan:</span>
+                <select
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value as any)}
+                  className="bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1 text-xs text-slate-900 font-semibold focus:outline-none focus:border-[#0D9488]"
+                >
+                  <option value="popular">Populer</option>
+                  <option value="rating">Rating Tertinggi</option>
+                  <option value="price">Harga Termurah</option>
+                </select>
               </div>
             </div>
-          )}
+          </div>
+        )}
 
         {/* REGENCY SELECTION GRID VIEW (WHEN USER HAS NOT SELECTED A REGENCY YET) */}
         {selectedRegency === 'PILIH' && !searchKeyword ? (
@@ -854,157 +845,155 @@ export const ExplorePage: React.FC = () => {
 
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
 
-          {/* LEFT: DESTINATIONS CARDS LIST (7 Cols - 2 Cards Per Row) */}
-          <div className="lg:col-span-7 space-y-4">
-            <div className="flex items-center justify-between px-1">
-              <p className="text-xs text-slate-500 font-medium">
-                Menampilkan <span className="font-bold text-slate-900">{filteredDestinations.length}</span> destinasi di Lampung
-              </p>
-            </div>
-
-            {filteredDestinations.length === 0 ? (
-              <div className="glass-card-container rounded-3xl p-12 text-center space-y-3">
-                <Filter className="w-10 h-10 text-slate-300 mx-auto" />
-                <h3 className="text-base font-bold text-slate-800">Tidak ada destinasi ditemukan</h3>
-                <p className="text-xs text-slate-500">Coba atur ulang kata kunci pencarian atau filter kategori kamu.</p>
-                <button
-                  onClick={() => {
-                    setSearchKeyword('');
-                    setSelectedCategory('Semua');
-                    setSelectedRegency('Semua');
-                    setSearchParams({});
-                  }}
-                  className="px-4 py-2 bg-[#0D9488] text-white text-xs font-bold rounded-full hover:bg-[#0F766E] transition-colors"
-                >
-                  Reset Semua Filter
-                </button>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {filteredDestinations.map((item) => (
-                  <div
-                    key={item.id}
-                    onMouseEnter={() => setHoveredDestinationId(item.id)}
-                    onMouseLeave={() => setHoveredDestinationId(null)}
-                    onClick={() => {
-                      setSelectedDestination(item);
-                      if (leafletInstanceRef.current) {
-                        leafletInstanceRef.current.panTo(item.coords, { animate: true });
-                      }
-                    }}
-                    className={`group glass-card-container rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 cursor-pointer border flex flex-col justify-between ${
-                      selectedDestination?.id === item.id || hoveredDestinationId === item.id
-                        ? 'border-[#0D9488] ring-2 ring-[#0D9488]/20 bg-white'
-                        : 'border-slate-200/80 hover:border-slate-300'
-                    }`}
-                  >
-                    {/* Card Image Header */}
-                    <div className="relative aspect-[16/10] overflow-hidden bg-slate-100">
-                      <img
-                        src={item.image}
-                        alt={item.name}
-                        onError={(e) => {
-                          (e.target as HTMLImageElement).src = '/assets/images/heroes/hero-pahawang-bg.png';
-                        }}
-                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                      />
-                      <div className="absolute inset-0 bg-gradient-to-t from-slate-950/60 via-transparent to-transparent" />
-
-                      {/* Top Category Badge & Heart button */}
-                      <div className="absolute top-3 left-3 right-3 flex items-center justify-between">
-                        <div className="flex items-center gap-1.5 flex-wrap">
-                          <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-[#0D9488] text-white shadow-md">
-                            {item.category}
-                          </span>
-                          {(user?.preferences || []).includes(item.category) && (
-                            <span className="px-2 py-0.5 rounded-full text-[9px] font-extrabold bg-amber-500 text-white shadow-md flex items-center gap-0.5 animate-pulse">
-                              <Sparkles className="w-2.5 h-2.5" />
-                              <span>Sesuai Minatmu</span>
-                            </span>
-                          )}
-                        </div>
-                        <button
-                          onClick={(e) => toggleFavorite(item.id, e)}
-                          className={`w-7 h-7 rounded-full flex items-center justify-center backdrop-blur-md transition-colors ${
-                            favorites.includes(item.id)
-                              ? 'bg-red-500 text-white'
-                              : 'bg-slate-900/40 text-white hover:bg-slate-900/70'
-                          }`}
-                        >
-                          <Heart className={`w-3.5 h-3.5 ${favorites.includes(item.id) ? 'fill-current' : ''}`} />
-                        </button>
-                      </div>
-
-                      {/* Bottom Info on Image */}
-                      <div className="absolute bottom-2.5 left-3 right-3 text-white flex items-center justify-between">
-                        <div className="flex items-center gap-1 text-siger-400 font-bold text-xs">
-                          <Star className="w-3.5 h-3.5 fill-current" />
-                          <span>{item.rating}</span>
-                          <span className="text-slate-300 text-[10px] font-normal">({item.reviews})</span>
-                        </div>
-                        <span className="text-[10px] bg-slate-900/60 px-2 py-0.5 rounded-md backdrop-blur-sm text-slate-200">
-                          {item.regency}
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* Card Content Body */}
-                    <div className="p-4 space-y-2 flex-1 flex flex-col justify-between">
-                      <div className="space-y-1">
-                        <h3 className="text-sm font-bold font-display text-slate-900 group-hover:text-[#0D9488] transition-colors leading-snug">
-                          {item.name}
-                        </h3>
-                        <p className="text-[11px] text-slate-500 font-sans flex items-center gap-1 line-clamp-1">
-                          <MapPin className="w-3 h-3 text-[#0D9488] shrink-0" />
-                          <span>{item.location}</span>
-                        </p>
-                      </div>
-
-                      <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-xs">
-                        <div>
-                          <p className="text-[10px] text-slate-400">Estimasi Tiket</p>
-                          <p className="text-xs font-extrabold text-[#0D9488]">{item.price}</p>
-                        </div>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setSelectedDestination(item);
-                          }}
-                          className="px-3 py-1.5 rounded-xl bg-teal-50 hover:bg-[#0D9488] text-[#0D9488] hover:text-white text-[11px] font-bold transition-all flex items-center gap-1"
-                        >
-                          <span>Detail</span>
-                          <ChevronRight className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* RIGHT: INTERACTIVE SPATIAL MAP (5 Cols - Sticky Container) */}
-          <div className="lg:col-span-5 sticky top-24">
-            <div className="glass-card-container rounded-[28px] overflow-hidden shadow-lg border border-slate-200/80 flex flex-col h-[600px]">
-              {/* Map Header */}
-              <div className="px-5 py-3.5 bg-white border-b border-slate-200/80 flex items-center justify-between shrink-0">
-                <div className="flex items-center gap-2">
-                  <div className="w-2.5 h-2.5 rounded-full bg-siger-500 animate-pulse" />
-                  <span className="text-xs font-bold text-slate-900">Map Spasial Interaktif Lampung</span>
+              {/* LEFT: DESTINATIONS CARDS LIST (7 Cols - 2 Cards Per Row) */}
+              <div className="lg:col-span-7 space-y-4">
+                <div className="flex items-center justify-between px-1">
+                  <p className="text-xs text-slate-500 font-medium">
+                    Menampilkan <span className="font-bold text-slate-900">{filteredDestinations.length}</span> destinasi di Lampung
+                  </p>
                 </div>
-                <span className="text-[10px] text-slate-500 font-medium bg-slate-100 px-2 py-0.5 rounded-md">
-                  {filteredDestinations.length} Pin Aktif
-                </span>
+
+                {filteredDestinations.length === 0 ? (
+                  <div className="glass-card-container rounded-3xl p-12 text-center space-y-3">
+                    <Filter className="w-10 h-10 text-slate-300 mx-auto" />
+                    <h3 className="text-base font-bold text-slate-800">Tidak ada destinasi ditemukan</h3>
+                    <p className="text-xs text-slate-500">Coba atur ulang kata kunci pencarian atau filter kategori kamu.</p>
+                    <button
+                      onClick={() => {
+                        setSearchKeyword('');
+                        setSelectedCategory('Semua');
+                        setSelectedRegency('Semua');
+                        setSearchParams({});
+                      }}
+                      className="px-4 py-2 bg-[#0D9488] text-white text-xs font-bold rounded-full hover:bg-[#0F766E] transition-colors"
+                    >
+                      Reset Semua Filter
+                    </button>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {filteredDestinations.map((item) => (
+                      <div
+                        key={item.id}
+                        onMouseEnter={() => setHoveredDestinationId(item.id)}
+                        onMouseLeave={() => setHoveredDestinationId(null)}
+                        onClick={() => {
+                          setSelectedDestination(item);
+                          if (leafletInstanceRef.current) {
+                            leafletInstanceRef.current.panTo(item.coords, { animate: true });
+                          }
+                        }}
+                        className={`group glass-card-container rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 cursor-pointer border flex flex-col justify-between ${selectedDestination?.id === item.id || hoveredDestinationId === item.id
+                          ? 'border-[#0D9488] ring-2 ring-[#0D9488]/20 bg-white'
+                          : 'border-slate-200/80 hover:border-slate-300'
+                          }`}
+                      >
+                        {/* Card Image Header */}
+                        <div className="relative aspect-[16/10] overflow-hidden bg-slate-100">
+                          <img
+                            src={item.image}
+                            alt={item.name}
+                            onError={(e) => {
+                              (e.target as HTMLImageElement).src = '/assets/images/heroes/hero-pahawang-bg.png';
+                            }}
+                            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                          />
+                          <div className="absolute inset-0 bg-gradient-to-t from-slate-950/60 via-transparent to-transparent" />
+
+                          {/* Top Category Badge & Heart button */}
+                          <div className="absolute top-3 left-3 right-3 flex items-center justify-between">
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-[#0D9488] text-white shadow-md">
+                                {item.category}
+                              </span>
+                              {(user?.preferences || []).includes(item.category) && (
+                                <span className="px-2 py-0.5 rounded-full text-[9px] font-extrabold bg-amber-500 text-white shadow-md flex items-center gap-0.5 animate-pulse">
+                                  <Sparkles className="w-2.5 h-2.5" />
+                                  <span>Sesuai Minatmu</span>
+                                </span>
+                              )}
+                            </div>
+                            <button
+                              onClick={(e) => toggleFavorite(item.id, e)}
+                              className={`w-7 h-7 rounded-full flex items-center justify-center backdrop-blur-md transition-colors ${favorites.includes(item.id)
+                                ? 'bg-red-500 text-white'
+                                : 'bg-slate-900/40 text-white hover:bg-slate-900/70'
+                                }`}
+                            >
+                              <Heart className={`w-3.5 h-3.5 ${favorites.includes(item.id) ? 'fill-current' : ''}`} />
+                            </button>
+                          </div>
+
+                          {/* Bottom Info on Image */}
+                          <div className="absolute bottom-2.5 left-3 right-3 text-white flex items-center justify-between">
+                            <div className="flex items-center gap-1 text-siger-400 font-bold text-xs">
+                              <Star className="w-3.5 h-3.5 fill-current" />
+                              <span>{item.rating}</span>
+                              <span className="text-slate-300 text-[10px] font-normal">({item.reviews})</span>
+                            </div>
+                            <span className="text-[10px] bg-slate-900/60 px-2 py-0.5 rounded-md backdrop-blur-sm text-slate-200">
+                              {item.regency}
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Card Content Body */}
+                        <div className="p-4 space-y-2 flex-1 flex flex-col justify-between">
+                          <div className="space-y-1">
+                            <h3 className="text-sm font-bold font-display text-slate-900 group-hover:text-[#0D9488] transition-colors leading-snug">
+                              {item.name}
+                            </h3>
+                            <p className="text-[11px] text-slate-500 font-sans flex items-center gap-1 line-clamp-1">
+                              <MapPin className="w-3 h-3 text-[#0D9488] shrink-0" />
+                              <span>{item.location}</span>
+                            </p>
+                          </div>
+
+                          <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-xs">
+                            <div>
+                              <p className="text-[10px] text-slate-400">Estimasi Tiket</p>
+                              <p className="text-xs font-extrabold text-[#0D9488]">{item.price}</p>
+                            </div>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setSelectedDestination(item);
+                              }}
+                              className="px-3 py-1.5 rounded-xl bg-teal-50 hover:bg-[#0D9488] text-[#0D9488] hover:text-white text-[11px] font-bold transition-all flex items-center gap-1"
+                            >
+                              <span>Detail</span>
+                              <ChevronRight className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
 
-              {/* Leaflet Map Canvas */}
-              <div ref={mapRef} className="flex-1 w-full h-full z-10 bg-slate-100" />
+              {/* RIGHT: INTERACTIVE SPATIAL MAP (5 Cols - Sticky Container) */}
+              <div className="lg:col-span-5 sticky top-24">
+                <div className="glass-card-container rounded-[28px] overflow-hidden shadow-lg border border-slate-200/80 flex flex-col h-[600px]">
+                  {/* Map Header */}
+                  <div className="px-5 py-3.5 bg-white border-b border-slate-200/80 flex items-center justify-between shrink-0">
+                    <div className="flex items-center gap-2">
+                      <div className="w-2.5 h-2.5 rounded-full bg-siger-500 animate-pulse" />
+                      <span className="text-xs font-bold text-slate-900">Map Spasial Interaktif Lampung</span>
+                    </div>
+                    <span className="text-[10px] text-slate-500 font-medium bg-slate-100 px-2 py-0.5 rounded-md">
+                      {filteredDestinations.length} Pin Aktif
+                    </span>
+                  </div>
+
+                  {/* Leaflet Map Canvas */}
+                  <div ref={mapRef} className="flex-1 w-full h-full z-10 bg-slate-100" />
+                </div>
+              </div>
             </div>
           </div>
-        </div>
+        )}
       </div>
-    )}
-  </div>
 
       {/* QUICK DETAIL DRAWER / MODAL */}
       {selectedDestination && (
@@ -1108,11 +1097,10 @@ export const ExplorePage: React.FC = () => {
             <div className="p-4 bg-slate-50 border-t border-slate-200/80 flex flex-wrap items-center justify-between gap-3">
               <button
                 onClick={(e) => toggleFavorite(selectedDestination.id, e)}
-                className={`px-4 py-2.5 rounded-full text-xs font-bold flex items-center gap-2 transition-all ${
-                  favorites.includes(selectedDestination.id)
-                    ? 'bg-red-500 text-white'
-                    : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-100'
-                }`}
+                className={`px-4 py-2.5 rounded-full text-xs font-bold flex items-center gap-2 transition-all ${favorites.includes(selectedDestination.id)
+                  ? 'bg-red-500 text-white'
+                  : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-100'
+                  }`}
               >
                 <Heart className={`w-3.5 h-3.5 ${favorites.includes(selectedDestination.id) ? 'fill-current' : ''}`} />
                 <span>{favorites.includes(selectedDestination.id) ? 'Tersimpan' : 'Simpan Favorit'}</span>
