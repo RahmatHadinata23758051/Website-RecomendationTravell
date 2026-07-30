@@ -638,7 +638,7 @@ export const ExplorePage: React.FC = () => {
             EXPLORE BANNER "Mau Jelajah Wisata di Mana Hari Ini?" (Matching Reference Image)
             ================================================================ */}
         <div
-          className="relative rounded-[32px] p-6 sm:p-8 lg:p-10 shadow-sm border border-amber-200/40 overflow-hidden bg-cover bg-center bg-no-repeat space-y-6"
+          className="relative rounded-[32px] py-6 sm:py-8 lg:py-10 pr-6 sm:pr-8 lg:pr-10 pl-16 sm:pl-24 lg:pl-28 shadow-sm border border-amber-200/40 overflow-hidden bg-cover bg-center bg-no-repeat space-y-6"
           style={{
             backgroundImage: "url('/assets/images/banners/banner-explore-lampung-bg.png')",
           }}
@@ -771,37 +771,6 @@ export const ExplorePage: React.FC = () => {
         {/* REGENCY SELECTION GRID VIEW (WHEN USER HAS NOT SELECTED A REGENCY YET) */}
         {selectedRegency === 'PILIH' && !searchKeyword ? (
           <div className="space-y-6">
-            {/* REGENCY SELECTION HEADER BANNER */}
-            <div className="relative overflow-hidden rounded-[32px] bg-slate-900 border border-slate-800 p-6 sm:p-8 text-white shadow-xl">
-              {/* Ambient Subtle Radial Glows */}
-              <div className="absolute top-0 right-0 w-96 h-96 bg-teal-500/10 rounded-full blur-3xl pointer-events-none" />
-              <div className="absolute bottom-0 left-0 w-80 h-80 bg-amber-500/5 rounded-full blur-3xl pointer-events-none" />
-
-              <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
-                <div className="space-y-2 max-w-2xl">
-                  <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-teal-500/10 border border-teal-500/20 backdrop-blur-md">
-                    <Sparkles className="w-3.5 h-3.5 text-teal-300" />
-                    <span className="text-[10px] font-extrabold text-teal-300 uppercase tracking-widest">
-                      Langkah 1: Pilih Kabupaten / Kota
-                    </span>
-                  </div>
-                  <h2 className="text-2xl sm:text-3xl font-display font-extrabold tracking-tight text-white">
-                    Mau Jelajah Wisata di Mana Hari Ini?
-                  </h2>
-                  <p className="text-xs sm:text-sm text-slate-300 font-sans leading-relaxed">
-                    Pilih wilayah di Provinsi Lampung di bawah ini untuk menampilkan daftar destinasi wisata resmi, lokasi presisi, dan peta interaktifnya.
-                  </p>
-                </div>
-                <button
-                  onClick={() => setSelectedRegency('Semua')}
-                  className="px-6 py-3 rounded-full bg-[#0D9488] hover:bg-[#0F766E] text-white text-xs font-extrabold shadow-lg shadow-[#0D9488]/30 border border-teal-400/30 transition-all shrink-0 self-start md:self-auto flex items-center gap-2 hover:scale-[1.02] active:scale-95"
-                >
-                  <span>Lihat Semua Kabupaten (1.590+ Data)</span>
-                  <ArrowUpRight className="w-4 h-4 text-teal-200" />
-                </button>
-              </div>
-            </div>
-
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
               {REGENCY_CARDS.map((card) => (
                 <div
