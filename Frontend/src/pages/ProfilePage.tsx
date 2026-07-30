@@ -199,6 +199,17 @@ export const ProfilePage: React.FC = () => {
     };
   }, [isAuthenticated]);
 
+  const handleRemoveFavorite = async (id: string, name: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    try {
+      await apiClient.delete(`/favorites/${id}`);
+      setFavoriteDestinations((prev) => prev.filter((d) => d.id !== id));
+      triggerToast(`Destinasi "${name}" dihapus dari wishlist`);
+    } catch (err) {
+      triggerToast('Gagal menghapus dari wishlist');
+    }
+  };
+
   const handleDeleteTrip = async (id: string, title: string, e: React.MouseEvent) => {
     e.stopPropagation();
     if (window.confirm(`Hapus itinerary "${title}" dari simpanan?`)) {
@@ -539,47 +550,64 @@ export const ProfilePage: React.FC = () => {
               </div>
 
               {/* Destination Cards Grid */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                {favoriteDestinations.slice(0, 4).map((dest) => (
-                  <div
-                    key={dest.id}
-                    onClick={() => navigate('/explore')}
-                    className="group relative rounded-2xl overflow-hidden bg-slate-900 shadow-sm hover:shadow-xl transition-all duration-300 cursor-pointer aspect-[4/5] flex flex-col justify-between p-3.5"
+              {favoriteDestinations.length === 0 ? (
+                <div className="text-center py-8 bg-slate-50 rounded-2xl border border-dashed border-slate-200 space-y-2">
+                  <Bookmark className="w-8 h-8 text-slate-300 mx-auto" />
+                  <p className="text-xs text-slate-500 font-medium">Belum ada destinasi impian di wishlist kamu</p>
+                  <Link
+                    to="/explore"
+                    className="inline-block text-xs font-bold text-[#0D9488] hover:underline"
                   >
-                    <img
-                      src={dest.image}
-                      alt={dest.name}
-                      className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                      onError={(e) => {
-                        (e.target as HTMLImageElement).src = '/assets/images/heroes/hero-pahawang-bg.png';
-                      }}
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/30 to-slate-950/20" />
+                    Jelajahi Destinasi Sekarang &rarr;
+                  </Link>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                  {favoriteDestinations.slice(0, 4).map((dest) => (
+                    <div
+                      key={dest.id}
+                      onClick={() => navigate(`/explore?search=${encodeURIComponent(dest.name)}`)}
+                      className="group relative rounded-2xl overflow-hidden bg-slate-900 shadow-sm hover:shadow-xl transition-all duration-300 cursor-pointer aspect-[4/5] flex flex-col justify-between p-3.5"
+                    >
+                      <img
+                        src={dest.image}
+                        alt={dest.name}
+                        className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).src = '/assets/images/heroes/hero-pahawang-bg.png';
+                        }}
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/30 to-slate-950/20" />
 
-                    {/* Category Tag & Heart Icon */}
-                    <div className="relative z-10 flex items-center justify-between">
-                      <span className="px-2 py-0.5 rounded-full text-[9px] font-extrabold bg-[#0D9488] text-white">
-                        {dest.category}
-                      </span>
-                      <button className="w-6 h-6 rounded-full bg-slate-900/60 text-white flex items-center justify-center backdrop-blur-sm">
-                        <Heart className="w-3 h-3 fill-current text-red-400" />
-                      </button>
-                    </div>
+                      {/* Category Tag & Heart Icon */}
+                      <div className="relative z-10 flex items-center justify-between">
+                        <span className="px-2 py-0.5 rounded-full text-[9px] font-extrabold bg-[#0D9488] text-white">
+                          {dest.category}
+                        </span>
+                        <button
+                          onClick={(e) => handleRemoveFavorite(dest.id, dest.name, e)}
+                          className="w-6 h-6 rounded-full bg-slate-900/60 text-white flex items-center justify-center backdrop-blur-sm transition-transform hover:scale-110"
+                          title="Hapus dari Wishlist"
+                        >
+                          <Heart className="w-3 h-3 fill-current text-red-400" />
+                        </button>
+                      </div>
 
-                    {/* Bottom Info */}
-                    <div className="relative z-10 space-y-1 text-white">
-                      <h4 className="text-xs font-bold font-display leading-tight line-clamp-1 group-hover:text-teal-300 transition-colors">
-                        {dest.name}
-                      </h4>
-                      <p className="text-[10px] text-slate-300">{dest.location}</p>
-                      <div className="flex items-center justify-between text-[10px] text-amber-400 font-bold pt-0.5">
-                        <span>★ {dest.rating} ({dest.reviews})</span>
-                        <span className="text-slate-300 font-normal">{dest.duration}</span>
+                      {/* Bottom Info */}
+                      <div className="relative z-10 space-y-1 text-white">
+                        <h4 className="text-xs font-bold font-display leading-tight line-clamp-1 group-hover:text-teal-300 transition-colors">
+                          {dest.name}
+                        </h4>
+                        <p className="text-[10px] text-slate-300">{dest.location}</p>
+                        <div className="flex items-center justify-between text-[10px] text-amber-400 font-bold pt-0.5">
+                          <span>★ {dest.rating} ({dest.reviews})</span>
+                          <span className="text-slate-300 font-normal">{dest.duration}</span>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* SECTION 2: RIWAYAT PERJALANAN (ITINERARY TERSIMPAN) */}
