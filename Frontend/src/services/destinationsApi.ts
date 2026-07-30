@@ -348,60 +348,77 @@ export const generateAiPlannerItinerary = async (payload: GeneratePlannerPayload
 };
 
 export const swapPlannerSlotApi = async (payload: SwapSlotPayload): Promise<any[]> => {
+  // 1. Try NestJS Backend API
   try {
     const response = await axios.post(`${API_BASE_URL}/planner/swap-slot`, payload, { timeout: 3500 });
-    if (response.data && response.data.alternatives) {
+    if (response.data && Array.isArray(response.data.alternatives) && response.data.alternatives.length > 0) {
       return response.data.alternatives;
     }
   } catch (e) {
-    try {
-      const fastApiRes = await axios.post('http://localhost:8000/api/v1/planner/swap-slot', payload, { timeout: 3500 });
-      if (fastApiRes.data && fastApiRes.data.alternatives) {
-        return fastApiRes.data.alternatives;
-      }
-    } catch (err) {
-      // Fallback using staticDestinationsCache
-      if (staticDestinationsCache && Array.isArray(staticDestinationsCache)) {
-        const cleanTargetReg = cleanRegency(payload.city_or_regency);
-        const exclude = new Set(payload.exclude_ids || []);
-
-        let matched = staticDestinationsCache.filter((item: any) => {
-          const itemReg = cleanRegency(item.city_or_regency);
-          const cid = item.canonical_id || item.name;
-          return itemReg.includes(cleanTargetReg) && !exclude.has(cid);
-        });
-
-        if (matched.length === 0) {
-          matched = staticDestinationsCache.filter((item: any) => !exclude.has(item.canonical_id || item.name));
-        }
-
-        if (payload.category) {
-          const catLow = payload.category.toLowerCase();
-          const catMatched = matched.filter((item: any) => String(item.primary_category || '').toLowerCase().includes(catLow));
-          if (catMatched.length > 0) matched = catMatched;
-        }
-
-        matched.sort((a: any, b: any) => (b.rating || 4.5) - (a.rating || 4.5));
-        const top3 = matched.slice(0, 3);
-
-        return top3.map((item: any) => {
-          const mapped = mapApiToDestination(item);
-          return {
-            canonical_id: mapped.id,
-            time: 'Rekomendasi Alternatif',
-            activityTitle: mapped.name,
-            category: mapped.category,
-            location: mapped.location,
-            estimatedCost: mapped.price,
-            numericCost: mapped.numericPrice,
-            coords: mapped.coords,
-            image: mapped.image,
-            aiTip: `Alternatif spot terbaik di ${payload.city_or_regency} dengan rating ${mapped.rating}/5.0.`,
-          };
-        });
-      }
-      return [];
-    }
+    // Silent fallback
   }
+
+  // 2. Try FastAPI Python ML API directly
+  try {
+    const fastApiRes = await axios.post('http://localhost:8000/api/v1/planner/swap-slot', payload, { timeout: 3500 });
+    if (fastApiRes.data && Array.isArray(fastApiRes.data.alternatives) && fastApiRes.data.alternatives.length > 0) {
+      return fastApiRes.data.alternatives;
+    }
+  } catch (err) {
+    // Silent fallback
+  }
+
+  // 3. Robust Real-Data Client Swap Engine
+  try {
+    if (!staticDestinationsCache) {
+      const staticRes = await fetch('/assets/data/public_destinations.json');
+      if (staticRes.ok) {
+        staticDestinationsCache = await staticRes.json();
+      }
+    }
+
+    if (staticDestinationsCache && Array.isArray(staticDestinationsCache)) {
+      const cleanTargetReg = cleanRegency(payload.city_or_regency);
+      const exclude = new Set(payload.exclude_ids || []);
+
+      let matched = staticDestinationsCache.filter((item: any) => {
+        const itemReg = cleanRegency(item.city_or_regency);
+        const cid = item.canonical_id || item.name;
+        return itemReg.includes(cleanTargetReg) && !exclude.has(cid);
+      });
+
+      if (matched.length === 0) {
+        matched = staticDestinationsCache.filter((item: any) => !exclude.has(item.canonical_id || item.name));
+      }
+
+      if (payload.category) {
+        const catLow = payload.category.toLowerCase();
+        const catMatched = matched.filter((item: any) => String(item.primary_category || '').toLowerCase().includes(catLow));
+        if (catMatched.length > 0) matched = catMatched;
+      }
+
+      matched.sort((a: any, b: any) => (b.rating || 4.5) - (a.rating || 4.5));
+      const top5 = matched.slice(0, 5);
+
+      return top5.map((item: any) => {
+        const mapped = mapApiToDestination(item);
+        return {
+          canonical_id: mapped.id,
+          time: 'Rekomendasi Alternatif',
+          activityTitle: mapped.name,
+          category: mapped.category,
+          location: mapped.location,
+          estimatedCost: mapped.price,
+          numericCost: mapped.numericPrice,
+          coords: mapped.coords,
+          image: mapped.image,
+          aiTip: `Alternatif spot terbaik di ${payload.city_or_regency} dengan rating ulasan ${mapped.rating}/5.0.`,
+        };
+      });
+    }
+  } catch (err) {
+    // Silent fallback
+  }
+
   return [];
 };
