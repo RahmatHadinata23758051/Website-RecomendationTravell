@@ -705,20 +705,20 @@ export const ExplorePage: React.FC = () => {
             EXPLORE BANNER "Mau Jelajah Wisata di Mana Hari Ini?" (Matching Reference Image)
             ================================================================ */}
         <section className="relative isolate min-h-[180px] overflow-hidden rounded-[28px] border border-[#EBE0C9] bg-[#FFFDF8] shadow-sm">
-          {/* Left Tapis Gold Ornament (Seamless Blend, No White Box) */}
+          {/* Left Tapis Gold Ornament (Pure Transparent PNG) */}
           <img
             src="/assets/images/banners/explore-banner-ornament.png"
             alt=""
             aria-hidden="true"
-            className="pointer-events-none absolute left-3 top-1/2 hidden h-[88%] w-auto -translate-y-1/2 select-none mix-blend-multiply sm:block"
+            className="pointer-events-none absolute left-3 top-1/2 hidden h-[88%] w-auto -translate-y-1/2 select-none sm:block"
           />
 
-          {/* Right Topography Map (Seamless Blend, No White Box) */}
+          {/* Right Topography Map (Pure Transparent PNG, Behind Controls) */}
           <img
             src="/assets/images/banners/explore-banner-map.png"
             alt=""
             aria-hidden="true"
-            className="pointer-events-none absolute right-2 top-1/2 hidden h-[90%] max-w-[50%] -translate-y-1/2 select-none object-contain opacity-50 mix-blend-multiply lg:block"
+            className="pointer-events-none absolute right-0 top-1/2 hidden h-full max-w-[45%] -translate-y-1/2 select-none object-contain opacity-60 lg:block"
           />
 
           {/* Banner Content Container */}
