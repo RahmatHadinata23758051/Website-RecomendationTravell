@@ -422,10 +422,10 @@ export const ExplorePage: React.FC = () => {
 
     const progressInterval = setInterval(() => {
       setLoadingProgress((prev) => {
-        if (prev >= 92) return 92;
-        return prev + Math.floor(Math.random() * 15) + 8;
+        if (prev >= 92) return Math.max(prev, 92);
+        return Math.min(92, prev + Math.floor(Math.random() * 12) + 6);
       });
-    }, 120);
+    }, 100);
 
     fetchRealDestinations({
       category: selectedCategory,
@@ -434,14 +434,14 @@ export const ExplorePage: React.FC = () => {
       limit: 100,
     }).then((data) => {
       if (isMounted) {
+        clearInterval(progressInterval);
         setLoadingProgress(100);
         setTimeout(() => {
           if (isMounted) {
             setRealDestinations(data && data.length > 0 ? data : mockDestinations);
             setIsLoadingRealData(false);
-            clearInterval(progressInterval);
           }
-        }, 250);
+        }, 200);
       }
     });
 
