@@ -204,6 +204,23 @@ export const PlannerPage: React.FC = () => {
       let mockResult: DaySchedule[] = [];
       const primaryCat = !selectedCategories.includes('Semua') ? selectedCategories[0] : 'Pantai';
 
+      let spotCost1 = 15000;
+      let foodCost = 20000;
+      let spotCost2 = 15000;
+      let tipPrefix = 'Tipe Backpacker (Hemat)';
+
+      if (selectedBudget === 'Standar') {
+        spotCost1 = 35000;
+        foodCost = 45000;
+        spotCost2 = 35000;
+        tipPrefix = 'Tipe Standar';
+      } else if (selectedBudget === 'Mewah' || selectedBudget === 'Sultan') {
+        spotCost1 = 85000;
+        foodCost = 120000;
+        spotCost2 = 95000;
+        tipPrefix = 'Tipe Mewah (Sultan)';
+      }
+
       for (let d = 1; d <= durationDays; d++) {
         mockResult.push({
           dayNumber: d,
@@ -215,11 +232,11 @@ export const PlannerPage: React.FC = () => {
               activityTitle: `Destinasi Wisata Unggulan ${selectedRegency}`,
               category: primaryCat,
               location: `Kawasan Wisata ${selectedRegency}`,
-              estimatedCost: 'Rp 25.000 / orang',
-              numericCost: 25000,
+              estimatedCost: `Rp ${spotCost1.toLocaleString('id-ID')} / orang`,
+              numericCost: spotCost1,
               coords: [targetCoords.lat + (d - 1) * 0.02, targetCoords.lng + (d - 1) * 0.015],
               image: '/assets/images/heroes/hero-pahawang-bg.png',
-              aiTip: `Spot unggulan terpopuler di ${selectedRegency} dengan lanskap eksotik.`,
+              aiTip: `[${tipPrefix}] Spot unggulan terpopuler di ${selectedRegency} dengan lanskap eksotik.`,
               travelTime: 'Lokasi awal hari',
             },
             {
@@ -228,11 +245,11 @@ export const PlannerPage: React.FC = () => {
               activityTitle: `Makan Siang & Kuliner Khas ${selectedRegency}`,
               category: 'Kuliner',
               location: `Pusat Kuliner ${selectedRegency}`,
-              estimatedCost: 'Rp 35.000 / orang',
-              numericCost: 35000,
+              estimatedCost: `Rp ${foodCost.toLocaleString('id-ID')} / orang`,
+              numericCost: foodCost,
               coords: [targetCoords.lat + (d - 1) * 0.02 + 0.012, targetCoords.lng + (d - 1) * 0.015 + 0.01],
               image: 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=800&q=80',
-              aiTip: `Mencicipi masakan khas Lampung otentik dengan racikan rempah istimewa.`,
+              aiTip: `[${tipPrefix}] Mencicipi masakan khas Lampung otentik dengan racikan rempah istimewa.`,
               travelTime: '15 menit perjalanan',
             },
             {
@@ -241,11 +258,11 @@ export const PlannerPage: React.FC = () => {
               activityTitle: `Pesona Sunset & Bukit Panorama ${selectedRegency}`,
               category: 'Alam',
               location: `Dataran Tinggi ${selectedRegency}`,
-              estimatedCost: 'Rp 20.000 / orang',
-              numericCost: 20000,
+              estimatedCost: `Rp ${spotCost2.toLocaleString('id-ID')} / orang`,
+              numericCost: spotCost2,
               coords: [targetCoords.lat + (d - 1) * 0.02 - 0.015, targetCoords.lng + (d - 1) * 0.015 - 0.012],
               image: 'https://images.unsplash.com/photo-1432405972618-c60b0225b8f9?auto=format&fit=crop&w=800&q=80',
-              aiTip: `Spot foto matahari terbenam paling indah dan adem.`,
+              aiTip: `[${tipPrefix}] Spot foto matahari terbenam paling indah dan adem.`,
               travelTime: '20 menit perjalanan',
             },
           ],
