@@ -356,7 +356,21 @@ export const generateAiPlannerItinerary = async (payload: GeneratePlannerPayload
             }))
             .sort((a, b) => b.score - a.score);
 
-          let chosenItem = candidates.length > 0 ? candidates[0].item : null;
+          // Top-K Weighted Random Sampling for route diversity
+          let chosenItem = null;
+          if (candidates.length > 0) {
+            const topK = candidates.slice(0, Math.min(candidates.length, 5));
+            const totalScore = topK.reduce((sum, c) => sum + c.score, 0);
+            let rand = Math.random() * totalScore;
+            for (const cand of topK) {
+              rand -= cand.score;
+              if (rand <= 0) {
+                chosenItem = cand.item;
+                break;
+              }
+            }
+            if (!chosenItem) chosenItem = topK[0].item;
+          }
 
           // Hierarchical Fallback inside same regency if pool exhausted
           if (!chosenItem && matched.length > 0) {
