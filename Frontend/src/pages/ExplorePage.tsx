@@ -562,7 +562,7 @@ export const ExplorePage: React.FC = () => {
             src="/assets/images/banners/explore-banner-map.png"
             alt=""
             aria-hidden="true"
-            className="pointer-events-none absolute right-[5%] top-1/2 hidden h-[95%] w-auto max-w-[480px] -translate-y-1/2 select-none object-contain opacity-60 lg:block z-0"
+            className="pointer-events-none absolute right-[18%] top-1/2 hidden h-[95%] w-auto max-w-[480px] -translate-y-1/2 select-none object-contain opacity-60 lg:block z-0"
           />
 
           {/* Banner Content Container */}
