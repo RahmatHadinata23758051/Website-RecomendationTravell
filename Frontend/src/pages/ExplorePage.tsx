@@ -562,7 +562,7 @@ export const ExplorePage: React.FC = () => {
             src="/assets/images/banners/explore-banner-map.png"
             alt=""
             aria-hidden="true"
-            className="pointer-events-none absolute right-[18%] top-1/2 hidden h-[95%] w-auto max-w-[480px] -translate-y-1/2 select-none object-contain opacity-60 lg:block z-0"
+            className="pointer-events-none absolute right-[35%] top-1/2 hidden h-[95%] w-auto max-w-[480px] -translate-y-1/2 select-none object-contain opacity-60 lg:block z-0"
           />
 
           {/* Banner Content Container */}
@@ -1053,13 +1053,12 @@ export const ExplorePage: React.FC = () => {
 
                           {/* Sentiment Badge */}
                           <span
-                            className={`px-2 py-0.5 rounded-full text-[9px] font-extrabold ${
-                              rev.sentimentLabel === 'POSITIVE'
-                                ? 'bg-emerald-100 text-emerald-800'
-                                : rev.sentimentLabel === 'NEGATIVE'
+                            className={`px-2 py-0.5 rounded-full text-[9px] font-extrabold ${rev.sentimentLabel === 'POSITIVE'
+                              ? 'bg-emerald-100 text-emerald-800'
+                              : rev.sentimentLabel === 'NEGATIVE'
                                 ? 'bg-rose-100 text-rose-800'
                                 : 'bg-slate-200 text-slate-700'
-                            }`}
+                              }`}
                           >
                             {rev.sentimentLabel === 'POSITIVE' ? 'Sentimen Positif ✨' : rev.sentimentLabel === 'NEGATIVE' ? 'Perlu Perbaikan ⚠️' : 'Sentimen Netral 💬'}
                           </span>
