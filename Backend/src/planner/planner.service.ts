@@ -211,12 +211,26 @@ export class PlannerService {
 
     const baseCoords = cleanKey ? regencyCoords[cleanKey] : { lat: -5.4292, lng: 105.2611 };
 
+    let spotCost = 15000;
+    let foodCost = 20000;
+    let tipPrefix = 'Tipe Backpacker (Hemat)';
+
+    if (budget === 'Standar') {
+      spotCost = 35000;
+      foodCost = 45000;
+      tipPrefix = 'Tipe Standar';
+    } else if (budget === 'Mewah' || budget === 'Sultan') {
+      spotCost = 85000;
+      foodCost = 120000;
+      tipPrefix = 'Tipe Mewah (Sultan)';
+    }
+
     const pool = [
       {
         canonicalId: 'fb-1',
         name: `Wisata Unggulan ${regency}`,
         category: category !== 'Semua' ? category : 'Pantai',
-        cost: 25000,
+        cost: spotCost,
         lat: baseCoords.lat,
         lng: baseCoords.lng,
         img: '/assets/images/heroes/hero-pahawang-bg.png',
@@ -225,7 +239,7 @@ export class PlannerService {
         canonicalId: 'fb-2',
         name: `Resto Wisata Kuliner Khas ${regency}`,
         category: 'Kuliner',
-        cost: 35000,
+        cost: foodCost,
         lat: baseCoords.lat + 0.015,
         lng: baseCoords.lng + 0.012,
         img: 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=800&q=80',
@@ -234,7 +248,7 @@ export class PlannerService {
         canonicalId: 'fb-3',
         name: `Bukit Panorama Sunset ${regency}`,
         category: 'Alam',
-        cost: 20000,
+        cost: spotCost,
         lat: baseCoords.lat - 0.018,
         lng: baseCoords.lng - 0.014,
         img: 'https://images.unsplash.com/photo-1432405972618-c60b0225b8f9?auto=format&fit=crop&w=800&q=80',
@@ -258,7 +272,7 @@ export class PlannerService {
           numericCost: item.cost,
           coords: [item.lat, item.lng],
           image: item.img,
-          aiTip: `Saran destinasi menarik di ${regency}. Disesuaikan dengan ritme liburan ${pace}.`,
+          aiTip: `[${tipPrefix}] Saran destinasi menarik di ${regency}. Disesuaikan dengan ritme liburan ${pace}.`,
           travelTime: s === 0 ? 'Lokasi awal hari' : '25 menit perjalanan',
         });
       }
