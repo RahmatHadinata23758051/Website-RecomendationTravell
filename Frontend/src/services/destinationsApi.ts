@@ -137,12 +137,44 @@ const mapCategoryName = (raw: string): string => {
   return catMap[String(raw).toLowerCase()] || 'Alam';
 };
 
+export const generateSmartPriceLabel = (item: any): { text: string; num: number } => {
+  const rawCategory = String(item.primary_category || '').toLowerCase();
+  const rawName = String(item.name || '').toLowerCase();
+  const priceVal = Number(item.price_min_idr || 0);
+
+  // 1. Free / Public Landmarks (Taman, Tugu, Alun-Alun, Hutan Kota, Embung)
+  if (
+    rawCategory.match(/park|forest|history|other/) ||
+    rawName.match(/taman|tugu|alun|hutan kota|embung|lapangan|masjid|islamic center/)
+  ) {
+    if (priceVal <= 10000 || priceVal === 25000) {
+      return { text: 'Gratis / Terjangkau ($)', num: 5000 };
+    }
+  }
+
+  // 2. Premium / Island / Resort / Waterpark
+  if (
+    rawCategory.match(/resort|waterpark|theme_park/) ||
+    rawName.match(/pahawang|kiluan|krui|resort|waterpark|dolphins|diving|villa/)
+  ) {
+    const cost = priceVal > 30000 && priceVal !== 25000 ? priceVal : 85000;
+    return { text: `Wisata Premium ($$$) ~ Rp ${cost.toLocaleString('id-ID')}`, num: cost };
+  }
+
+  // 3. Culinary / Resto / Cafe
+  if (rawCategory.match(/kuliner|culinary|resto|makanan|café|cafe/) || rawName.match(/sate|pempek|pindang|cafe|kopi|resto/)) {
+    const cost = priceVal > 20000 && priceVal !== 25000 ? priceVal : 35000;
+    return { text: `Kuliner / Resto ($$) ~ Rp ${cost.toLocaleString('id-ID')}`, num: cost };
+  }
+
+  // 4. Standard Tourism (Beach, Waterfall, Mountain, Culture)
+  const cost = priceVal > 0 && priceVal !== 25000 ? priceVal : 20000;
+  return { text: `Estimasi Masuk ($$) ~ Rp ${cost.toLocaleString('id-ID')}`, num: cost };
+};
+
 export const mapApiToDestination = (item: any): Destination => {
   const primaryCategory = mapCategoryName(item.primary_category);
-
-  const priceText = item.price_min_idr && item.price_min_idr > 0
-    ? `Rp ${Number(item.price_min_idr).toLocaleString('id-ID')} / orang`
-    : 'Gratis (Parkir Terjangkau)';
+  const smartPrice = generateSmartPriceLabel(item);
 
   return {
     id: item.canonical_id || `dest-${Math.random()}`,
@@ -152,8 +184,8 @@ export const mapApiToDestination = (item: any): Destination => {
     category: primaryCategory as any,
     rating: item.rating || 4.6,
     reviews: item.reviews_count || 120,
-    price: priceText,
-    numericPrice: item.price_min_idr || 0,
+    price: smartPrice.text,
+    numericPrice: smartPrice.num,
     duration: '2-3 jam',
     hours: '08:00 - 17:00 WIB',
     image: item.image_url || '/assets/images/heroes/hero-pahawang-bg.png',
@@ -335,18 +367,9 @@ export const generateAiPlannerItinerary = async (payload: GeneratePlannerPayload
             const cid = chosenItem.canonical_id || chosenItem.name;
             usedIds.add(cid);
 
-            // Compute realistic price per slot based on budget tier & item dataset
-            let defaultBaseCost = stpl.isFood ? 25000 : 15000;
-            if (budgetTier === 'Standar') defaultBaseCost = stpl.isFood ? 45000 : 35000;
-            if (budgetTier === 'Mewah') defaultBaseCost = stpl.isFood ? 120000 : 85000;
-
-            const itemCost = chosenItem.price_min_idr && chosenItem.price_min_idr > 0
-              ? chosenItem.price_min_idr
-              : defaultBaseCost;
-
-            totalCostAccum += itemCost;
-
             const mapped = mapApiToDestination(chosenItem);
+            const itemCost = mapped.numericPrice || 20000;
+            totalCostAccum += itemCost;
 
             const tipPrefix =
               budgetTier === 'Backpacker'
@@ -361,7 +384,7 @@ export const generateAiPlannerItinerary = async (payload: GeneratePlannerPayload
               activityTitle: mapped.name,
               category: mapped.category,
               location: mapped.location,
-              estimatedCost: `Rp ${itemCost.toLocaleString('id-ID')} / orang`,
+              estimatedCost: mapped.price,
               numericCost: itemCost,
               coords: mapped.coords,
               image: mapped.image,
