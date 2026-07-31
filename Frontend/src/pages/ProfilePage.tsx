@@ -36,7 +36,7 @@ import {
 import { useAuth } from '../context/AuthContext';
 import { apiClient } from '../lib/api';
 import { fetchRealDestinations } from '../services/destinationsApi';
-import { Destination, mockDestinations } from './ExplorePage';
+import { Destination } from './ExplorePage';
 
 import { fetchUserActivities, UserActivity } from '../services/activitiesApi';
 
@@ -167,14 +167,14 @@ export const ProfilePage: React.FC = () => {
         const res = await apiClient.get('/favorites');
         if (isMounted && res.data?.data) {
           const favIds = res.data.data.map((f: any) => f.canonicalId);
-          const pool = allDests && allDests.length > 0 ? allDests : mockDestinations;
-          const matched = pool.filter((d) => favIds.includes(d.id));
-          setFavoriteDestinations(matched.length > 0 ? matched : mockDestinations.slice(0, 4));
-        } else if (isMounted) {
-          setFavoriteDestinations(mockDestinations.slice(0, 4));
+          const pool = allDests || [];
+          const matched = pool.filter((d: Destination) => favIds.includes(d.id));
+          setFavoriteDestinations(matched.length > 0 ? matched : pool.slice(0, 4));
+        } else if (isMounted && allDests) {
+          setFavoriteDestinations(allDests.slice(0, 4));
         }
       } catch (err) {
-        if (isMounted) setFavoriteDestinations(mockDestinations.slice(0, 4));
+        if (isMounted) setFavoriteDestinations([]);
       }
     };
 

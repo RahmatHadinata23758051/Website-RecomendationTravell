@@ -19,7 +19,7 @@ import {
   Utensils,
   Footprints,
 } from 'lucide-react';
-import { Destination, mockDestinations } from './ExplorePage';
+import { Destination } from './ExplorePage';
 import { useAuth } from '../context/AuthContext';
 import { apiClient } from '../lib/api';
 import { fetchRealDestinations } from '../services/destinationsApi';
@@ -27,7 +27,7 @@ import { fetchRealDestinations } from '../services/destinationsApi';
 export const FavoritesPage: React.FC = () => {
   const { isAuthenticated } = useAuth();
   const [favoriteIds, setFavoriteIds] = useState<string[]>([]);
-  const [allDestinations, setAllDestinations] = useState<Destination[]>(mockDestinations);
+  const [allDestinations, setAllDestinations] = useState<Destination[]>([]);
   const [searchKeyword, setSearchKeyword] = useState<string>('');
   const [selectedCategory, setSelectedCategory] = useState<string>('Semua');
   const [selectedDestination, setSelectedDestination] = useState<Destination | null>(null);
