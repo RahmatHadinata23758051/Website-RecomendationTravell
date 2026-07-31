@@ -557,12 +557,12 @@ export const ExplorePage: React.FC = () => {
             className="pointer-events-none absolute left-3 top-1/2 hidden h-[88%] w-auto -translate-y-1/2 select-none sm:block"
           />
 
-          {/* Right Topography Map (Pure Transparent PNG, Behind Controls) */}
+          {/* Right Topography Map (Centered behind Search Box & Button) */}
           <img
             src="/assets/images/banners/explore-banner-map.png"
             alt=""
             aria-hidden="true"
-            className="pointer-events-none absolute right-0 top-1/2 hidden h-full max-w-[45%] -translate-y-1/2 select-none object-contain opacity-60 lg:block"
+            className="pointer-events-none absolute right-[5%] top-1/2 hidden h-[95%] w-auto max-w-[480px] -translate-y-1/2 select-none object-contain opacity-60 lg:block z-0"
           />
 
           {/* Banner Content Container */}
