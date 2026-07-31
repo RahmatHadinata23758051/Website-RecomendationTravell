@@ -245,20 +245,48 @@ export const generateAiPlannerItinerary = async (payload: GeneratePlannerPayload
         .map((c) => c.toLowerCase().trim())
         .filter((c) => c && c !== 'semua');
 
-      if (requestedCats.length > 0) {
-        const matchedCats = attractions.filter((item: any) =>
-          requestedCats.some((rc) => String(item.primary_category || '').toLowerCase().includes(rc))
-        );
-        if (matchedCats.length > 0) {
-          const otherCats = attractions.filter((item: any) =>
-            !requestedCats.some((rc) => String(item.primary_category || '').toLowerCase().includes(rc))
-          );
-          attractions = [...matchedCats, ...otherCats];
-        }
-      }
+      const budgetTier = payload.budget_level || 'Standar';
 
-      // Sort by rating & reviews
-      attractions.sort((a: any, b: any) => (b.rating || 4.5) - (a.rating || 4.5));
+      // Multi-factor Weighted Relevance Scoring Function:
+      // Score = (CategoryMatch * 0.40) + (BudgetMatch * 0.40) + (Rating/5 * 0.20)
+      const calculateRelevanceScore = (item: any, isFoodSlot: boolean): number => {
+        const itemCat = String(item.primary_category || '').toLowerCase();
+        
+        // 1. Category Score (0.0 to 1.0)
+        let categoryScore = 0.5;
+        if (isFoodSlot) {
+          categoryScore = itemCat.match(/kuliner|culinary|resto|makanan|café|cafe/) ? 1.0 : 0.3;
+        } else if (requestedCats.length > 0) {
+          categoryScore = requestedCats.some((rc) => itemCat.includes(rc)) ? 1.0 : 0.3;
+        } else {
+          categoryScore = 0.8;
+        }
+
+        // 2. Budget Match Score (0.0 to 1.0)
+        const price = Number(item.price_min_idr || 25000);
+        let budgetScore = 0.5;
+
+        if (budgetTier === 'Backpacker') {
+          if (price <= 20000) budgetScore = 1.0;
+          else if (price <= 35000) budgetScore = 0.75;
+          else if (price <= 50000) budgetScore = 0.4;
+          else budgetScore = 0.1; // Penalty for expensive items on Backpacker budget
+        } else if (budgetTier === 'Standar') {
+          if (price >= 15000 && price <= 75000) budgetScore = 1.0;
+          else if (price <= 120000) budgetScore = 0.7;
+          else budgetScore = 0.3;
+        } else { // Mewah / Sultan
+          if (price >= 50000) budgetScore = 1.0;
+          else if (price >= 25000) budgetScore = 0.6;
+          else budgetScore = 0.3;
+        }
+
+        // 3. Rating Score (0.0 to 1.0)
+        const rating = Number(item.rating || 4.5);
+        const ratingScore = Math.min(1.0, rating / 5.0);
+
+        return (categoryScore * 0.40) + (budgetScore * 0.40) + (ratingScore * 0.20);
+      };
 
       const usedIds = new Set<string>();
       const numDays = Math.min(payload.duration_days || 1, 5);
@@ -287,19 +315,45 @@ export const generateAiPlannerItinerary = async (payload: GeneratePlannerPayload
         slotTemplates.forEach((stpl, tIdx) => {
           const pool = stpl.isFood ? culinaryPool : attractions;
 
-          let chosenItem = pool.find((item: any) => !usedIds.has(item.canonical_id || item.name));
-          if (!chosenItem && pool.length > 0) {
-            chosenItem = pool[tIdx % pool.length];
+          // Rank available pool candidates by relevance score for this slot
+          const candidates = pool
+            .filter((item: any) => !usedIds.has(item.canonical_id || item.name))
+            .map((item: any) => ({
+              item,
+              score: calculateRelevanceScore(item, stpl.isFood),
+            }))
+            .sort((a, b) => b.score - a.score);
+
+          let chosenItem = candidates.length > 0 ? candidates[0].item : null;
+
+          // Hierarchical Fallback inside same regency if pool exhausted
+          if (!chosenItem && matched.length > 0) {
+            chosenItem = matched[tIdx % matched.length];
           }
 
           if (chosenItem) {
             const cid = chosenItem.canonical_id || chosenItem.name;
             usedIds.add(cid);
 
-            const itemCost = chosenItem.price_min_idr || (stpl.isFood ? 35000 : 25000);
+            // Compute realistic price per slot based on budget tier & item dataset
+            let defaultBaseCost = stpl.isFood ? 25000 : 15000;
+            if (budgetTier === 'Standar') defaultBaseCost = stpl.isFood ? 45000 : 35000;
+            if (budgetTier === 'Mewah') defaultBaseCost = stpl.isFood ? 120000 : 85000;
+
+            const itemCost = chosenItem.price_min_idr && chosenItem.price_min_idr > 0
+              ? chosenItem.price_min_idr
+              : defaultBaseCost;
+
             totalCostAccum += itemCost;
 
             const mapped = mapApiToDestination(chosenItem);
+
+            const tipPrefix =
+              budgetTier === 'Backpacker'
+                ? 'Tipe Backpacker (Hemat)'
+                : budgetTier === 'Mewah'
+                ? 'Tipe Mewah (Sultan)'
+                : 'Tipe Standar';
 
             daySlots.push({
               canonical_id: cid,
@@ -307,11 +361,11 @@ export const generateAiPlannerItinerary = async (payload: GeneratePlannerPayload
               activityTitle: mapped.name,
               category: mapped.category,
               location: mapped.location,
-              estimatedCost: mapped.price,
+              estimatedCost: `Rp ${itemCost.toLocaleString('id-ID')} / orang`,
               numericCost: itemCost,
               coords: mapped.coords,
               image: mapped.image,
-              aiTip: `Rekomendasi real AI Raden Gajah untuk ${payload.city_or_regency}. Rating ulasan ${mapped.rating}/5.0.`,
+              aiTip: `[${tipPrefix}] Rekomendasi AI Raden Gajah untuk ${payload.city_or_regency}. Rating ${mapped.rating}/5.0.`,
               travelTime: tIdx === 0 ? 'Lokasi awal hari' : '20 menit perjalanan',
             });
           }
