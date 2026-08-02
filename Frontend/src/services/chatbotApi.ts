@@ -99,19 +99,19 @@ export const askRadenGajahChatbot = async (payload: AskChatbotPayload): Promise<
   // 2. Active Regency Resolution (Current Message First, Then History)
   let activeRegency = '';
   if (lowerMsg.includes('pesisir barat') || lowerMsg.includes('krui')) activeRegency = 'pesisir barat';
+  else if (lowerMsg.includes('pesawaran')) activeRegency = 'pesawaran';
   else if (lowerMsg.includes('tanggamus')) activeRegency = 'tanggamus';
   else if (lowerMsg.includes('bandar lampung') || lowerMsg.includes('bdl')) activeRegency = 'bandar lampung';
   else if (lowerMsg.includes('tulang bawang') || lowerMsg.includes('tubaba')) activeRegency = 'tulang bawang';
-  else if (lowerMsg.includes('pesawaran')) activeRegency = 'pesawaran';
   else {
-    if (combinedCtx.includes('tanggamus')) activeRegency = 'tanggamus';
+    if (combinedCtx.includes('pesawaran')) activeRegency = 'pesawaran';
+    else if (combinedCtx.includes('tanggamus')) activeRegency = 'tanggamus';
     else if (combinedCtx.includes('pesisir barat') || combinedCtx.includes('krui')) activeRegency = 'pesisir barat';
     else if (combinedCtx.includes('bandar lampung') || combinedCtx.includes('bdl')) activeRegency = 'bandar lampung';
     else if (combinedCtx.includes('tulang bawang') || combinedCtx.includes('tubaba')) activeRegency = 'tulang bawang';
-    else if (combinedCtx.includes('pesawaran')) activeRegency = 'pesawaran';
   }
 
-  // 3. Determine Effective Topic: Current Message explicit intent ALWAYS overrides history!
+  // 3. Determine Effective Topic
   let effectiveTopic = '';
   if (msgIsBeach) {
     effectiveTopic = 'beach';
@@ -120,7 +120,6 @@ export const askRadenGajahChatbot = async (payload: AskChatbotPayload): Promise<
   } else if (msgIsFood) {
     effectiveTopic = 'food';
   } else if (isFollowupQuery) {
-    // Ambiguous follow-up without topic keyword
     const lastUserMsg = Array.isArray(payload.history) && payload.history.length > 0 ? payload.history.filter(h => h.sender === 'user').pop()?.text.toLowerCase() || '' : '';
     if (/(kuliner|makan|food|seruit)/i.test(lastUserMsg)) {
       effectiveTopic = 'food';
@@ -135,6 +134,27 @@ export const askRadenGajahChatbot = async (payload: AskChatbotPayload): Promise<
 
   // A. Food Topic
   if (effectiveTopic === 'food') {
+    if (activeRegency === 'pesawaran') {
+      return {
+        reply: `Tabik Pun! 🍲 Kuliner paling khas & lezat di **Kabupaten Pesawaran** adalah olahan **Seruit Ikan Simba & Sambal Rampai** segar yang dinikmati tepi pantai!
+
+Berikut rekomendasi kuliner mantap di Pesawaran:
+
+🐟 **1. Seruit Ikan Bakar Simba / Patin**
+Ikan segar bakar bumbu gurih khas Pesawaran yang dinikmati bersama sambal tempoyak durian & lalapan segar.
+
+🦐 **2. Seafood Olahan Laut Ketapang**
+Hasil tangkapan nelayan segar seperti kepiting, cumi bakar, & udang goreng mentega di sekitar Dermaga Ketapang.
+
+🥥 **3. Es Kelapa Muda Pasir Putih**
+Minuman penyegar khas pantai Pesawaran sambil menikmati pemandangan laut jernih.
+
+📍 *Rekomendasi Tempat*: Rumah makan lesehan seafood tepi Pantai Mutun, Sari Ringgung, & kawasan Dermaga Ketapang!`,
+        suggested_queries: ['🏖️ Pantai di Pesawaran', '🤿 Snorkeling Pulau Pahawang', '💰 Estimasi biaya liburan'],
+        destinations: [],
+      };
+    }
+
     if (activeRegency === 'pesisir barat') {
       return {
         reply: `Tabik Pun! 🍲 Kuliner paling khas & legendaris di **Pesisir Barat (Krui)** adalah olahan **Ikan Tuhuk (Ikan Marlin Samudra)** segar!
@@ -150,9 +170,7 @@ Sate daging marlin segar bakar bumbu kecap pedas gurih khas pesisir samudra.
 🍲 **3. Seruit Ikan Laut & Tempoyak Durian**
 Ikan laut bakar disajikan dengan tempoyak durian fermentasi dan lalapan segar.
 
-📍 *Rekomendasi Tempat*: Kamu bisa mencicipinya di **Kedai Nelayan Vanie** (Jl. Lintas Barat Sumatra) atau resto seafood sepanjang pantai Tanjung Setia & Labuhan Jukung!
-
-Ada yang ingin kamu tanyakan lagi seputar penginapan atau tempat indahnya di Krui? 😊`,
+📍 *Rekomendasi Tempat*: Kamu bisa mencicipinya di **Kedai Nelayan Vanie** (Jl. Lintas Barat Sumatra) atau resto seafood sepanjang pantai Tanjung Setia & Labuhan Jukung!`,
         suggested_queries: ['🏖️ Pantai di Pesisir Barat', '🏄 Surfing Tanjung Setia', '💰 Estimasi biaya liburan'],
         destinations: [],
       };
@@ -173,9 +191,7 @@ Gulai santan kaya bumbu rempah tradisional khas pesisir Kota Agung & Gisting.
 ☕ **3. Kopi Robusta Gisting Tanggamus**
 Kopi lereng Gunung Tanggamus yang sangat harum & nikmat dinikmati di udara sejuk Gisting.
 
-📍 *Rekomendasi Tempat*: Rumah makan lesehan seafood di sekitar Dermaga Kota Agung atau kawasan wisata Gisting!
-
-Mau Muli bantu rekomendasikan tempat wisata eksotis terdekat seperti Teluk Kiluan / Gigi Hiu? 😊`,
+📍 *Rekomendasi Tempat*: Rumah makan lesehan seafood di sekitar Dermaga Kota Agung atau kawasan wisata Gisting!`,
         suggested_queries: ['🐬 Wisata lumba-lumba Teluk Kiluan', '🪨 Pantai Gigi Hiu', '🌿 Udara sejuk Gisting'],
         destinations: [],
       };
@@ -194,9 +210,7 @@ Pusat olahan Seruit ikan simba/patin bakar komplit dengan sambal tempoyak durian
 Sangat terkenal dengan Ayam Pop legendaris khas Lampung & olahan Padang rempah gurih.
 
 🍌 **3. Keripik Pisang Cokelat YenYen (Pusat Oleh-oleh Gang PU)**
-Pusat keripik pisang anekarasa cokelat lumer terpopuler yang wajib dibawa pulang!
-
-Mana nih yang paling bikin kamu penasaran? 😊`,
+Pusat keripik pisang anekarasa cokelat lumer terpopuler yang wajib dibawa pulang!`,
         suggested_queries: ['📍 Wisata hits Bandar Lampung', '🏖️ Pantai di Pesawaran', '💰 Estimasi biaya liburan'],
         destinations: [],
       };
@@ -205,6 +219,34 @@ Mana nih yang paling bikin kamu penasaran? 😊`,
 
   // B. Wisata / Beach Topic
   if (effectiveTopic === 'wisata' || effectiveTopic === 'beach') {
+    if (activeRegency === 'pesawaran') {
+      return {
+        reply: `Tabik Pun! 🤿 **Kabupaten Pesawaran** adalah rajanya wisata bahari, island hopping, & snorkeling di Lampung!
+
+Berikut destinasi wisata unggulan paling hits yang wajib kamu kunjungi di Pesawaran:
+
+🤿 **1. Pulau Pahawang (Spot Snorkeling Nemo)**
+Destinasi bahari kelas dunia tempat snorkeling terbaik melihat terumbu karang alami & ekosistem Ikan Nemo yang sangat bening.
+
+🏝️ **2. Pantai Sari Ringgung & Pasir Timbul**
+Pantai pasir putih populer dengan fenomena unik wahana Pasir Timbul mengapung di tengah laut.
+
+🌴 **3. Pulau Kelagian & Pantai Mutun**
+Pulau pasir putih halus berair laut tenang yang sangat cocok untuk liburan keluarga & wahana olahraga air.
+
+🌊 **4. Pantai Dewi Mandapa & Pulau Mahitam**
+Spot pantai estetik dengan hutan mangrove instagramable & daratan pasir timbul menuju Pulau Mahitam.
+
+Destinasi mana yang paling ingin kamu kunjungi di Pesawaran? 😊`,
+        suggested_queries: [
+          '🤿 Paket snorkeling Pulau Pahawang',
+          '🏖️ Tiket masuk Pantai Sari Ringgung',
+          '🍲 Kuliner Seruit Pesawaran',
+        ],
+        destinations: [],
+      };
+    }
+
     if (activeRegency === 'pesisir barat') {
       return {
         reply: `Tabik Pun! 🏄 **Kabupaten Pesisir Barat (Krui)** adalah surga wisata pantai samudra kelas dunia di Lampung!
@@ -266,16 +308,17 @@ Ada yang paling membuatmu tertarik untuk dikunjungi di Tanggamus? 😊`,
 
   if (allDestinations && allDestinations.length > 0) {
     let filtered = allDestinations.filter((d: any) => {
-      const nameLower = (d.name || '').toLowerCase();
+      const nameLower = (d.name || '').toLowerCase().trim();
       return (
         nameLower !== 'wisata' &&
+        nameLower !== 'destinasi wisata' &&
         !nameLower.startsWith('lampung') &&
         !nameLower.startsWith('wisata alam') &&
-        !nameLower.includes('tour and travel') &&
-        !nameLower.includes('tour & travel') &&
-        !nameLower.includes('travel rasi') &&
-        !nameLower.includes('biro perjalanan') &&
-        !nameLower.includes('rental mobil') &&
+        !nameLower.includes('tour') &&
+        !nameLower.includes('travel') &&
+        !nameLower.includes('biro') &&
+        !nameLower.includes('mepo') &&
+        !nameLower.includes('rental') &&
         !nameLower.includes('tugu selamat') &&
         !nameLower.includes('gapura selamat') &&
         !nameLower.includes('spbu') &&

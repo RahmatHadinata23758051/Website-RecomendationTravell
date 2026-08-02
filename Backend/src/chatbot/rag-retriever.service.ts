@@ -79,19 +79,19 @@ export class RagRetrieverService implements OnModuleInit {
         const parsed = JSON.parse(rawData);
         this.destinationsPool = parsed
           .filter((item: any) => {
-            const nameLower = (item.name || '').toLowerCase();
-            const categoryLower = (item.primary_category || item.category || '').toLowerCase();
+            const nameLower = (item.name || '').toLowerCase().trim();
             
-            // Filter out non-tourist spots like tour agencies, rental, gas stations, buses, generic titles
+            // Filter out non-attractions strictly
             const isNonTourist =
               nameLower === 'wisata' ||
+              nameLower === 'destinasi wisata' ||
               nameLower.startsWith('lampung') ||
               nameLower.startsWith('wisata alam') ||
-              nameLower.includes('tour and travel') ||
-              nameLower.includes('tour & travel') ||
-              nameLower.includes('travel rasi') ||
-              nameLower.includes('biro perjalanan') ||
-              nameLower.includes('rental mobil') ||
+              nameLower.includes('tour') ||
+              nameLower.includes('travel') ||
+              nameLower.includes('biro') ||
+              nameLower.includes('mepo') ||
+              nameLower.includes('rental') ||
               nameLower.includes('tugu selamat') ||
               nameLower.includes('gapura selamat') ||
               nameLower.includes('spbu') ||
@@ -231,7 +231,6 @@ export class RagRetrieverService implements OnModuleInit {
         return dReg.includes(regClean) || dLoc.includes(regClean);
       });
 
-      // If strict filter has items, use candidates, else fallback to pool
       if (candidates.length === 0) {
         candidates = pool;
       }
@@ -254,7 +253,7 @@ export class RagRetrieverService implements OnModuleInit {
         score += 30;
       }
 
-      // Keyword match (avoiding 'wisata' since it matches everything)
+      // Keyword match (avoiding common stop words)
       const queryWords = lowerQuery.split(/\s+/).filter((w) => w.length > 3 && w !== 'wisata' && w !== 'rekomendasi' && w !== 'pantai');
       for (const word of queryWords) {
         if (lowerName.includes(word)) score += 15;
