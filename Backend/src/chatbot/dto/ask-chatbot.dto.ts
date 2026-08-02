@@ -1,4 +1,14 @@
-import { IsNotEmpty, IsOptional, IsString, MinLength } from 'class-validator';
+import { IsNotEmpty, IsOptional, IsString, MinLength, IsArray } from 'class-validator';
+
+export class ChatHistoryItemDto {
+  @IsNotEmpty()
+  @IsString()
+  sender: 'user' | 'bot';
+
+  @IsNotEmpty()
+  @IsString()
+  text: string;
+}
 
 export class AskChatbotDto {
   @IsNotEmpty({ message: 'message is required' })
@@ -9,4 +19,16 @@ export class AskChatbotDto {
   @IsOptional()
   @IsString({ message: 'context must be a string' })
   context?: string;
+
+  @IsOptional()
+  @IsArray()
+  history?: ChatHistoryItemDto[];
+
+  @IsOptional()
+  @IsString()
+  category?: string;
+
+  @IsOptional()
+  @IsString()
+  regency?: string;
 }

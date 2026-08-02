@@ -3,6 +3,7 @@ import { AuthProvider } from './context/AuthContext';
 import { Navbar } from './components/Navbar';
 import { Footer } from './components/Footer';
 import { AuthModal } from './components/AuthModal';
+import { RadenGajahChatWidget } from './components/RadenGajahChatWidget';
 import { HomePage } from './pages/HomePage';
 import { ExplorePage } from './pages/ExplorePage';
 import { PlannerPage } from './pages/PlannerPage';
@@ -26,6 +27,7 @@ export function App() {
           </Routes>
           <Footer />
           <AuthModal />
+          <RadenGajahChatWidget />
         </div>
       </Router>
     </AuthProvider>

@@ -1,83 +1,231 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { HttpService } from '@nestjs/axios';
 import { ConfigService } from '@nestjs/config';
+import { HttpService } from '@nestjs/axios';
 import { firstValueFrom } from 'rxjs';
 import { AskChatbotDto } from './dto/ask-chatbot.dto';
+import { RagRetrieverService, DestinationFact } from './rag-retriever.service';
 
 @Injectable()
 export class ChatbotService {
   private readonly logger = new Logger(ChatbotService.name);
+  private keyIndex = 0;
 
   constructor(
-    private readonly httpService: HttpService,
     private readonly configService: ConfigService,
+    private readonly httpService: HttpService,
+    private readonly ragRetriever: RagRetrieverService,
   ) {}
 
+  private getGeminiApiKeys(): string[] {
+    const rawKeys =
+      this.configService.get<string>('GEMINI_API_KEYS') ||
+      this.configService.get<string>('GEMINI_API_KEY') ||
+      process.env.GEMINI_API_KEYS ||
+      process.env.GEMINI_API_KEY ||
+      '';
+
+    const keys = rawKeys
+      .split(',')
+      .map((k) => k.trim())
+      .filter((k) => k.length > 0);
+
+    return keys;
+  }
+
+  private isComplexItineraryQuery(query: string): boolean {
+    const lower = query.toLowerCase();
+    const complexKeywords = [
+      'buatkan rencana',
+      'susunkan rute',
+      'itinerary',
+      'jadwal 3 hari',
+      'jadwal 2 hari',
+      'liburan 3 hari',
+      'liburan 2 hari',
+      'rencana perjalanan',
+      'rundown',
+      'jadwal perjalanan',
+    ];
+    return complexKeywords.some((kw) => lower.includes(kw));
+  }
+
   async askChatbot(dto: AskChatbotDto) {
-    const { message } = dto;
+    const { message, history, category, regency } = dto;
     this.logger.log(`[CHATBOT QUERY] Processing message: "${message}"`);
 
-    const mlEngineUrl =
-      this.configService.get<string>('ML_ENGINE_URL') || 'http://localhost:8000';
+    // 1. Check for Out-Of-Scope Non-Tourism Queries (Domain Guardrails)
+    const lowerMessage = message.toLowerCase();
+    const outOfScopeKeywords = [
+      'koding',
+      'javascript',
+      'python',
+      'presiden',
+      'matematika',
+      'rumus',
+      'saham',
+      'crypto',
+      'bitcoin',
+      'politik',
+      'pemilu',
+      'skripsi',
+    ];
 
-    try {
-      const response = await firstValueFrom(
-        this.httpService.post(
-          `${mlEngineUrl}/api/v1/chatbot`,
-          dto,
-          { timeout: 5000 },
-        ),
-      );
-
+    const isOutOfScope = outOfScopeKeywords.some((kw) => lowerMessage.includes(kw));
+    if (isOutOfScope) {
       return {
         status: 'success',
-        bot_name: 'Raden Gajah (AI Concierge Lampung)',
-        data: response.data,
-      };
-    } catch (err) {
-      this.logger.warn(
-        `[CHATBOT FALLBACK] Could not reach ML Engine chatbot API: ${err.message}. Using built-in Raden Gajah knowledge base.`,
-      );
-
-      // Local Knowledge Base for Raden Gajah AI Concierge
-      const lower = message.toLowerCase();
-      let reply =
-        'Tabik Pun! Saya Raden Gajah, asisten AI perjalanan wisata Provinsi Lampung. Ada yang bisa saya bantu untuk rencana liburan Anda?';
-      const suggestions = [
-        'Rekomendasi pantai terbaik di Pesawaran',
-        'Kuliner khas Lampung wajib coba',
-        'Jadwal & tips snorkeling Pulau Pahawang',
-      ];
-
-      if (lower.includes('pantai') || lower.includes('laut')) {
-        reply =
-          'Lampung terkenal dengan pantai-pantai indahnya! Pantai Mutun dan Pantai Bensam di Kabupaten Pesawaran sangat ideal untuk keluarga, sedangkan Pantai Tanjung Setia di Krui sangat terkenal di dunia untuk olahraga surfing.';
-      } else if (
-        lower.includes('makan') ||
-        lower.includes('kuliner') ||
-        lower.includes('seruit')
-      ) {
-        reply =
-          'Kuliner wajib khas Lampung adalah Seruit (ikan bakar/goreng yang dicampur sambal terasi, tempoyak durian, dan lalapan). Jangan lupa mencoba Keripik Pisang Cokelat khas Bandar Lampung untuk oleh-oleh!';
-      } else if (
-        lower.includes('pahawang') ||
-        lower.includes('snorkeling')
-      ) {
-        reply =
-          'Pulau Pahawang terkenal dengan keindahan terumbu karang dan spot nemo. Waktu terbaik berkunjung adalah pagi hari jam 07:00 - 14:00 WIB untuk visibilitas air laut jernih.';
-      } else if (lower.includes('rute') || lower.includes('jalan')) {
-        reply =
-          'Untuk akses dari Bandar Lampung menuju kawasan wisata Pesawaran, perjalanan darat menempuh waktu sekitar 45-60 menit via Jalan Raya Teluk Betung.';
-      }
-
-      return {
-        status: 'success',
-        bot_name: 'Raden Gajah (AI Concierge Lampung)',
+        bot_name: 'Raden Gajah & Muli AI Concierge Lampung',
         data: {
-          reply,
-          suggested_queries: suggestions,
+          reply:
+            'Tabik Pun! Saya Raden Gajah & Muli, asisten khusus panduan wisata, budaya, dan kuliner khas Provinsi Lampung. Maaf, saya tidak dapat menjawab pertanyaan di luar seputar pariwisata Lampung. Ada yang ingin Anda tanyakan mengenai pantai, kuliner Seruit, atau destinasi wisata di Lampung?',
+          suggested_queries: [
+            '🏖️ Rekomendasi pantai di Pesawaran',
+            '🍲 Tempat makan Seruit khas Lampung',
+            '🐬 Wisata lumba-lumba Teluk Kiluan',
+          ],
+          destinations: [],
         },
       };
     }
+
+    // 2. Retrieve Relevant Destination Facts via RAG Retriever
+    const relevantFacts: DestinationFact[] = this.ragRetriever.retrieveRelevantFacts(message, regency, category);
+    const ragContext = this.ragRetriever.buildRagContextPrompt(message, regency, category);
+
+    // 3. Determine Model (Hybrid Routing: Gemini 1.5 Flash vs Gemini 1.5 Pro)
+    const isComplex = this.isComplexItineraryQuery(message);
+    const targetModel = isComplex ? 'gemini-1.5-pro' : 'gemini-1.5-flash';
+    this.logger.log(`[HYBRID MODEL ROUTER] Query complexity: ${isComplex ? 'HIGH (Pro)' : 'NORMAL (Flash)'} -> Target: ${targetModel}`);
+
+    // 4. Construct System Prompt & Conversation History
+    const systemPrompt = `Anda adalah "Raden Gajah & Muli AI Concierge", pemandu wisata digital resmi Provinsi Lampung yang ramah, sopan, dan berwawasan luas.
+
+ATURAN UTAMA PERILAKU:
+1. Mulai jawaban dengan sapaan khas Lampung "Tabik Pun!" jika ini awal percakapan atau pertanyaan baru.
+2. Gunakan gaya bahasa hangat, sopan, dan ramah khas pemandu wisata lokal profesional.
+3. Jawab HANYA berdasarkan fakta terverifikasi dari RAG Database berikut:
+${ragContext}
+4. Jika nama tempat dalam RAG Database cocok dengan pertanyaan pengguna, sebutkan nama tempat tersebut secara eksplisit beserta estimasi harga tiket, jam buka, dan lokasinya.
+5. Bersikap jujur dan transparan. Jika informasi tidak ada di database, sampaikan dengan ramah tanpa mengarang cerita palsu.
+6. Berikan respons yang jelas, rapi dengan poin-poin jika merekomendasikan beberapa tempat.`;
+
+    // Format 5-turn history
+    const formattedHistory = Array.isArray(history)
+      ? history.slice(-5).map((h) => `${h.sender === 'user' ? 'Pengguna' : 'Muli AI'}: ${h.text}`).join('\n')
+      : '';
+
+    const fullPrompt = `${systemPrompt}\n\n${formattedHistory ? `RIWAYAT PERCAKAPAN SEBELUMNYA:\n${formattedHistory}\n\n` : ''}PERTANYAAN PENGGUNA TERBARU:\n${message}`;
+
+    // 5. Try calling Gemini API via Multi-Key Load Balancer
+    const apiKeys = this.getGeminiApiKeys();
+
+    if (apiKeys.length > 0) {
+      for (let attempt = 0; attempt < apiKeys.length; attempt++) {
+        const activeKey = apiKeys[this.keyIndex];
+        this.keyIndex = (this.keyIndex + 1) % apiKeys.length;
+
+        try {
+          const url = `https://generativelanguage.googleapis.com/v1beta/models/${targetModel}:generateContent?key=${activeKey}`;
+          const payload = {
+            contents: [
+              {
+                parts: [{ text: fullPrompt }],
+              },
+            ],
+            generationConfig: {
+              temperature: 0.7,
+              maxOutputTokens: 800,
+            },
+          };
+
+          const response = await firstValueFrom(
+            this.httpService.post(url, payload, {
+              headers: { 'Content-Type': 'application/json' },
+              timeout: 10000,
+            }),
+          );
+
+          const aiReply =
+            response.data?.candidates?.[0]?.content?.parts?.[0]?.text ||
+            'Tabik Pun! Maaf, sistem sedang memproses informasi. Ada yang bisa saya bantu untuk wisata Lampung?';
+
+          // Extract suggested queries
+          const suggestions = [
+            '🏖️ Rekomendasi pantai di Pesawaran',
+            '🍲 Kuliner Seruit khas Lampung',
+            '💰 Estimasi biaya liburan 2 hari',
+          ];
+
+          return {
+            status: 'success',
+            bot_name: 'Raden Gajah & Muli AI Concierge Lampung',
+            model_used: targetModel,
+            data: {
+              reply: aiReply,
+              suggested_queries: suggestions,
+              destinations: relevantFacts.slice(0, 3).map((f) => ({
+                id: f.id,
+                name: f.name,
+                location: f.location,
+                regency: f.regency,
+                price: f.price,
+                rating: f.rating,
+              })),
+            },
+          };
+        } catch (err) {
+          const status = err.response?.status;
+          this.logger.warn(
+            `[GEMINI ROTATOR 429 SHIELD] Key index ${this.keyIndex} failed (Status: ${status || err.message}). Failing over to next key...`,
+          );
+        }
+      }
+    }
+
+    // 6. Local Knowledge Base Fallback Shield (100% Zero Crash Guarantee)
+    this.logger.warn(`[CHATBOT FALLBACK SHIELD] All API keys depleted or network down. Triggering Local Knowledge Base.`);
+    return this.executeLocalKbFallback(message, relevantFacts);
+  }
+
+  private executeLocalKbFallback(message: string, relevantFacts: DestinationFact[]) {
+    const lower = message.toLowerCase();
+    let reply =
+      'Tabik Pun! Saya Raden Gajah & Muli AI, pemandu wisata resmi Provinsi Lampung. Selamat datang di Kelana Lampung!';
+
+    if (relevantFacts.length > 0) {
+      const topSpot = relevantFacts[0];
+      reply = `Tabik Pun! Berdasarkan rekomendasi utama di ${topSpot.regency}, Anda sangat disarankan mengunjungi **${topSpot.name}** (${topSpot.category}).\n\n📌 **Lokasi**: ${topSpot.location}\n💰 **Estimasi Biaya**: ${topSpot.price}\n⭐ **Rating**: ${topSpot.rating}★\nℹ️ **Deskripsi**: ${topSpot.description}`;
+    } else if (lower.includes('pantai') || lower.includes('laut')) {
+      reply =
+        'Tabik Pun! Lampung terkenal dengan wisata bahari unggulan seperti **Pulau Pahawang** dan **Pantai Sari Ringgung** di Pesawaran, serta **Pantai Tanjung Setia Krui** di Pesisir Barat yang terkenal di mancanegara untuk olahraga surfing.';
+    } else if (lower.includes('kuliner') || lower.includes('makan') || lower.includes('seruit')) {
+      reply =
+        'Tabik Pun! Kuliner khas utama Suku Lampung yang wajib dicoba adalah **Seruit** (ikan segar bakar/goreng diolah bersama sambal terasi, tempoyak durian fermentasi, dan lalapan segar). Untuk oleh-oleh, keripik pisang anekarasa Bandar Lampung adalah pilihan terpopuler!';
+    } else if (lower.includes('pahawang') || lower.includes('snorkeling')) {
+      reply =
+        'Tabik Pun! **Pulau Pahawang** di Pesawaran adalah tempat terbaik untuk snorkeling dengan keindahan terumbu karang alami dan spot Ikan Nemo. Waktu terbaik berkunjung adalah pagi hari pukul 07:00 - 13:00 WIB.';
+    }
+
+    return {
+      status: 'success',
+      bot_name: 'Raden Gajah & Muli AI Concierge Lampung',
+      model_used: 'local-kb-fallback',
+      data: {
+        reply,
+        suggested_queries: [
+          '🏖️ Rekomendasi pantai di Pesawaran',
+          '🍲 Kuliner Seruit khas Lampung',
+          '🐬 Wisata lumba-lumba Teluk Kiluan',
+        ],
+        destinations: relevantFacts.slice(0, 3).map((f) => ({
+          id: f.id,
+          name: f.name,
+          location: f.location,
+          regency: f.regency,
+          price: f.price,
+          rating: f.rating,
+        })),
+      },
+    };
   }
 }
