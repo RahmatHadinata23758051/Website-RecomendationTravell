@@ -53,8 +53,31 @@ export class ChatbotService {
     const { message, history, category, regency } = dto;
     this.logger.log(`[CHATBOT QUERY] Processing message: "${message}"`);
 
+    const lowerMessage = message.toLowerCase().trim();
+    const cleanMsg = lowerMessage.replace(/[^a-z0-9\s]/gi, '').trim();
+
+    // 0. Detect Simple Greetings (halo, hallo, hai, hi, p, etc.)
+    const greetingWords = ['halo', 'hallo', 'hai', 'hi', 'hey', 'pagi', 'siang', 'sore', 'malam', 'tes', 'test', 'ping', 'p'];
+    const isPureGreeting = greetingWords.includes(cleanMsg) || (cleanMsg.length <= 15 && (cleanMsg.startsWith('halo') || cleanMsg.startsWith('hallo') || cleanMsg.startsWith('hai') || cleanMsg.startsWith('hi')));
+
+    if (isPureGreeting && !cleanMsg.includes('wisata') && !cleanMsg.includes('pantai') && !cleanMsg.includes('kuliner') && !cleanMsg.includes('rekomendasi')) {
+      return {
+        status: 'success',
+        bot_name: 'Muli AI Concierge Lampung',
+        data: {
+          reply:
+            'Tabik Pun! ✨ Halo! Saya **Muli**, Customer Service & AI Concierge Resmi Panduan Wisata Provinsi Lampung. Selamat datang di Kelana Lampung!\n\nAda yang bisa Muli bantu untuk liburanmu hari ini? Kamu bisa bertanya seputar rekomendasi pantai eksotis, wisata alam hits, tempat makan Seruit khas Lampung, atau estimasi biaya liburan! 😊',
+          suggested_queries: [
+            '🏖️ Rekomendasi pantai di Pesawaran',
+            '🍲 Tempat makan Seruit khas Lampung',
+            '📍 Wisata populer di Bandar Lampung',
+          ],
+          destinations: [],
+        },
+      };
+    }
+
     // 1. Check for Out-Of-Scope Non-Tourism Queries (Domain Guardrails)
-    const lowerMessage = message.toLowerCase();
     const outOfScopeKeywords = [
       'koding',
       'javascript',
@@ -312,29 +335,13 @@ Kira-kira destinasi mana nih yang paling bikin kamu penasaran? Muli siap bantu s
     }
 
     // Default Conversational Topic Guide
-    let reply =
-      'Tabik Pun! ✨ Halo! Saya Muli, Customer Service & AI Concierge Resmi Wisata Lampung. Senang sekali bisa menyambutmu di Kelana Lampung!';
-
-    if (lower.includes('pantai') || lower.includes('laut')) {
-      reply =
-        'Tabik Pun! ✨ Kalau kamu suka wisata bahari, Lampung itu rajanya! Kamu wajib coba snorkeling melihat Ikan Nemo di **Pulau Pahawang**, pantai pasir putih **Sari Ringgung** di Pesawaran, atau merasakan ombak surfing kelas dunia di **Pantai Tanjung Setia Krui**, Pesisir Barat! 🌊\n\nMau Muli rekomendasikan pantai di kabupaten tertentu?';
-    } else if (lower.includes('kuliner') || lower.includes('makan') || lower.includes('seruit')) {
-      reply =
-        'Tabik Pun! 🍲 Bicara soal kuliner khas Lampung, juara utamanya tentu saja **Seruit**! Ikan segar bakar yang disajikan dengan sambal tempoyak durian khas, sambal terasi, dan lalapan segar. Untuk buah tangan, Keripik Pisang Cokelat khas Bandar Lampung adalah favorit yang wajib dibeli!\n\nMau Muli pilihkan tempat makan Seruit paling enak di Bandar Lampung?';
-    } else if (lower.includes('pahawang') || lower.includes('snorkeling')) {
-      reply =
-        'Tabik Pun! 🏝️ **Pulau Pahawang** di Pesawaran itu destinasi favorit banget untuk island hopping dan snorkeling! Air lautnya jernih dengan terumbu karang alami dan spot foto foto ikan nemo yang ikonik.\n\nWaktu terbaik berkunjung adalah pagi hari sekitar jam 07:00 - 13:00 WIB. Mau Muli bantu rekomendasikan paket open trip atau spot foto cantiknya?';
-    } else if (lower.includes('gajah') || lower.includes('way kambas')) {
-      reply =
-        'Tabik Pun! 🐘 **Taman Nasional Way Kambas** di Lampung Timur adalah salah satu pusat konservasi & sekolah gajah tertua di Asia! Di sini kamu bisa berinteraksi langsung dengan gajah Sumatera yang ramah dan belajar konservasi alam.\n\nAda yang ingin kamu tanyakan mengenai rute menuju ke sana?';
-    }
-
     return {
       status: 'success',
       bot_name: 'Muli AI Concierge Lampung',
       model_used: 'rag-dataset-engine',
       data: {
-        reply,
+        reply:
+          'Tabik Pun! ✨ Halo! Saya Muli, Customer Service & AI Concierge Resmi Wisata Lampung.\n\nLampung memiliki keindahan wisata luar biasa! Untuk wisata bahari, Anda dapat mengunjungi **Pulau Pahawang** di Pesawaran & **Pantai Tanjung Setia** di Krui. Untuk kuliner khas, cobalah **Seruit** dan Keripik Pisang Cokelat khas Bandar Lampung!',
         suggested_queries: [
           '🏖️ Rekomendasi pantai di Pesawaran',
           '🍲 Kuliner Seruit khas Lampung',

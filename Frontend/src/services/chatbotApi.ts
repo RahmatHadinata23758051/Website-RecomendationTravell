@@ -63,7 +63,26 @@ export const askRadenGajahChatbot = async (payload: AskChatbotPayload): Promise<
   }
 
   // Pure Client-Side RAG Engine (Humanized Gemini Tone)
-  const lowerMsg = payload.message.toLowerCase();
+  const lowerMsg = payload.message.toLowerCase().trim();
+  const cleanMsg = lowerMsg.replace(/[^a-z0-9\s]/gi, '').trim();
+
+  // Pure Greeting Detection
+  const greetingWords = ['halo', 'hallo', 'hai', 'hi', 'hey', 'pagi', 'siang', 'sore', 'malam', 'tes', 'test', 'ping', 'p'];
+  const isPureGreeting = greetingWords.includes(cleanMsg) || (cleanMsg.length <= 15 && (cleanMsg.startsWith('halo') || cleanMsg.startsWith('hallo') || cleanMsg.startsWith('hai') || cleanMsg.startsWith('hi')));
+
+  if (isPureGreeting && !cleanMsg.includes('wisata') && !cleanMsg.includes('pantai') && !cleanMsg.includes('kuliner') && !cleanMsg.includes('rekomendasi')) {
+    return {
+      reply:
+        'Tabik Pun! ✨ Halo! Saya **Muli**, Customer Service & AI Concierge Resmi Panduan Wisata Provinsi Lampung. Selamat datang di Kelana Lampung!\n\nAda yang bisa Muli bantu untuk liburanmu hari ini? Kamu bisa bertanya seputar rekomendasi pantai eksotis, wisata alam hits, tempat makan Seruit khas Lampung, atau estimasi biaya liburan! 😊',
+      suggested_queries: [
+        '🏖️ Rekomendasi pantai di Pesawaran',
+        '🍲 Tempat makan Seruit khas Lampung',
+        '📍 Wisata populer di Bandar Lampung',
+      ],
+      destinations: [],
+    };
+  }
+
   const allDestinations = await getClientDestinations();
 
   const regencies = [
