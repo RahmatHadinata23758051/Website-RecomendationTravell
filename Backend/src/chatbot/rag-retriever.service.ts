@@ -46,20 +46,25 @@ export class RagRetrieverService implements OnModuleInit {
     this.loadDestinationsData();
   }
 
-  private loadDestinationsData() {
+  public loadDestinationsData(): DestinationFact[] {
+    if (this.destinationsPool.length > 0) {
+      return this.destinationsPool;
+    }
+
     try {
       const posiblesPaths = [
         path.join(process.cwd(), '..', 'Frontend', 'public', 'assets', 'data', 'public_destinations.json'),
         path.join(process.cwd(), '..', 'Frontend', 'public', 'data', 'destinations.json'),
         path.join(process.cwd(), '..', 'Frontend', 'public', 'public_destinations.json'),
         path.join(process.cwd(), 'public', 'assets', 'data', 'public_destinations.json'),
+        path.join(__dirname, '..', '..', '..', 'Frontend', 'public', 'assets', 'data', 'public_destinations.json'),
       ];
 
       let rawData = '';
       for (const p of posiblesPaths) {
         if (fs.existsSync(p)) {
           rawData = fs.readFileSync(p, 'utf-8');
-          this.logger.log(`[RAG RETRIEVER] Successfully loaded destinations dataset from: ${p}`);
+          this.logger.log(`[RAG RETRIEVER] Loaded destinations dataset from: ${p}`);
           break;
         }
       }
@@ -70,7 +75,7 @@ export class RagRetrieverService implements OnModuleInit {
           id: item.canonical_id || item.id || item.canonicalId || `dest-${Math.random()}`,
           name: item.name || 'Destinasi Wisata Lampung',
           location: item.address || item.location || item.city_or_regency || 'Lampung',
-          regency: item.city_or_regency || item.regency || 'Bandar Lampung',
+          regency: item.city_or_regency || item.regency || 'Kota Bandar Lampung',
           category: item.primary_category || item.category || 'Alam',
           rating: item.rating || 4.5,
           price: item.price || (item.price_min_idr ? `Rp ${item.price_min_idr.toLocaleString('id-ID')}` : 'Terjangkau ($)'),
@@ -80,17 +85,95 @@ export class RagRetrieverService implements OnModuleInit {
           description: item.description || item.summary || 'Destinasi wisata unggulan di Lampung.',
           facilities: Array.isArray(item.facilities) ? item.facilities : ['Spot Foto', 'Parkir', 'Toilet'],
         }));
-        this.logger.log(`[RAG RETRIEVER] Total ${this.destinationsPool.length} destinations indexed into memory pool.`);
-      } else {
-        this.logger.warn(`[RAG RETRIEVER] public_destinations.json file not found. Initialized with fallback pool.`);
+        this.logger.log(`[RAG RETRIEVER] Indexed ${this.destinationsPool.length} destinations.`);
       }
     } catch (err) {
-      this.logger.error(`[RAG RETRIEVER] Failed to load destinations dataset: ${err.message}`);
+      this.logger.error(`[RAG RETRIEVER] Failed to load dataset: ${err.message}`);
     }
+
+    // Fallback Seed Pool if file load fails
+    if (this.destinationsPool.length === 0) {
+      this.logger.warn(`[RAG RETRIEVER] Using Seed Pool fallback.`);
+      this.destinationsPool = [
+        {
+          id: 'seed-1',
+          name: 'Puncak Mas Bandar Lampung',
+          location: 'Kemiling, Kota Bandar Lampung',
+          regency: 'Kota Bandar Lampung',
+          category: 'Alam',
+          rating: 4.8,
+          price: 'Rp 20.000',
+          numericPrice: 20000,
+          duration: '2-3 jam',
+          hours: '08:00 - 22:00 WIB',
+          description: 'Wisata perbukitan populer di Bandar Lampung dengan wahana foto rumah pohon & pemandangan kota.',
+          facilities: ['Rumah Pohon', 'Spot Foto', 'Kantin', 'Parkir'],
+        },
+        {
+          id: 'seed-2',
+          name: 'Museum Negeri Lampung Ruwa Jurai',
+          location: 'Rajabasa, Kota Bandar Lampung',
+          regency: 'Kota Bandar Lampung',
+          category: 'Budaya',
+          rating: 4.7,
+          price: 'Rp 5.000',
+          numericPrice: 5000,
+          duration: '1-2 jam',
+          hours: '08:00 - 15:00 WIB',
+          description: 'Museum kebudayaan tertua di Lampung berisi koleksi benda bersejarah, meriam antik & pakaian adat Siger.',
+          facilities: ['Pemandu', 'Koleksi Bersejarah', 'Toilet', 'Parkir'],
+        },
+        {
+          id: 'seed-3',
+          name: 'Pulau Pahawang Snorkeling Spot',
+          location: 'Kecamatan Marga Punduh, Kabupaten Pesawaran',
+          regency: 'Kabupaten Pesawaran',
+          category: 'Pantai',
+          rating: 4.9,
+          price: 'Rp 150.000 (Paket Boat & Alat)',
+          numericPrice: 150000,
+          duration: '1 Hari',
+          hours: '07:00 - 16:00 WIB',
+          description: 'Destinasi bahari kelas dunia tempat snorkeling terbaik melihat terumbu karang alami & ekosistem Ikan Nemo.',
+          facilities: ['Boat', 'Alat Snorkeling', 'Kamera Underwater', 'Homestay'],
+        },
+        {
+          id: 'seed-4',
+          name: 'Pantai Sari Ringgung',
+          location: 'Padang Cermin, Kabupaten Pesawaran',
+          regency: 'Kabupaten Pesawaran',
+          category: 'Pantai',
+          rating: 4.7,
+          price: 'Rp 20.000',
+          numericPrice: 20000,
+          duration: '3-4 jam',
+          hours: '06:00 - 18:00 WIB',
+          description: 'Pantai pasir putih populer dengan atraksi Pasir Timbul di tengah laut & wahana olahraga air.',
+          facilities: ['Pasir Timbul', 'Restoran Apung', 'Gazebo', 'Parkir'],
+        },
+        {
+          id: 'seed-5',
+          name: 'Restoran Seruit khas Lampung Ibu Hajah',
+          location: 'Kota Bandar Lampung',
+          regency: 'Kota Bandar Lampung',
+          category: 'Kuliner',
+          rating: 4.8,
+          price: 'Rp 35.000 / porsi',
+          numericPrice: 35000,
+          duration: '1 jam',
+          hours: '10:00 - 21:00 WIB',
+          description: 'Pusat olahan Seruit tradisional ikan simba/patin bakar diolah bersama sambal tempoyak durian & lalapan.',
+          facilities: ['Lesehan', 'Parkir Luas', 'AC', 'Lalapan Segar'],
+        },
+      ];
+    }
+
+    return this.destinationsPool;
   }
 
   public retrieveRelevantFacts(query: string, targetRegency?: string, targetCategory?: string): DestinationFact[] {
-    if (!this.destinationsPool || this.destinationsPool.length === 0) {
+    const pool = this.loadDestinationsData();
+    if (!pool || pool.length === 0) {
       return [];
     }
 
@@ -119,7 +202,7 @@ export class RagRetrieverService implements OnModuleInit {
     }
 
     // 3. Score candidates
-    const scored = this.destinationsPool.map((dest) => {
+    const scored = pool.map((dest) => {
       let score = 0;
       const lowerName = dest.name.toLowerCase();
       const lowerReg = dest.regency.toLowerCase();
@@ -155,7 +238,6 @@ export class RagRetrieverService implements OnModuleInit {
       return { dest, score };
     });
 
-    // Filter score > 0 or top items
     scored.sort((a, b) => b.score - a.score);
     return scored.slice(0, 5).map((s) => s.dest);
   }
@@ -173,6 +255,6 @@ export class RagRetrieverService implements OnModuleInit {
       )
       .join('\n');
 
-    return `FAKTA TERVERIFIKASI DATABASE 2.889 DESTINASI WISATA LAMPUNG:\n${factsText}`;
+    return `FAKTA TERVERIFIKASI DATABASE DESTINASI WISATA LAMPUNG:\n${factsText}`;
   }
 }
