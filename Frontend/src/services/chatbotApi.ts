@@ -62,9 +62,15 @@ export const askRadenGajahChatbot = async (payload: AskChatbotPayload): Promise<
     console.warn('[CHATBOT API CLIENT FALLBACK TRIGGERED]', err);
   }
 
-  // Pure Client-Side RAG Engine (Humanized Gemini Tone)
+  // Pure Client-Side RAG Engine (Humanized Gemini Tone & Multi-Turn History Memory)
   const lowerMsg = payload.message.toLowerCase().trim();
   const cleanMsg = lowerMsg.replace(/[^a-z0-9\s]/gi, '').trim();
+
+  // Combine history for multi-turn intent resolution
+  const historyText = Array.isArray(payload.history)
+    ? payload.history.map((h) => h.text.toLowerCase()).join(' ')
+    : '';
+  const combinedCtx = `${historyText} ${lowerMsg}`.trim();
 
   // Pure Greeting Detection
   const greetingWords = ['halo', 'hallo', 'hai', 'hi', 'hey', 'pagi', 'siang', 'sore', 'malam', 'tes', 'test', 'ping', 'p'];
@@ -83,21 +89,23 @@ export const askRadenGajahChatbot = async (payload: AskChatbotPayload): Promise<
     };
   }
 
-  // Kuliner & Food Intent Handling
-  if (lowerMsg.includes('kuliner') || lowerMsg.includes('makan') || lowerMsg.includes('seruit') || lowerMsg.includes('resto') || lowerMsg.includes('makanan')) {
-    if (lowerMsg.includes('pesisir barat') || lowerMsg.includes('krui')) {
-      return {
-        reply: `Tabik Pun! 🍲 Wuih, kalau ke Pesisir Barat (Krui), kuliner khasnya mantap-mantap banget bro!
+  const isKulinerQuery = combinedCtx.includes('kuliner') || combinedCtx.includes('makan') || combinedCtx.includes('seruit') || combinedCtx.includes('resto') || combinedCtx.includes('makanan');
 
-Krui terkenal banget dengan **Olahan Ikan Tuhuk (Ikan Marlin Samudra)** segar hasil tangkapan nelayan lokal. Menu kuliner paling juara yang wajib kamu coba:
+  // Kuliner & Food Intent Handling (Context Aware)
+  if (isKulinerQuery) {
+    if (combinedCtx.includes('pesisir barat') || combinedCtx.includes('krui')) {
+      return {
+        reply: `Tabik Pun! 🍲 Kalau untuk kuliner di **Pesisir Barat (Krui)**, juaranya adalah olahan **Ikan Tuhuk (Ikan Marlin Samudra)** segar hasil tangkapan nelayan lokal!
+
+Berikut kuliner khas paling mantap di Krui yang wajib banget kamu coba:
 
 🐟 **1. Gulai Taboh Ikan Tuhuk**
-Olahan gurih santan kelapa muda dicampur kuah rempah bumbu khas Pesisir Barat. Tekstur daging ikan tuhuknya tebal, padat, dan lembut mirip daging ayam!
+Kuah gurih santan kelapa muda khas Krui dengan bumbu rempah tradisional dan potongan daging ikan tuhuk tebal yang sangat lembut!
 
 🍢 **2. Sate Ikan Tuhuk Krui**
-Sate daging ikan tuhuk segar yang dibakar gurih disajikan dengan bumbu kacang khas atau kecap pedas manis khas pantai.
+Sate daging marlin segar yang dibakar dengan bumbu kecap pedas manis atau bumbu kacang khas pantai.
 
-🍲 **3. Seruit Ikan Laut & Sambal Tempoyak**
+🍲 **3. Seruit Ikan Laut & Tempoyak Durian**
 Ikan simba/marlin segar bakar disajikan dengan tempoyak durian fermentasi khas Lampung dan lalapan segar tepi pantai.
 
 📍 *Rekomendasi Tempat*: Kamu bisa mencicipinya di **Kedai Nelayan Vanie** (Jl. Lintas Barat Sumatra) atau rumah makan seafood di sekitar Tanjung Setia & Labuhan Jukung!
@@ -112,7 +120,7 @@ Kira-kira mau Muli bantu rekomendasikan tempat inap atau pantai terdekatnya? �
       };
     }
 
-    if (lowerMsg.includes('bandar lampung')) {
+    if (combinedCtx.includes('bandar lampung')) {
       return {
         reply: `Tabik Pun! 🍲 Wah, Bandar Lampung adalah pusatnya kuliner lezat khas Lampung bro! 
 
@@ -139,7 +147,7 @@ Mana nih yang paling bikin kamu penasaran untuk dicoba duluan? 😊`,
   }
 
   // Tulang Bawang / Tubaba Intent Handling
-  if (lowerMsg.includes('tulang bawang')) {
+  if (combinedCtx.includes('tulang bawang')) {
     return {
       reply: `Tabik Pun! ✨ Wah, Kabupaten Tulang Bawang & Tulang Bawang Barat (Tubaba) itu kaya sekali akan wisata arsitektur ikonis dan sejarah budaya!
 

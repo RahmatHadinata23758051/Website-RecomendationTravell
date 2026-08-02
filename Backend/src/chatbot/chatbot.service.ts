@@ -56,6 +56,12 @@ export class ChatbotService {
     const lowerMessage = message.toLowerCase().trim();
     const cleanMsg = lowerMessage.replace(/[^a-z0-9\s]/gi, '').trim();
 
+    // Multi-turn History Context Resolution
+    const historyText = Array.isArray(history)
+      ? history.map((h) => h.text.toLowerCase()).join(' ')
+      : '';
+    const combinedContext = `${historyText} ${lowerMessage}`.trim();
+
     // 0. Detect Simple Greetings (halo, hallo, hai, hi, p, etc.)
     const greetingWords = ['halo', 'hallo', 'hai', 'hi', 'hey', 'pagi', 'siang', 'sore', 'malam', 'tes', 'test', 'ping', 'p'];
     const isPureGreeting = greetingWords.includes(cleanMsg) || (cleanMsg.length <= 15 && (cleanMsg.startsWith('halo') || cleanMsg.startsWith('hallo') || cleanMsg.startsWith('hai') || cleanMsg.startsWith('hi')));
@@ -130,8 +136,8 @@ export class ChatbotService {
     }
 
     // 2. Retrieve Relevant Destination Facts via RAG Retriever (2,889 dataset)
-    const relevantFacts: DestinationFact[] = this.ragRetriever.retrieveRelevantFacts(message, regency, category);
-    const ragContext = this.ragRetriever.buildRagContextPrompt(message, regency, category);
+    const relevantFacts: DestinationFact[] = this.ragRetriever.retrieveRelevantFacts(combinedContext, regency, category);
+    const ragContext = this.ragRetriever.buildRagContextPrompt(combinedContext, regency, category);
 
     // 3. Determine Model (Hybrid Routing: Gemini 1.5 Flash vs Gemini 1.5 Pro)
     const isComplex = this.isComplexItineraryQuery(message);
@@ -143,7 +149,7 @@ export class ChatbotService {
 ATURAN UTAMA PERILAKU:
 1. Mulai jawaban dengan sapaan hangat "Tabik Pun! ✨" atau sapaan ramah alami.
 2. Gunakan bahasa Indonesia yang santai, luwes, komunikatif, bersahabat, dan TIDAK KAKU seperti laporan teknis.
-3. Jawab pertanyaan pengguna secara LANGSUNG dan SPESIFIK (jika ditanya kuliner, jawab tentang makanan; jika ditanya pantai, jawab tentang pantai; jika ditanya kabupaten tertentu, jawab kabupaten tersebut).
+3. Jawab pertanyaan pengguna secara LANGSUNG dan SPESIFIK. Jika riwayat percakapan sebelumnya membahas kuliner dan pengguna bertanya "kalo di pesisir barat?", jawablah tentang KULINER di Pesisir Barat!
 4. Gunakan fakta dari RAG Database berikut sebagai acuan tempat:
 ${ragContext}
 5. Ceritakan dengan gaya narasi menarik. Sebutkan nama tempat, daya tarik utama, lokasi singkat, dan perkiraan biaya/rating secara mengalir.
@@ -274,32 +280,36 @@ ${ragContext}
     }
 
     // 7. Intelligent Context-Aware Conversational AI Fallback
-    this.logger.log(`[RAG ENGINE FALLBACK] Generating intelligent conversational RAG response from dataset.`);
-    return this.executeLocalKbFallback(message, relevantFacts);
+    this.logger.log(`[RAG ENGINE FALLBACK] Generating intelligent conversational RAG response with multi-turn memory.`);
+    return this.executeLocalKbFallback(message, combinedContext, relevantFacts);
   }
 
-  private executeLocalKbFallback(message: string, relevantFacts: DestinationFact[]) {
-    const lower = message.toLowerCase();
+  private executeLocalKbFallback(message: string, combinedContext: string, relevantFacts: DestinationFact[]) {
+    const lowerMsg = message.toLowerCase();
+    const lowerCtx = combinedContext.toLowerCase();
 
-    // 1. Kuliner & Food Intent Handling
-    if (lower.includes('kuliner') || lower.includes('makan') || lower.includes('seruit') || lower.includes('resto') || lower.includes('makanan')) {
-      if (lower.includes('pesisir barat') || lower.includes('krui')) {
+    const isKulinerQuery = lowerCtx.includes('kuliner') || lowerCtx.includes('makan') || lowerCtx.includes('seruit') || lowerCtx.includes('resto') || lowerCtx.includes('makanan');
+    const isBeachQuery = lowerCtx.includes('pantai') || lowerCtx.includes('laut') || lowerCtx.includes('snorkeling') || lowerCtx.includes('surfing');
+
+    // 1. Kuliner Intent (Context Aware across turns)
+    if (isKulinerQuery) {
+      if (lowerCtx.includes('pesisir barat') || lowerCtx.includes('krui')) {
         return {
           status: 'success',
           bot_name: 'Muli AI Concierge Lampung',
           model_used: 'rag-dataset-engine',
           data: {
-            reply: `Tabik Pun! 🍲 Wuih, kalau ke Pesisir Barat (Krui), kuliner khasnya mantap-mantap banget bro!
+            reply: `Tabik Pun! 🍲 Kalau untuk kuliner di **Pesisir Barat (Krui)**, juaranya adalah olahan **Ikan Tuhuk (Ikan Marlin Samudra)** segar hasil tangkapan nelayan lokal!
 
-Krui terkenal banget dengan **Olahan Ikan Tuhuk (Ikan Marlin Samudra)** segar hasil tangkapan nelayan lokal. Menu kuliner paling juara yang wajib kamu coba:
+Berikut kuliner khas paling mantap di Krui yang wajib banget kamu coba:
 
 🐟 **1. Gulai Taboh Ikan Tuhuk**
-Olahan gurih santan kelapa muda dicampur kuah rempah bumbu khas Pesisir Barat. Tekstur daging ikan tuhuknya tebal, padat, dan lembut mirip daging ayam!
+Kuah gurih santan kelapa muda khas Krui dengan bumbu rempah tradisional dan potongan daging ikan tuhuk tebal yang sangat lembut!
 
 🍢 **2. Sate Ikan Tuhuk Krui**
-Sate daging ikan tuhuk segar yang dibakar gurih disajikan dengan bumbu kacang khas atau kecap pedas manis khas pantai.
+Sate daging marlin segar yang dibakar dengan bumbu kecap pedas manis atau bumbu kacang khas pantai.
 
-🍲 **3. Seruit Ikan Laut & Sambal Tempoyak**
+🍲 **3. Seruit Ikan Laut & Tempoyak Durian**
 Ikan simba/marlin segar bakar disajikan dengan tempoyak durian fermentasi khas Lampung dan lalapan segar tepi pantai.
 
 📍 *Rekomendasi Tempat*: Kamu bisa mencicipinya di **Kedai Nelayan Vanie** (Jl. Lintas Barat Sumatra) atau rumah makan seafood di sekitar Tanjung Setia & Labuhan Jukung!
@@ -315,7 +325,7 @@ Kira-kira mau Muli bantu rekomendasikan tempat inap atau pantai terdekatnya? �
         };
       }
 
-      if (lower.includes('bandar lampung')) {
+      if (lowerCtx.includes('bandar lampung')) {
         return {
           status: 'success',
           bot_name: 'Muli AI Concierge Lampung',
@@ -347,7 +357,7 @@ Mana nih yang paling bikin kamu penasaran untuk dicoba duluan? 😊`,
     }
 
     // 2. Tulang Bawang / Tubaba Intent Handling
-    if (lower.includes('tulang bawang')) {
+    if (lowerCtx.includes('tulang bawang')) {
       return {
         status: 'success',
         bot_name: 'Muli AI Concierge Lampung',
