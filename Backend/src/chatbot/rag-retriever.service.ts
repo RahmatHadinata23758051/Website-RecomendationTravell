@@ -22,23 +22,29 @@ export class RagRetrieverService implements OnModuleInit {
   private readonly logger = new Logger(RagRetrieverService.name);
   private destinationsPool: DestinationFact[] = [];
 
-  private readonly regencies = [
-    'Bandar Lampung',
-    'Pesawaran',
-    'Lampung Selatan',
-    'Pesisir Barat',
-    'Tanggamus',
-    'Lampung Timur',
-    'Lampung Barat',
-    'Way Kanan',
-    'Metro',
-    'Pringsewu',
-    'Tulang Bawang Barat',
-    'Lampung Utara',
-    'Tulang Bawang',
-    'Mesuji',
-    'Lampung Tengah',
-  ];
+  private readonly regencyAliasMap: Record<string, string> = {
+    'bandar lampung': 'Kota Bandar Lampung',
+    'bdl': 'Kota Bandar Lampung',
+    'pesawaran': 'Kabupaten Pesawaran',
+    'pesisir barat': 'Kabupaten Pesisir Barat',
+    'krui': 'Kabupaten Pesisir Barat',
+    'tanggamus': 'Kabupaten Tanggamus',
+    'lampung selatan': 'Kabupaten Lampung Selatan',
+    'lamsel': 'Kabupaten Lampung Selatan',
+    'lampung timur': 'Kabupaten Lampung Timur',
+    'lamtim': 'Kabupaten Lampung Timur',
+    'lampung barat': 'Kabupaten Lampung Barat',
+    'lambar': 'Kabupaten Lampung Barat',
+    'way kanan': 'Kabupaten Way Kanan',
+    'metro': 'Kota Metro',
+    'pringsewu': 'Kabupaten Pringsewu',
+    'tulang bawang barat': 'Kabupaten Tulang Bawang Barat',
+    'tubaba': 'Kabupaten Tulang Bawang Barat',
+    'tulang bawang': 'Kabupaten Tulang Bawang',
+    'mesuji': 'Kabupaten Mesuji',
+    'lampung tengah': 'Kabupaten Lampung Tengah',
+    'lampung utara': 'Kabupaten Lampung Utara',
+  };
 
   private readonly categories = ['Pantai', 'Alam', 'Budaya', 'Kuliner', 'Adventure'];
 
@@ -71,27 +77,38 @@ export class RagRetrieverService implements OnModuleInit {
 
       if (rawData) {
         const parsed = JSON.parse(rawData);
-        this.destinationsPool = parsed.map((item: any) => ({
-          id: item.canonical_id || item.id || item.canonicalId || `dest-${Math.random()}`,
-          name: item.name || 'Destinasi Wisata Lampung',
-          location: item.address || item.location || item.city_or_regency || 'Lampung',
-          regency: item.city_or_regency || item.regency || 'Kota Bandar Lampung',
-          category: item.primary_category || item.category || 'Alam',
-          rating: item.rating || 4.5,
-          price: item.price || (item.price_min_idr ? `Rp ${item.price_min_idr.toLocaleString('id-ID')}` : 'Terjangkau ($)'),
-          numericPrice: item.numericPrice || item.price_min_idr || 0,
-          duration: item.duration || '1-2 jam',
-          hours: item.hours || '08:00 - 17:00 WIB',
-          description: item.description || item.summary || 'Destinasi wisata unggulan di Lampung.',
-          facilities: Array.isArray(item.facilities) ? item.facilities : ['Spot Foto', 'Parkir', 'Toilet'],
-        }));
-        this.logger.log(`[RAG RETRIEVER] Indexed ${this.destinationsPool.length} destinations.`);
+        this.destinationsPool = parsed
+          .filter((item: any) => {
+            const nameLower = (item.name || '').toLowerCase();
+            return (
+              !nameLower.startsWith('lampung') &&
+              !nameLower.startsWith('wisata alam') &&
+              !nameLower.includes('tugu selamat') &&
+              !nameLower.includes('gapura selamat') &&
+              !nameLower.includes('spbu') &&
+              !nameLower.includes('terminal')
+            );
+          })
+          .map((item: any) => ({
+            id: item.canonical_id || item.id || item.canonicalId || `dest-${Math.random()}`,
+            name: item.name || 'Destinasi Wisata Lampung',
+            location: item.address || item.location || item.city_or_regency || 'Lampung',
+            regency: item.city_or_regency || item.regency || 'Kota Bandar Lampung',
+            category: item.primary_category || item.category || 'Alam',
+            rating: item.rating || 4.5,
+            price: item.price || (item.price_min_idr ? `Rp ${item.price_min_idr.toLocaleString('id-ID')}` : 'Terjangkau ($)'),
+            numericPrice: item.numericPrice || item.price_min_idr || 0,
+            duration: item.duration || '1-2 jam',
+            hours: item.hours || '08:00 - 17:00 WIB',
+            description: item.description || item.summary || 'Destinasi wisata unggulan di Lampung.',
+            facilities: Array.isArray(item.facilities) ? item.facilities : ['Spot Foto', 'Parkir', 'Toilet'],
+          }));
+        this.logger.log(`[RAG RETRIEVER] Indexed ${this.destinationsPool.length} clean destinations.`);
       }
     } catch (err) {
       this.logger.error(`[RAG RETRIEVER] Failed to load dataset: ${err.message}`);
     }
 
-    // Fallback Seed Pool if file load fails
     if (this.destinationsPool.length === 0) {
       this.logger.warn(`[RAG RETRIEVER] Using Seed Pool fallback.`);
       this.destinationsPool = [
@@ -179,20 +196,27 @@ export class RagRetrieverService implements OnModuleInit {
 
     const lowerQuery = query.toLowerCase();
 
-    // 1. Detect Regency
+    // 1. Detect Regency via Alias Map
     let detectedRegency = targetRegency;
     if (!detectedRegency || detectedRegency === 'Semua' || detectedRegency === 'PILIH') {
-      for (const reg of this.regencies) {
-        if (lowerQuery.includes(reg.toLowerCase())) {
-          detectedRegency = reg;
+      for (const [alias, fullReg] of Object.entries(this.regencyAliasMap)) {
+        if (lowerQuery.includes(alias)) {
+          detectedRegency = fullReg;
           break;
         }
       }
     }
 
-    // 2. Detect Category
+    // 2. Detect Category & Food Intent
     let detectedCategory = targetCategory;
-    if (!detectedCategory || detectedCategory === 'Semua') {
+    const isFoodIntent = /(kuliner|kuliiner|kulinr|kulineran|makan|mkan|mkn|makanan|resto|restoran|seruit|warung)/i.test(lowerQuery);
+    const isBeachIntent = /(pantai|pntai|pantaii|laut|snorkeling|surfing|beach)/i.test(lowerQuery);
+
+    if (isFoodIntent) {
+      detectedCategory = 'Kuliner';
+    } else if (isBeachIntent) {
+      detectedCategory = 'Pantai';
+    } else if (!detectedCategory || detectedCategory === 'Semua') {
       for (const cat of this.categories) {
         if (lowerQuery.includes(cat.toLowerCase())) {
           detectedCategory = cat;
@@ -217,12 +241,12 @@ export class RagRetrieverService implements OnModuleInit {
 
       // Regency / Location match
       if (detectedRegency && (lowerReg.includes(detectedRegency.toLowerCase()) || lowerLoc.includes(detectedRegency.toLowerCase()))) {
-        score += 35;
+        score += 40;
       }
 
       // Category match
       if (detectedCategory && lowerCat.includes(detectedCategory.toLowerCase())) {
-        score += 20;
+        score += 25;
       }
 
       // Keyword match in description
@@ -239,7 +263,7 @@ export class RagRetrieverService implements OnModuleInit {
     });
 
     scored.sort((a, b) => b.score - a.score);
-    return scored.slice(0, 5).map((s) => s.dest);
+    return scored.slice(0, 6).map((s) => s.dest);
   }
 
   public buildRagContextPrompt(query: string, regency?: string, category?: string): string {
