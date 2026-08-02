@@ -56,7 +56,7 @@ export class ChatbotService {
     const lowerMessage = message.toLowerCase().trim();
     const cleanMsg = lowerMessage.replace(/[^a-z0-9\s]/gi, '').trim();
 
-    // Context resolution: Current message explicit intent ALWAYS overrides history!
+    // Multi-turn Context resolution
     const historyText = Array.isArray(history)
       ? history.map((h) => h.text.toLowerCase()).join(' ')
       : '';
@@ -279,19 +279,23 @@ ${ragContext}
       }
     }
 
-    // 7. Intelligent Context-Aware Conversational AI Fallback
+    // 7. Intelligent Context-Aware Conversational AI Fallback (Typo Tolerant)
     this.logger.log(`[RAG ENGINE FALLBACK] Generating intelligent conversational RAG response with multi-turn memory.`);
     return this.executeLocalKbFallback(lowerMessage, combinedContext, relevantFacts);
   }
 
   private executeLocalKbFallback(lowerMsg: string, combinedContext: string, relevantFacts: DestinationFact[]) {
-    // Current explicit intent in current message ALWAYS overrides history!
-    const msgHasKuliner = lowerMsg.includes('kuliner') || lowerMsg.includes('makan') || lowerMsg.includes('seruit') || lowerMsg.includes('resto') || lowerMsg.includes('makanan');
-    const msgHasBeach = lowerMsg.includes('pantai') || lowerMsg.includes('laut') || lowerMsg.includes('snorkeling') || lowerMsg.includes('surfing');
-    const msgHasTopRegencies = lowerMsg.includes('top kabupaten') || lowerMsg.includes('kabupaten yang cocok') || (lowerMsg.includes('kabupaten') && msgHasBeach);
+    // Typo-tolerant Food Keyword Detection
+    const kulinerRegex = /(kuliner|kuliiner|kulinr|kulineran|makan|mkan|mkn|makanan|makan2|makan-makan|resto|restoran|seruit|warung)/i;
+    const beachRegex = /(pantai|pntai|pantaii|laut|snorkeling|surfing|beach)/i;
+    const topRegencyRegex = /(top kabupaten|kabupaten yang cocok|rekomendasi kabupaten)/i;
+
+    const msgHasKuliner = kulinerRegex.test(lowerMsg);
+    const msgHasBeach = beachRegex.test(lowerMsg);
+    const msgHasTopRegencies = topRegencyRegex.test(lowerMsg) || (lowerMsg.includes('kabupaten') && msgHasBeach);
 
     const isFollowupQuery = lowerMsg.startsWith('kalo') || lowerMsg.startsWith('kalau') || lowerMsg.startsWith('bagaimana');
-    const historyHasKuliner = combinedContext.includes('kuliner') || combinedContext.includes('makan') || combinedContext.includes('seruit');
+    const historyHasKuliner = kulinerRegex.test(combinedContext);
 
     // Case A: Top Regencies for Beaches
     if (msgHasTopRegencies || (msgHasBeach && lowerMsg.includes('kabupaten'))) {
@@ -310,7 +314,7 @@ ${ragContext}
 • Spot Utama: **Pantai Tanjung Setia** (Ombak surfing kelas dunia), **Pantai Penaga Resort**, **Labuhan Jukung**, dan **Pulau Pisang**.
 • Keunggulan: Ombak spektakuler tempat surfer dunia berkumpul & pemandangan sunset samudra yang luar biasa!
 
-🐬 **3. Kabupaten Tanggamus** (Terbaik untuk Atraction Lumba-lumba & Karang Eksotis)
+🐬 **3. Kabupaten Tanggamus** (Terbaik untuk Atraksi Lumba-lumba & Karang Eksotis)
 • Spot Utama: **Teluk Kiluan** (Atraksi kawanan lumba-lumba bebas di laut lepas) & **Pantai Gigi Hiu** (Gugusan batu karang tajam eksotis).
 • Keunggulan: Pemandangan tebing karang dramatis & pengalaman bertualang bahari yang tak terlupakan!
 
@@ -325,7 +329,7 @@ Kira-kira jenis pantai yang mana nih yang paling sesuai dengan gaya liburanmu? M
       };
     }
 
-    // Case B: Kuliner Query (either explicit in current message OR implicit follow-up from history)
+    // Case B: Kuliner Query (explicit in current message OR implicit follow-up from history)
     const isKulinerIntent = msgHasKuliner || (isFollowupQuery && historyHasKuliner && !msgHasBeach);
 
     if (isKulinerIntent) {
@@ -393,7 +397,7 @@ Kira-kira mau Muli bantu rekomendasikan tempat inap atau pantai terdekatnya? �
         };
       }
 
-      if (lowerMsg.includes('bandar lampung') || (isFollowupQuery && combinedContext.includes('bandar lampung'))) {
+      if (lowerMsg.includes('bandar lampung') || lowerMsg.includes('bdl') || (isFollowupQuery && combinedContext.includes('bandar lampung'))) {
         return {
           status: 'success',
           bot_name: 'Muli AI Concierge Lampung',
@@ -457,9 +461,23 @@ Ada yang ingin kamu tanyakan lebih lanjut mengenai rute jalan menuju Tubaba? �
       };
     }
 
-    // Case D: Regency / Category Destination Response
-    if (relevantFacts && relevantFacts.length > 0) {
-      const topSpots = relevantFacts.slice(0, 4);
+    // Case D: Regency / Category Destination Response (Filter out generic non-tourist names)
+    const validFacts = relevantFacts.filter((f) => {
+      const nameLower = f.name.toLowerCase();
+      return (
+        !nameLower.startsWith('lampung') &&
+        !nameLower.startsWith('wisata alam') &&
+        !nameLower.includes('tugu selamat') &&
+        !nameLower.includes('gapura selamat') &&
+        !nameLower.includes('spbu') &&
+        !nameLower.includes('terminal')
+      );
+    });
+
+    const spotsToUse = validFacts.length > 0 ? validFacts : relevantFacts;
+
+    if (spotsToUse && spotsToUse.length > 0) {
+      const topSpots = spotsToUse.slice(0, 4);
       const targetArea = topSpots[0].regency || 'Lampung';
 
       const categoryEmojiMap: Record<string, string> = {

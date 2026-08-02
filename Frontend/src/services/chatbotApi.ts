@@ -89,13 +89,17 @@ export const askRadenGajahChatbot = async (payload: AskChatbotPayload): Promise<
     };
   }
 
-  // Current explicit intent in current message ALWAYS overrides history!
-  const msgHasKuliner = lowerMsg.includes('kuliner') || lowerMsg.includes('makan') || lowerMsg.includes('seruit') || lowerMsg.includes('resto') || lowerMsg.includes('makanan');
-  const msgHasBeach = lowerMsg.includes('pantai') || lowerMsg.includes('laut') || lowerMsg.includes('snorkeling') || lowerMsg.includes('surfing');
-  const msgHasTopRegencies = lowerMsg.includes('top kabupaten') || lowerMsg.includes('kabupaten yang cocok') || (lowerMsg.includes('kabupaten') && msgHasBeach);
+  // Typo-tolerant Food & Beach Keyword Regex
+  const kulinerRegex = /(kuliner|kuliiner|kulinr|kulineran|makan|mkan|mkn|makanan|makan2|makan-makan|resto|restoran|seruit|warung)/i;
+  const beachRegex = /(pantai|pntai|pantaii|laut|snorkeling|surfing|beach)/i;
+  const topRegencyRegex = /(top kabupaten|kabupaten yang cocok|rekomendasi kabupaten)/i;
+
+  const msgHasKuliner = kulinerRegex.test(lowerMsg);
+  const msgHasBeach = beachRegex.test(lowerMsg);
+  const msgHasTopRegencies = topRegencyRegex.test(lowerMsg) || (lowerMsg.includes('kabupaten') && msgHasBeach);
 
   const isFollowupQuery = lowerMsg.startsWith('kalo') || lowerMsg.startsWith('kalau') || lowerMsg.startsWith('bagaimana');
-  const historyHasKuliner = combinedCtx.includes('kuliner') || combinedCtx.includes('makan') || combinedCtx.includes('seruit');
+  const historyHasKuliner = kulinerRegex.test(combinedCtx);
 
   // Case A: Top Regencies for Beaches
   if (msgHasTopRegencies || (msgHasBeach && lowerMsg.includes('kabupaten'))) {
@@ -110,11 +114,11 @@ export const askRadenGajahChatbot = async (payload: AskChatbotPayload): Promise<
 • Spot Utama: **Pantai Tanjung Setia** (Ombak surfing kelas dunia), **Pantai Penaga Resort**, **Labuhan Jukung**, dan **Pulau Pisang**.
 • Keunggulan: Ombak spektakuler tempat surfer dunia berkumpul & pemandangan sunset samudra yang luar biasa!
 
-🐬 **3. Kabupaten Tanggamus** (Terbaik untuk Atraction Lumba-lumba & Karang Eksotis)
+🐬 **3. Kabupaten Tanggamus** (Terbaik untuk Atraksi Lumba-lumba & Karang Eksotis)
 • Spot Utama: **Teluk Kiluan** (Atraksi kawanan lumba-lumba bebas di laut lepas) & **Pantai Gigi Hiu** (Gugusan batu karang tajam eksotis).
 • Keunggulan: Pemandangan tebing karang dramatis & pengalaman bertualang bahari yang tak terlupakan!
 
-Kira-kira jenis pantai yang mana nih yang paling sesuai dengan gaya liburanmu? Muli siap bantu susunkan rutenya! 😊`,
+Kira-kira jenis pantai yang mana nih yang paling sesuai dengan gaya liburanmu? Muli siap bantu susunkan rutesnya! 😊`,
       suggested_queries: [
         '🏖️ Rekomendasi pantai di Pesawaran',
         '🏄 Tempat surfing Tanjung Setia Krui',
@@ -124,7 +128,7 @@ Kira-kira jenis pantai yang mana nih yang paling sesuai dengan gaya liburanmu? M
     };
   }
 
-  // Case B: Kuliner Query (either explicit in current message OR implicit follow-up from history)
+  // Case B: Kuliner Query (explicit in current message OR implicit follow-up from history)
   const isKulinerIntent = msgHasKuliner || (isFollowupQuery && historyHasKuliner && !msgHasBeach);
 
   if (isKulinerIntent) {
@@ -182,7 +186,7 @@ Kira-kira mau Muli bantu rekomendasikan tempat inap atau pantai terdekatnya? �
       };
     }
 
-    if (lowerMsg.includes('bandar lampung') || (isFollowupQuery && combinedCtx.includes('bandar lampung'))) {
+    if (lowerMsg.includes('bandar lampung') || lowerMsg.includes('bdl') || (isFollowupQuery && combinedCtx.includes('bandar lampung'))) {
       return {
         reply: `Tabik Pun! 🍲 Wah, Bandar Lampung adalah pusatnya kuliner lezat khas Lampung bro! 
 
@@ -259,15 +263,25 @@ Ada yang ingin kamu tanyakan lebih lanjut mengenai rute jalan menuju Tubaba? �
   let matchedRegency = regencies.find((r) => lowerMsg.includes(r));
 
   if (allDestinations && allDestinations.length > 0) {
-    let filtered = allDestinations;
+    let filtered = allDestinations.filter((d: any) => {
+      const nameLower = (d.name || '').toLowerCase();
+      return (
+        !nameLower.startsWith('lampung') &&
+        !nameLower.startsWith('wisata alam') &&
+        !nameLower.includes('tugu selamat') &&
+        !nameLower.includes('gapura selamat') &&
+        !nameLower.includes('spbu') &&
+        !nameLower.includes('terminal')
+      );
+    });
 
     if (matchedRegency) {
-      filtered = allDestinations.filter((d: any) => {
+      filtered = filtered.filter((d: any) => {
         const regStr = (d.city_or_regency || d.regency || d.address || '').toLowerCase();
         return regStr.includes(matchedRegency!);
       });
     } else if (lowerMsg.includes('pantai') || lowerMsg.includes('laut')) {
-      filtered = allDestinations.filter((d: any) => {
+      filtered = filtered.filter((d: any) => {
         const catStr = (d.primary_category || d.category || d.name || '').toLowerCase();
         return catStr.includes('pantai') || catStr.includes('beach');
       });
