@@ -154,12 +154,12 @@ export const RadenGajahChatWidget: React.FC = () => {
             <span className="relative inline-flex h-4 w-4 rounded-full bg-emerald-500 border-2 border-white"></span>
           </span>
 
-          {/* Muli Mascot CS Avatar Badge */}
+          {/* Muli Mascot CS Avatar Badge (Ultra HD Face Crop) */}
           <div className="relative flex h-12 w-12 items-center justify-center overflow-hidden rounded-full border-2 border-amber-300 bg-[#FFFDF8] shadow-md">
             <img
-              src="/assets/images/mascot/muli-lampung-mascot.png"
+              src="/assets/images/mascot/muli-avatar-face.png"
               alt="Muli AI CS Lampung"
-              className="h-full w-full object-cover object-top scale-125"
+              className="h-full w-full object-cover"
             />
           </div>
 
@@ -186,9 +186,9 @@ export const RadenGajahChatWidget: React.FC = () => {
               {/* High Quality Muli CS Avatar Header */}
               <div className="relative flex h-11 w-11 items-center justify-center overflow-hidden rounded-full border-2 border-amber-300 bg-[#FFFDF8] shadow-md">
                 <img
-                  src="/assets/images/mascot/muli-lampung-mascot.png"
+                  src="/assets/images/mascot/muli-avatar-face.png"
                   alt="Muli AI CS"
-                  className="h-full w-full object-cover object-top scale-125"
+                  className="h-full w-full object-cover"
                 />
                 <span className="absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-white bg-emerald-500"></span>
               </div>
@@ -237,11 +237,11 @@ export const RadenGajahChatWidget: React.FC = () => {
               >
                 {/* Bot Avatar on Left Side */}
                 {msg.sender === 'bot' && (
-                  <div className="h-8 w-8 shrink-0 overflow-hidden rounded-full border border-amber-300 bg-white shadow-sm mt-0.5">
+                  <div className="h-9 w-9 shrink-0 overflow-hidden rounded-full border-2 border-amber-300 bg-[#FFFDF8] shadow-sm mt-0.5">
                     <img
-                      src="/assets/images/mascot/muli-lampung-mascot.png"
+                      src="/assets/images/mascot/muli-avatar-face.png"
                       alt="Muli"
-                      className="h-full w-full object-cover object-top scale-125"
+                      className="h-full w-full object-cover"
                     />
                   </div>
                 )}
@@ -293,11 +293,11 @@ export const RadenGajahChatWidget: React.FC = () => {
             {/* Loading Indicator */}
             {isLoading && (
               <div className="flex items-start gap-2.5">
-                <div className="h-8 w-8 shrink-0 overflow-hidden rounded-full border border-amber-300 bg-white shadow-sm mt-0.5">
+                <div className="h-9 w-9 shrink-0 overflow-hidden rounded-full border-2 border-amber-300 bg-[#FFFDF8] shadow-sm mt-0.5">
                   <img
-                    src="/assets/images/mascot/muli-lampung-mascot.png"
+                    src="/assets/images/mascot/muli-avatar-face.png"
                     alt="Muli"
-                    className="h-full w-full object-cover object-top scale-125"
+                    className="h-full w-full object-cover"
                   />
                 </div>
                 <div className="flex items-center gap-2 rounded-2xl rounded-tl-none border border-[#E2D6BE] bg-white px-4 py-3 text-xs text-slate-600 shadow-sm">
