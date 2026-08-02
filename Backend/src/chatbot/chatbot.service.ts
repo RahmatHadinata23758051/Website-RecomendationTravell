@@ -139,7 +139,7 @@ ${ragContext}
               'Content-Type': 'application/json',
               Authorization: `Bearer ${nineRouterKey}`,
             },
-            timeout: 10000,
+            timeout: 3500,
           }),
         );
 
@@ -197,7 +197,7 @@ ${ragContext}
           const response = await firstValueFrom(
             this.httpService.post(url, payload, {
               headers: { 'Content-Type': 'application/json' },
-              timeout: 10000,
+              timeout: 3500,
             }),
           );
 
