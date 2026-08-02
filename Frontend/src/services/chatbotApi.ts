@@ -62,7 +62,7 @@ export const askRadenGajahChatbot = async (payload: AskChatbotPayload): Promise<
     console.warn('[CHATBOT API CLIENT FALLBACK TRIGGERED]', err);
   }
 
-  // Pure Client-Side RAG Engine (Humanized Gemini Tone & Multi-Turn History Memory)
+  // Pure Client-Side RAG Engine
   const lowerMsg = payload.message.toLowerCase().trim();
   const cleanMsg = lowerMsg.replace(/[^a-z0-9\s]/gi, '').trim();
 
@@ -89,11 +89,73 @@ export const askRadenGajahChatbot = async (payload: AskChatbotPayload): Promise<
     };
   }
 
-  const isKulinerQuery = combinedCtx.includes('kuliner') || combinedCtx.includes('makan') || combinedCtx.includes('seruit') || combinedCtx.includes('resto') || combinedCtx.includes('makanan');
+  // Current explicit intent in current message ALWAYS overrides history!
+  const msgHasKuliner = lowerMsg.includes('kuliner') || lowerMsg.includes('makan') || lowerMsg.includes('seruit') || lowerMsg.includes('resto') || lowerMsg.includes('makanan');
+  const msgHasBeach = lowerMsg.includes('pantai') || lowerMsg.includes('laut') || lowerMsg.includes('snorkeling') || lowerMsg.includes('surfing');
+  const msgHasTopRegencies = lowerMsg.includes('top kabupaten') || lowerMsg.includes('kabupaten yang cocok') || (lowerMsg.includes('kabupaten') && msgHasBeach);
 
-  // Kuliner & Food Intent Handling (Context Aware)
-  if (isKulinerQuery) {
-    if (combinedCtx.includes('pesisir barat') || combinedCtx.includes('krui')) {
+  const isFollowupQuery = lowerMsg.startsWith('kalo') || lowerMsg.startsWith('kalau') || lowerMsg.startsWith('bagaimana');
+  const historyHasKuliner = combinedCtx.includes('kuliner') || combinedCtx.includes('makan') || combinedCtx.includes('seruit');
+
+  // Case A: Top Regencies for Beaches
+  if (msgHasTopRegencies || (msgHasBeach && lowerMsg.includes('kabupaten'))) {
+    return {
+      reply: `Tabik Pun! 🏖️ Kalau kamu cari kabupaten terbaik di Lampung yang rajanya wisata pantai eksotis & bahari, 3 kabupaten ini adalah jawaranya:
+
+🌊 **1. Kabupaten Pesawaran** (Terbaik untuk Island Hopping & Snorkeling)
+• Spot Utama: **Pulau Pahawang** (Spot Ikan Nemo & Karang Alami), **Pantai Sari Ringgung** (Pasir Timbul apung), **Pulau Kelagian**, dan **Pantai Mutun**.
+• Keunggulan: Laut tenang, pasir putih jernih, sangat cocok untuk liburan keluarga & snorkeling.
+
+🏄 **2. Kabupaten Pesisir Barat (Krui)** (Terbaik untuk Surfing & Sunset Samudra)
+• Spot Utama: **Pantai Tanjung Setia** (Ombak surfing kelas dunia), **Pantai Penaga Resort**, **Labuhan Jukung**, dan **Pulau Pisang**.
+• Keunggulan: Ombak spektakuler tempat surfer dunia berkumpul & pemandangan sunset samudra yang luar biasa!
+
+🐬 **3. Kabupaten Tanggamus** (Terbaik untuk Atraction Lumba-lumba & Karang Eksotis)
+• Spot Utama: **Teluk Kiluan** (Atraksi kawanan lumba-lumba bebas di laut lepas) & **Pantai Gigi Hiu** (Gugusan batu karang tajam eksotis).
+• Keunggulan: Pemandangan tebing karang dramatis & pengalaman bertualang bahari yang tak terlupakan!
+
+Kira-kira jenis pantai yang mana nih yang paling sesuai dengan gaya liburanmu? Muli siap bantu susunkan rutenya! 😊`,
+      suggested_queries: [
+        '🏖️ Rekomendasi pantai di Pesawaran',
+        '🏄 Tempat surfing Tanjung Setia Krui',
+        '🐬 Wisata lumba-lumba Teluk Kiluan',
+      ],
+      destinations: [],
+    };
+  }
+
+  // Case B: Kuliner Query (either explicit in current message OR implicit follow-up from history)
+  const isKulinerIntent = msgHasKuliner || (isFollowupQuery && historyHasKuliner && !msgHasBeach);
+
+  if (isKulinerIntent) {
+    if (lowerMsg.includes('tulang bawang') || (isFollowupQuery && combinedCtx.includes('tulang bawang'))) {
+      return {
+        reply: `Tabik Pun! 🍲 Kuliner khas di **Kabupaten Tulang Bawang & Tubaba** itu terkenal banget dengan olahan ikan sungai dan sambal pilihan olahan tradisional Suku Lampung!
+
+Berikut kuliner terlezat yang wajib kamu cicipi di sana:
+
+🐟 **1. Seruit Ikan Simba / Patin River Bakar**
+Ikan segar hasil tangkapan Sungai Tulang Bawang yang dibakar gurih, disajikan dengan tempoyak durian fermentasi, sambal terasi, dan lalapan segar!
+
+🍲 **2. Gulai Taboh Ikan Sungai**
+Gulai santan kaya rempah tradisional dengan potongan ikan sungai gurih khas Menggala.
+
+🍌 **3. Keripik & Olahan Pisang khas Menggala**
+Camilan khas pesisir sungai Tulang Bawang yang cocok jadi buah tangan.
+
+📍 *Rekomendasi Tempat*: Kamu bisa mencicipinya di Rumah Makan Lesehan sekitar Kota Menggala atau Kawasan Islamic Center Tubaba!
+
+Mau Muli bantu rekomendasikan tempat wisata terdekatnya? 😊`,
+        suggested_queries: [
+          '📸 Spot foto Islamic Center Tubaba',
+          '🚗 Rute ke Kota Menggala',
+          '🏖️ Rekomendasi pantai terdekat',
+        ],
+        destinations: [],
+      };
+    }
+
+    if (lowerMsg.includes('pesisir barat') || lowerMsg.includes('krui') || (isFollowupQuery && (combinedCtx.includes('pesisir barat') || combinedCtx.includes('krui')))) {
       return {
         reply: `Tabik Pun! 🍲 Kalau untuk kuliner di **Pesisir Barat (Krui)**, juaranya adalah olahan **Ikan Tuhuk (Ikan Marlin Samudra)** segar hasil tangkapan nelayan lokal!
 
@@ -120,7 +182,7 @@ Kira-kira mau Muli bantu rekomendasikan tempat inap atau pantai terdekatnya? �
       };
     }
 
-    if (combinedCtx.includes('bandar lampung')) {
+    if (lowerMsg.includes('bandar lampung') || (isFollowupQuery && combinedCtx.includes('bandar lampung'))) {
       return {
         reply: `Tabik Pun! 🍲 Wah, Bandar Lampung adalah pusatnya kuliner lezat khas Lampung bro! 
 
@@ -146,8 +208,8 @@ Mana nih yang paling bikin kamu penasaran untuk dicoba duluan? 😊`,
     }
   }
 
-  // Tulang Bawang / Tubaba Intent Handling
-  if (combinedCtx.includes('tulang bawang')) {
+  // Case C: Tulang Bawang Tourism Intent
+  if (lowerMsg.includes('tulang bawang') && !isKulinerIntent) {
     return {
       reply: `Tabik Pun! ✨ Wah, Kabupaten Tulang Bawang & Tulang Bawang Barat (Tubaba) itu kaya sekali akan wisata arsitektur ikonis dan sejarah budaya!
 

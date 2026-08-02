@@ -56,11 +56,10 @@ export class ChatbotService {
     const lowerMessage = message.toLowerCase().trim();
     const cleanMsg = lowerMessage.replace(/[^a-z0-9\s]/gi, '').trim();
 
-    // Multi-turn History Context Resolution
+    // Context resolution: Current message explicit intent ALWAYS overrides history!
     const historyText = Array.isArray(history)
       ? history.map((h) => h.text.toLowerCase()).join(' ')
       : '';
-    const combinedContext = `${historyText} ${lowerMessage}`.trim();
 
     // 0. Detect Simple Greetings (halo, hallo, hai, hi, p, etc.)
     const greetingWords = ['halo', 'hallo', 'hai', 'hi', 'hey', 'pagi', 'siang', 'sore', 'malam', 'tes', 'test', 'ping', 'p'];
@@ -136,6 +135,7 @@ export class ChatbotService {
     }
 
     // 2. Retrieve Relevant Destination Facts via RAG Retriever (2,889 dataset)
+    const combinedContext = `${historyText} ${lowerMessage}`.trim();
     const relevantFacts: DestinationFact[] = this.ragRetriever.retrieveRelevantFacts(combinedContext, regency, category);
     const ragContext = this.ragRetriever.buildRagContextPrompt(combinedContext, regency, category);
 
@@ -149,7 +149,7 @@ export class ChatbotService {
 ATURAN UTAMA PERILAKU:
 1. Mulai jawaban dengan sapaan hangat "Tabik Pun! ✨" atau sapaan ramah alami.
 2. Gunakan bahasa Indonesia yang santai, luwes, komunikatif, bersahabat, dan TIDAK KAKU seperti laporan teknis.
-3. Jawab pertanyaan pengguna secara LANGSUNG dan SPESIFIK. Jika riwayat percakapan sebelumnya membahas kuliner dan pengguna bertanya "kalo di pesisir barat?", jawablah tentang KULINER di Pesisir Barat!
+3. Jawab pertanyaan pengguna secara LANGSUNG dan SPESIFIK sesuai maksud kalimat TERBARU pengguna.
 4. Gunakan fakta dari RAG Database berikut sebagai acuan tempat:
 ${ragContext}
 5. Ceritakan dengan gaya narasi menarik. Sebutkan nama tempat, daya tarik utama, lokasi singkat, dan perkiraan biaya/rating secara mengalir.
@@ -281,19 +281,87 @@ ${ragContext}
 
     // 7. Intelligent Context-Aware Conversational AI Fallback
     this.logger.log(`[RAG ENGINE FALLBACK] Generating intelligent conversational RAG response with multi-turn memory.`);
-    return this.executeLocalKbFallback(message, combinedContext, relevantFacts);
+    return this.executeLocalKbFallback(lowerMessage, combinedContext, relevantFacts);
   }
 
-  private executeLocalKbFallback(message: string, combinedContext: string, relevantFacts: DestinationFact[]) {
-    const lowerMsg = message.toLowerCase();
-    const lowerCtx = combinedContext.toLowerCase();
+  private executeLocalKbFallback(lowerMsg: string, combinedContext: string, relevantFacts: DestinationFact[]) {
+    // Current explicit intent in current message ALWAYS overrides history!
+    const msgHasKuliner = lowerMsg.includes('kuliner') || lowerMsg.includes('makan') || lowerMsg.includes('seruit') || lowerMsg.includes('resto') || lowerMsg.includes('makanan');
+    const msgHasBeach = lowerMsg.includes('pantai') || lowerMsg.includes('laut') || lowerMsg.includes('snorkeling') || lowerMsg.includes('surfing');
+    const msgHasTopRegencies = lowerMsg.includes('top kabupaten') || lowerMsg.includes('kabupaten yang cocok') || (lowerMsg.includes('kabupaten') && msgHasBeach);
 
-    const isKulinerQuery = lowerCtx.includes('kuliner') || lowerCtx.includes('makan') || lowerCtx.includes('seruit') || lowerCtx.includes('resto') || lowerCtx.includes('makanan');
-    const isBeachQuery = lowerCtx.includes('pantai') || lowerCtx.includes('laut') || lowerCtx.includes('snorkeling') || lowerCtx.includes('surfing');
+    const isFollowupQuery = lowerMsg.startsWith('kalo') || lowerMsg.startsWith('kalau') || lowerMsg.startsWith('bagaimana');
+    const historyHasKuliner = combinedContext.includes('kuliner') || combinedContext.includes('makan') || combinedContext.includes('seruit');
 
-    // 1. Kuliner Intent (Context Aware across turns)
-    if (isKulinerQuery) {
-      if (lowerCtx.includes('pesisir barat') || lowerCtx.includes('krui')) {
+    // Case A: Top Regencies for Beaches
+    if (msgHasTopRegencies || (msgHasBeach && lowerMsg.includes('kabupaten'))) {
+      return {
+        status: 'success',
+        bot_name: 'Muli AI Concierge Lampung',
+        model_used: 'rag-dataset-engine',
+        data: {
+          reply: `Tabik Pun! 🏖️ Kalau kamu cari kabupaten terbaik di Lampung yang rajanya wisata pantai eksotis & bahari, 3 kabupaten ini adalah jawaranya:
+
+🌊 **1. Kabupaten Pesawaran** (Terbaik untuk Island Hopping & Snorkeling)
+• Spot Utama: **Pulau Pahawang** (Spot Ikan Nemo & Karang Alami), **Pantai Sari Ringgung** (Pasir Timbul apung), **Pulau Kelagian**, dan **Pantai Mutun**.
+• Keunggulan: Laut tenang, pasir putih jernih, sangat cocok untuk liburan keluarga & snorkeling.
+
+🏄 **2. Kabupaten Pesisir Barat (Krui)** (Terbaik untuk Surfing & Sunset Samudra)
+• Spot Utama: **Pantai Tanjung Setia** (Ombak surfing kelas dunia), **Pantai Penaga Resort**, **Labuhan Jukung**, dan **Pulau Pisang**.
+• Keunggulan: Ombak spektakuler tempat surfer dunia berkumpul & pemandangan sunset samudra yang luar biasa!
+
+🐬 **3. Kabupaten Tanggamus** (Terbaik untuk Atraction Lumba-lumba & Karang Eksotis)
+• Spot Utama: **Teluk Kiluan** (Atraksi kawanan lumba-lumba bebas di laut lepas) & **Pantai Gigi Hiu** (Gugusan batu karang tajam eksotis).
+• Keunggulan: Pemandangan tebing karang dramatis & pengalaman bertualang bahari yang tak terlupakan!
+
+Kira-kira jenis pantai yang mana nih yang paling sesuai dengan gaya liburanmu? Muli siap bantu susunkan rutenya! 😊`,
+          suggested_queries: [
+            '🏖️ Rekomendasi pantai di Pesawaran',
+            '🏄 Tempat surfing Tanjung Setia Krui',
+            '🐬 Wisata lumba-lumba Teluk Kiluan',
+          ],
+          destinations: [],
+        },
+      };
+    }
+
+    // Case B: Kuliner Query (either explicit in current message OR implicit follow-up from history)
+    const isKulinerIntent = msgHasKuliner || (isFollowupQuery && historyHasKuliner && !msgHasBeach);
+
+    if (isKulinerIntent) {
+      if (lowerMsg.includes('tulang bawang') || (isFollowupQuery && combinedContext.includes('tulang bawang'))) {
+        return {
+          status: 'success',
+          bot_name: 'Muli AI Concierge Lampung',
+          model_used: 'rag-dataset-engine',
+          data: {
+            reply: `Tabik Pun! 🍲 Kuliner khas di **Kabupaten Tulang Bawang & Tubaba** itu terkenal banget dengan olahan ikan sungai dan sambal pilihan olahan tradisional Suku Lampung!
+
+Berikut kuliner terlezat yang wajib kamu cicipi di sana:
+
+🐟 **1. Seruit Ikan Simba / Patin River Bakar**
+Ikan segar hasil tangkapan Sungai Tulang Bawang yang dibakar gurih, disajikan dengan tempoyak durian fermentasi, sambal terasi, dan lalapan segar!
+
+🍲 **2. Gulai Taboh Ikan Sungai**
+Gulai santan kaya rempah tradisional dengan potongan ikan sungai gurih khas Menggala.
+
+🍌 **3. Keripik & Olahan Pisang khas Menggala**
+Camilan khas pesisir sungai Tulang Bawang yang cocok jadi buah tangan.
+
+📍 *Rekomendasi Tempat*: Kamu bisa mencicipinya di Rumah Makan Lesehan sekitar Kota Menggala atau Kawasan Islamic Center Tubaba!
+
+Mau Muli bantu rekomendasikan tempat wisata terdekatnya? 😊`,
+            suggested_queries: [
+              '📸 Spot foto Islamic Center Tubaba',
+              '🚗 Rute ke Kota Menggala',
+              '🏖️ Rekomendasi pantai terdekat',
+            ],
+            destinations: [],
+          },
+        };
+      }
+
+      if (lowerMsg.includes('pesisir barat') || lowerMsg.includes('krui') || (isFollowupQuery && (combinedContext.includes('pesisir barat') || combinedContext.includes('krui')))) {
         return {
           status: 'success',
           bot_name: 'Muli AI Concierge Lampung',
@@ -325,7 +393,7 @@ Kira-kira mau Muli bantu rekomendasikan tempat inap atau pantai terdekatnya? �
         };
       }
 
-      if (lowerCtx.includes('bandar lampung')) {
+      if (lowerMsg.includes('bandar lampung') || (isFollowupQuery && combinedContext.includes('bandar lampung'))) {
         return {
           status: 'success',
           bot_name: 'Muli AI Concierge Lampung',
@@ -356,8 +424,8 @@ Mana nih yang paling bikin kamu penasaran untuk dicoba duluan? 😊`,
       }
     }
 
-    // 2. Tulang Bawang / Tubaba Intent Handling
-    if (lowerCtx.includes('tulang bawang')) {
+    // Case C: Tulang Bawang Tourism Intent
+    if (lowerMsg.includes('tulang bawang') && !isKulinerIntent) {
       return {
         status: 'success',
         bot_name: 'Muli AI Concierge Lampung',
@@ -389,7 +457,7 @@ Ada yang ingin kamu tanyakan lebih lanjut mengenai rute jalan menuju Tubaba? �
       };
     }
 
-    // 3. Regency / Category Destination Response
+    // Case D: Regency / Category Destination Response
     if (relevantFacts && relevantFacts.length > 0) {
       const topSpots = relevantFacts.slice(0, 4);
       const targetArea = topSpots[0].regency || 'Lampung';
