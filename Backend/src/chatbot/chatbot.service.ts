@@ -143,10 +143,11 @@ export class ChatbotService {
 ATURAN UTAMA PERILAKU:
 1. Mulai jawaban dengan sapaan hangat "Tabik Pun! ✨" atau sapaan ramah alami.
 2. Gunakan bahasa Indonesia yang santai, luwes, komunikatif, bersahabat, dan TIDAK KAKU seperti laporan teknis.
-3. Gunakan fakta dari RAG Database berikut sebagai acuan tempat:
+3. Jawab pertanyaan pengguna secara LANGSUNG dan SPESIFIK (jika ditanya kuliner, jawab tentang makanan; jika ditanya pantai, jawab tentang pantai; jika ditanya kabupaten tertentu, jawab kabupaten tersebut).
+4. Gunakan fakta dari RAG Database berikut sebagai acuan tempat:
 ${ragContext}
-4. Saat merekomendasikan tempat, ceritakan dengan gaya narasi menarik. Sebutkan nama tempat, daya tarik utama, lokasi singkat, dan perkiraan biaya/rating secara mengalir.
-5. Di akhir jawaban, tanyakan dengan ramah bantuan apa lagi yang pengguna butuhkan (misal: rute perjalanan, kuliner terdekat, atau penginapan).`;
+5. Ceritakan dengan gaya narasi menarik. Sebutkan nama tempat, daya tarik utama, lokasi singkat, dan perkiraan biaya/rating secara mengalir.
+6. Di akhir jawaban, tanyakan dengan ramah bantuan apa lagi yang pengguna butuhkan (misal: rute perjalanan, kuliner terdekat, atau penginapan).`;
 
     const formattedHistory = Array.isArray(history)
       ? history.slice(-5).map((h) => `${h.sender === 'user' ? 'Pengguna' : 'Muli AI'}: ${h.text}`).join('\n')
@@ -272,14 +273,113 @@ ${ragContext}
       }
     }
 
-    // 7. Humanized RAG Knowledge Engine Fallback (Warm Conversational Tone)
-    this.logger.log(`[RAG ENGINE FALLBACK] Generating warm conversational RAG response from dataset.`);
+    // 7. Intelligent Context-Aware Conversational AI Fallback
+    this.logger.log(`[RAG ENGINE FALLBACK] Generating intelligent conversational RAG response from dataset.`);
     return this.executeLocalKbFallback(message, relevantFacts);
   }
 
   private executeLocalKbFallback(message: string, relevantFacts: DestinationFact[]) {
     const lower = message.toLowerCase();
 
+    // 1. Kuliner & Food Intent Handling
+    if (lower.includes('kuliner') || lower.includes('makan') || lower.includes('seruit') || lower.includes('resto') || lower.includes('makanan')) {
+      if (lower.includes('pesisir barat') || lower.includes('krui')) {
+        return {
+          status: 'success',
+          bot_name: 'Muli AI Concierge Lampung',
+          model_used: 'rag-dataset-engine',
+          data: {
+            reply: `Tabik Pun! 🍲 Wuih, kalau ke Pesisir Barat (Krui), kuliner khasnya mantap-mantap banget bro!
+
+Krui terkenal banget dengan **Olahan Ikan Tuhuk (Ikan Marlin Samudra)** segar hasil tangkapan nelayan lokal. Menu kuliner paling juara yang wajib kamu coba:
+
+🐟 **1. Gulai Taboh Ikan Tuhuk**
+Olahan gurih santan kelapa muda dicampur kuah rempah bumbu khas Pesisir Barat. Tekstur daging ikan tuhuknya tebal, padat, dan lembut mirip daging ayam!
+
+🍢 **2. Sate Ikan Tuhuk Krui**
+Sate daging ikan tuhuk segar yang dibakar gurih disajikan dengan bumbu kacang khas atau kecap pedas manis khas pantai.
+
+🍲 **3. Seruit Ikan Laut & Sambal Tempoyak**
+Ikan simba/marlin segar bakar disajikan dengan tempoyak durian fermentasi khas Lampung dan lalapan segar tepi pantai.
+
+📍 *Rekomendasi Tempat*: Kamu bisa mencicipinya di **Kedai Nelayan Vanie** (Jl. Lintas Barat Sumatra) atau rumah makan seafood di sekitar Tanjung Setia & Labuhan Jukung!
+
+Kira-kira mau Muli bantu rekomendasikan tempat inap atau pantai terdekatnya? 😊`,
+            suggested_queries: [
+              '🏖️ Rekomendasi pantai di Pesisir Barat',
+              '🏄 Tempat surfing Tanjung Setia',
+              '💰 Estimasi biaya liburan ke Krui',
+            ],
+            destinations: [],
+          },
+        };
+      }
+
+      if (lower.includes('bandar lampung')) {
+        return {
+          status: 'success',
+          bot_name: 'Muli AI Concierge Lampung',
+          model_used: 'rag-dataset-engine',
+          data: {
+            reply: `Tabik Pun! 🍲 Wah, Bandar Lampung adalah pusatnya kuliner lezat khas Lampung bro! 
+
+Berikut rekomendasi tempat makan & oleh-oleh paling mantap di Bandar Lampung:
+
+🍲 **1. Rumah Makan Seruit Ibu Hajah**
+Pusat olahan Seruit tradisional khas Suku Lampung dengan ikan simba/patin bakar, sambal terasi, tempoyak durian, dan lalapan segar komplit!
+
+🍗 **2. Rumah Makan Begadang V**
+Sangat terkenal dengan Ayam Pop khas Lampung & Nasi Padang olahan rempah gurih khas yang sangat legendaris.
+
+🍌 **3. Keripik Pisang Cokelat YenYen (Pusat Oleh-oleh Gang PU)**
+Pusat keripik pisang anekarasa (cokelat lumer, keju, susu, kopi) terpopuler khas Bandar Lampung yang wajib dibawa pulang!
+
+Mana nih yang paling bikin kamu penasaran untuk dicoba duluan? 😊`,
+            suggested_queries: [
+              '📍 Wisata hits Bandar Lampung',
+              '🏖️ Rekomendasi pantai di Pesawaran',
+              '💰 Estimasi biaya makan Seruit',
+            ],
+            destinations: [],
+          },
+        };
+      }
+    }
+
+    // 2. Tulang Bawang / Tubaba Intent Handling
+    if (lower.includes('tulang bawang')) {
+      return {
+        status: 'success',
+        bot_name: 'Muli AI Concierge Lampung',
+        data: {
+          reply: `Tabik Pun! ✨ Wah, Kabupaten Tulang Bawang & Tulang Bawang Barat (Tubaba) itu kaya sekali akan wisata arsitektur ikonis dan sejarah budaya!
+
+Berikut tempat paling mantap & fotogenik yang wajib kamu kunjungi di sana:
+
+🏛️ **1. Islamic Center Tulang Bawang Barat (Masjid 99 Cahaya)**
+Masjid tanpa kubah bergaya modern kontemporer yang sangat megah dan fotogenik di atas danau buatan.
+
+🗿 **2. Kompleks Tugu Rato Nago Besanding**
+Monumen ikonik berbentuk dua naga penarik kereta kencana khas budaya adat Lampung.
+
+🌳 **3. Taman Kota & Ruang Terbuka Panaragan Jaya**
+Taman hijau asri tempat bersantai keluarga dengan suasana sore hari yang sangat sejuk.
+
+🏛️ **4. Taman Pemda & Kawasan Kota Menggala Heritage**
+Pusat bersejarah kota kuno Menggala di tepi Sungai Tulang Bawang.
+
+Ada yang ingin kamu tanyakan lebih lanjut mengenai rute jalan menuju Tubaba? 😊`,
+          suggested_queries: [
+            '📸 Spot foto Islamic Center Tubaba',
+            '🚗 Rute perjalanan dari Bandar Lampung',
+            '🍲 Kuliner khas Tulang Bawang',
+          ],
+          destinations: [],
+        },
+      };
+    }
+
+    // 3. Regency / Category Destination Response
     if (relevantFacts && relevantFacts.length > 0) {
       const topSpots = relevantFacts.slice(0, 4);
       const targetArea = topSpots[0].regency || 'Lampung';
