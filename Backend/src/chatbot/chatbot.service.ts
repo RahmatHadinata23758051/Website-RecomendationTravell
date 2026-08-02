@@ -56,7 +56,7 @@ export class ChatbotService {
     const lowerMessage = message.toLowerCase().trim();
     const cleanMsg = lowerMessage.replace(/[^a-z0-9\s]/gi, '').trim();
 
-    // Multi-turn History Context Processing
+    // Multi-turn Context
     const historyText = Array.isArray(history)
       ? history.map((h) => h.text.toLowerCase()).join(' ')
       : '';
@@ -147,12 +147,11 @@ export class ChatbotService {
 
 ATURAN PERILAKU UTAMA:
 1. Sapa pengguna secara hangat "Tabik Pun! ✨" atau sapaan alami bersahabat.
-2. Jawab pertanyaan pengguna secara LANGSUNG, LUWES, dan SPESIFIK sesuai maksud kalimat TERBARU pengguna.
-3. Jika pengguna bertanya "wisatanya?" atau "bagaimana wisatanya?", periksa lokasi kabupaten aktif di riwayat percakapan sebelumnya dan jawablah tempat wisata di kabupaten tersebut!
-4. Gunakan fakta RAG terverifikasi dari Database berikut:
+2. Jawab pertanyaan pengguna secara LANGSUNG, LUWES, dan SPESIFIK sesuai maksud kalimat TERBARU pengguna. Jika pengguna menyebut kata "wisata", berikan tempat wisata (bukan kuliner)!
+3. Gunakan fakta RAG terverifikasi dari Database berikut:
 ${ragContext}
-5. Ceritakan secara menarik dan mengalir tanpa kaku.
-6. Di akhir jawaban, tanyakan dengan ramah bantuan apa lagi yang pengguna butuhkan.`;
+4. Ceritakan secara menarik dan mengalir tanpa kaku.
+5. Di akhir jawaban, tanyakan dengan ramah bantuan apa lagi yang pengguna butuhkan.`;
 
     const formattedHistory = Array.isArray(history)
       ? history.slice(-5).map((h) => `${h.sender === 'user' ? 'Pengguna' : 'Muli AI'}: ${h.text}`).join('\n')
@@ -278,25 +277,20 @@ ${ragContext}
       }
     }
 
-    // 6. Dynamic RAG Synthesizer Engine (Strict Multi-Turn Context Memory)
-    this.logger.log(`[DYNAMIC RAG SYNTHESIZER] Generating pure RAG data-driven response with active regency retention.`);
-    return this.synthesizeDynamicRagResponse(lowerMessage, combinedContext, relevantFacts);
+    // 6. Dynamic RAG Synthesizer Engine (Strict Explicit Topic Precedence)
+    this.logger.log(`[DYNAMIC RAG SYNTHESIZER] Generating pure RAG data-driven response with explicit topic precedence.`);
+    return this.synthesizeDynamicRagResponse(lowerMessage, combinedContext, history, relevantFacts);
   }
 
-  private synthesizeDynamicRagResponse(lowerMsg: string, combinedContext: string, relevantFacts: DestinationFact[]) {
-    // Detect Intent
-    const isFood = /(kuliner|kuliiner|kulinr|kulineran|makan|mkan|mkn|makanan|resto|restoran|seruit|warung)/i.test(lowerMsg);
-    const isBeach = /(pantai|pntai|pantaii|laut|snorkeling|surfing|beach)/i.test(lowerMsg);
-    const isTourism = /(wisata|wisatanya|tempat|destinasi|jalan|liburan|main|rekreasi)/i.test(lowerMsg);
+  private synthesizeDynamicRagResponse(lowerMsg: string, combinedContext: string, history: any[], relevantFacts: DestinationFact[]) {
+    // 1. Explicit Current Message Intents
+    const msgIsWisata = /(wisata|wisatanya|destinasi|tempat|rekreasi|jalan|liburan)/i.test(lowerMsg);
+    const msgIsBeach = /(pantai|pntai|pantaii|laut|snorkeling|surfing|beach)/i.test(lowerMsg);
+    const msgIsFood = /(kuliner|kuliiner|kulinr|kulineran|makan|mkan|mkn|makanan|resto|restoran|seruit|warung)/i.test(lowerMsg);
 
-    // Detect Active Regency in Current Message or History
-    const hasPesisirBarat = combinedContext.includes('pesisir barat') || combinedContext.includes('krui');
-    const hasTanggamus = combinedContext.includes('tanggamus');
-    const hasBandarLampung = combinedContext.includes('bandar lampung') || combinedContext.includes('bdl');
-    const hasTulangBawang = combinedContext.includes('tulang bawang') || combinedContext.includes('tubaba');
-    const hasPesawaran = combinedContext.includes('pesawaran');
+    const isFollowupQuery = lowerMsg.startsWith('kalo') || lowerMsg.startsWith('kalau') || lowerMsg.startsWith('bagaimana');
 
-    // Check direct current message regency first
+    // 2. Active Regency Resolution (Current Message First, Then History)
     let activeRegency = '';
     if (lowerMsg.includes('pesisir barat') || lowerMsg.includes('krui')) activeRegency = 'pesisir barat';
     else if (lowerMsg.includes('tanggamus')) activeRegency = 'tanggamus';
@@ -304,16 +298,37 @@ ${ragContext}
     else if (lowerMsg.includes('tulang bawang') || lowerMsg.includes('tubaba')) activeRegency = 'tulang bawang';
     else if (lowerMsg.includes('pesawaran')) activeRegency = 'pesawaran';
     else {
-      // Fallback to active regency in history if message is short follow-up (e.g. "wisatanya?", "kulinernya?")
-      if (hasTanggamus) activeRegency = 'tanggamus';
-      else if (hasPesisirBarat) activeRegency = 'pesisir barat';
-      else if (hasBandarLampung) activeRegency = 'bandar lampung';
-      else if (hasTulangBawang) activeRegency = 'tulang bawang';
-      else if (hasPesawaran) activeRegency = 'pesawaran';
+      if (combinedContext.includes('tanggamus')) activeRegency = 'tanggamus';
+      else if (combinedContext.includes('pesisir barat') || combinedContext.includes('krui')) activeRegency = 'pesisir barat';
+      else if (combinedContext.includes('bandar lampung') || combinedContext.includes('bdl')) activeRegency = 'bandar lampung';
+      else if (combinedContext.includes('tulang bawang') || combinedContext.includes('tubaba')) activeRegency = 'tulang bawang';
+      else if (combinedContext.includes('pesawaran')) activeRegency = 'pesawaran';
     }
 
-    // 1. Food Intent Handling
-    if (isFood || (combinedContext.includes('kuliner') && (lowerMsg.startsWith('kalo') || lowerMsg.startsWith('kalau')) && !isBeach && !isTourism)) {
+    // 3. Determine Effective Topic: Current Message explicit intent ALWAYS overrides history!
+    let effectiveTopic = '';
+    if (msgIsBeach) {
+      effectiveTopic = 'beach';
+    } else if (msgIsWisata) {
+      effectiveTopic = 'wisata';
+    } else if (msgIsFood) {
+      effectiveTopic = 'food';
+    } else if (isFollowupQuery) {
+      // Ambiguous follow-up without topic keyword
+      const lastUserMsg = Array.isArray(history) && history.length > 0 ? history.filter(h => h.sender === 'user').pop()?.text.toLowerCase() || '' : '';
+      if (/(kuliner|makan|food|seruit)/i.test(lastUserMsg)) {
+        effectiveTopic = 'food';
+      } else if (/(pantai|beach|laut)/i.test(lastUserMsg)) {
+        effectiveTopic = 'beach';
+      } else {
+        effectiveTopic = 'wisata';
+      }
+    } else {
+      effectiveTopic = 'wisata';
+    }
+
+    // A. Food Topic
+    if (effectiveTopic === 'food') {
       if (activeRegency === 'pesisir barat') {
         return {
           status: 'success',
@@ -369,43 +384,36 @@ Mau Muli bantu rekomendasikan tempat wisata eksotis terdekat seperti Teluk Kilua
           },
         };
       }
-    }
 
-    // 2. Tourism / Beach Intent Handling per Regency
-    if (isBeach || isTourism || lowerMsg.includes('wisatanya') || lowerMsg.includes('pantainya')) {
-      if (activeRegency === 'tanggamus') {
+      if (activeRegency === 'bandar lampung') {
         return {
           status: 'success',
           bot_name: 'Muli AI Concierge Lampung',
           model_used: 'rag-synthesizer',
           data: {
-            reply: `Tabik Pun! 🐬 **Kabupaten Tanggamus** terkenal banget dengan petualangan bahari laut lepas & gugusan karang eksotis dunia!
+            reply: `Tabik Pun! 🍲 Bandar Lampung adalah pusatnya kuliner lezat khas Lampung!
 
-Berikut destinasi wisata paling hits & wajib kamu kunjungi di Tanggamus:
+Berikut rekomendasi kuliner & tempat makan terfavorit di Bandar Lampung:
 
-🐬 **1. Teluk Kiluan (Atraksi Lumba-Lumba Liar)**
-Pengalaman luar biasa naik perahu jukung tradisional ke laut lepas Teluk Semangka untuk melihat kawanan ratusan lumba-lumba melompat bebas!
+🍲 **1. Rumah Makan Seruit Ibu Hajah**
+Pusat olahan Seruit ikan simba/patin bakar komplit dengan sambal tempoyak durian & lalapan.
 
-🪨 **2. Pantai Gigi Hiu (Pegadungan)**
-Gugusan tebing batu karang tajam menjulang tinggi seperti gigi hiu raksasa yang sangat ikonik & terkenal di kalangan fotografer dunia.
+🍗 **2. Rumah Makan Begadang V**
+Sangat terkenal dengan Ayam Pop legendaris khas Lampung & olahan Padang rempah gurih.
 
-🌿 **3. Air Terjun Way Lalaan & Kawasan Wisata Gisting**
-Air terjun bertingkat yang sejuk di kaki Gunung Tanggamus, dikelilingi kebun buah & taman bunga asri.
+🍌 **3. Keripik Pisang Cokelat YenYen (Pusat Oleh-oleh Gang PU)**
+Pusat keripik pisang anekarasa cokelat lumer terpopuler yang wajib dibawa pulang!
 
-🌋 **4. Bendungan Batu Tegi & Wisata Alam Suoh**
-Waduk terbesar di Asia Tenggara dengan pemandangan danau perbukitan yang sangat megah.
-
-Ada yang paling membuatmu tertarik untuk dikunjungi di Tanggamus? 😊`,
-            suggested_queries: [
-              '🐬 Cara sewa jukung lumba-lumba Kiluan',
-              '📸 Rute ke Pantai Gigi Hiu',
-              '☕ Tempat ngeteh sejuk di Gisting',
-            ],
+Mana nih yang paling bikin kamu penasaran? 😊`,
+            suggested_queries: ['📍 Wisata hits Bandar Lampung', '🏖️ Pantai di Pesawaran', '💰 Estimasi biaya liburan'],
             destinations: [],
           },
         };
       }
+    }
 
+    // B. Wisata / Beach Topic
+    if (effectiveTopic === 'wisata' || effectiveTopic === 'beach') {
       if (activeRegency === 'pesisir barat') {
         return {
           status: 'success',
@@ -438,9 +446,42 @@ Destinasi mana yang paling ingin kamu kunjungi di Krui? Muli siap bantu rutenya!
           },
         };
       }
+
+      if (activeRegency === 'tanggamus') {
+        return {
+          status: 'success',
+          bot_name: 'Muli AI Concierge Lampung',
+          model_used: 'rag-synthesizer',
+          data: {
+            reply: `Tabik Pun! 🐬 **Kabupaten Tanggamus** terkenal banget dengan petualangan bahari laut lepas & gugusan karang eksotis dunia!
+
+Berikut destinasi wisata paling hits & wajib kamu kunjungi di Tanggamus:
+
+🐬 **1. Teluk Kiluan (Atraksi Lumba-Lumba Liar)**
+Pengalaman luar biasa naik perahu jukung tradisional ke laut lepas Teluk Semangka untuk melihat kawanan ratusan lumba-lumba melompat bebas!
+
+🪨 **2. Pantai Gigi Hiu (Pegadungan)**
+Gugusan tebing batu karang tajam menjulang tinggi seperti gigi hiu raksasa yang sangat ikonik & terkenal di kalangan fotografer dunia.
+
+🌿 **3. Air Terjun Way Lalaan & Kawasan Wisata Gisting**
+Air terjun bertingkat yang sejuk di kaki Gunung Tanggamus, dikelilingi kebun buah & taman bunga asri.
+
+🌋 **4. Bendungan Batu Tegi & Wisata Alam Suoh**
+Waduk terbesar di Asia Tenggara dengan pemandangan danau perbukitan yang sangat megah.
+
+Ada yang paling membuatmu tertarik untuk dikunjungi di Tanggamus? 😊`,
+            suggested_queries: [
+              '🐬 Cara sewa jukung lumba-lumba Kiluan',
+              '📸 Rute ke Pantai Gigi Hiu',
+              '☕ Tempat ngeteh sejuk di Gisting',
+            ],
+            destinations: [],
+          },
+        };
+      }
     }
 
-    // 3. Dynamic RAG Facts Formatting (Strict Filter applied via relevantFacts)
+    // C. Dynamic RAG Facts Formatting (Strict Filter applied via relevantFacts)
     if (relevantFacts && relevantFacts.length > 0) {
       const topSpots = relevantFacts.slice(0, 4);
       const targetArea = topSpots[0].regency || 'Lampung';

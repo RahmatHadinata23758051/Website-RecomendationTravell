@@ -89,12 +89,14 @@ export const askRadenGajahChatbot = async (payload: AskChatbotPayload): Promise<
     };
   }
 
-  // Detect Intents
-  const isFood = /(kuliner|kuliiner|kulinr|kulineran|makan|mkan|mkn|makanan|resto|restoran|seruit|warung)/i.test(lowerMsg);
-  const isBeach = /(pantai|pntai|pantaii|laut|snorkeling|surfing|beach)/i.test(lowerMsg);
-  const isTourism = /(wisata|wisatanya|tempat|destinasi|jalan|liburan|main|rekreasi)/i.test(lowerMsg);
+  // 1. Explicit Current Message Intents
+  const msgIsWisata = /(wisata|wisatanya|destinasi|tempat|rekreasi|jalan|liburan)/i.test(lowerMsg);
+  const msgIsBeach = /(pantai|pntai|pantaii|laut|snorkeling|surfing|beach)/i.test(lowerMsg);
+  const msgIsFood = /(kuliner|kuliiner|kulinr|kulineran|makan|mkan|mkn|makanan|resto|restoran|seruit|warung)/i.test(lowerMsg);
 
-  // Active Regency Resolution
+  const isFollowupQuery = lowerMsg.startsWith('kalo') || lowerMsg.startsWith('kalau') || lowerMsg.startsWith('bagaimana');
+
+  // 2. Active Regency Resolution (Current Message First, Then History)
   let activeRegency = '';
   if (lowerMsg.includes('pesisir barat') || lowerMsg.includes('krui')) activeRegency = 'pesisir barat';
   else if (lowerMsg.includes('tanggamus')) activeRegency = 'tanggamus';
@@ -109,8 +111,30 @@ export const askRadenGajahChatbot = async (payload: AskChatbotPayload): Promise<
     else if (combinedCtx.includes('pesawaran')) activeRegency = 'pesawaran';
   }
 
-  // Food Intent Handling
-  if (isFood || (combinedCtx.includes('kuliner') && (lowerMsg.startsWith('kalo') || lowerMsg.startsWith('kalau')) && !isBeach && !isTourism)) {
+  // 3. Determine Effective Topic: Current Message explicit intent ALWAYS overrides history!
+  let effectiveTopic = '';
+  if (msgIsBeach) {
+    effectiveTopic = 'beach';
+  } else if (msgIsWisata) {
+    effectiveTopic = 'wisata';
+  } else if (msgIsFood) {
+    effectiveTopic = 'food';
+  } else if (isFollowupQuery) {
+    // Ambiguous follow-up without topic keyword
+    const lastUserMsg = Array.isArray(payload.history) && payload.history.length > 0 ? payload.history.filter(h => h.sender === 'user').pop()?.text.toLowerCase() || '' : '';
+    if (/(kuliner|makan|food|seruit)/i.test(lastUserMsg)) {
+      effectiveTopic = 'food';
+    } else if (/(pantai|beach|laut)/i.test(lastUserMsg)) {
+      effectiveTopic = 'beach';
+    } else {
+      effectiveTopic = 'wisata';
+    }
+  } else {
+    effectiveTopic = 'wisata';
+  }
+
+  // A. Food Topic
+  if (effectiveTopic === 'food') {
     if (activeRegency === 'pesisir barat') {
       return {
         reply: `Tabik Pun! 🍲 Kuliner paling khas & legendaris di **Pesisir Barat (Krui)** adalah olahan **Ikan Tuhuk (Ikan Marlin Samudra)** segar!
@@ -156,38 +180,31 @@ Mau Muli bantu rekomendasikan tempat wisata eksotis terdekat seperti Teluk Kilua
         destinations: [],
       };
     }
-  }
 
-  // Tourism / Beach Intent Handling per Regency
-  if (isBeach || isTourism || lowerMsg.includes('wisatanya') || lowerMsg.includes('pantainya')) {
-    if (activeRegency === 'tanggamus') {
+    if (activeRegency === 'bandar lampung') {
       return {
-        reply: `Tabik Pun! 🐬 **Kabupaten Tanggamus** terkenal banget dengan petualangan bahari laut lepas & gugusan karang eksotis dunia!
+        reply: `Tabik Pun! 🍲 Bandar Lampung adalah pusatnya kuliner lezat khas Lampung!
 
-Berikut destinasi wisata paling hits & wajib kamu kunjungi di Tanggamus:
+Berikut rekomendasi kuliner & tempat makan terfavorit di Bandar Lampung:
 
-🐬 **1. Teluk Kiluan (Atraksi Lumba-Lumba Liar)**
-Pengalaman luar biasa naik perahu jukung tradisional ke laut lepas Teluk Semangka untuk melihat kawanan ratusan lumba-lumba melompat bebas!
+🍲 **1. Rumah Makan Seruit Ibu Hajah**
+Pusat olahan Seruit ikan simba/patin bakar komplit dengan sambal tempoyak durian & lalapan.
 
-🪨 **2. Pantai Gigi Hiu (Pegadungan)**
-Gugusan tebing batu karang tajam menjulang tinggi seperti gigi hiu raksasa yang sangat ikonik & terkenal di kalangan fotografer dunia.
+🍗 **2. Rumah Makan Begadang V**
+Sangat terkenal dengan Ayam Pop legendaris khas Lampung & olahan Padang rempah gurih.
 
-🌿 **3. Air Terjun Way Lalaan & Kawasan Wisata Gisting**
-Air terjun bertingkat yang sejuk di kaki Gunung Tanggamus, dikelilingi kebun buah & taman bunga asri.
+🍌 **3. Keripik Pisang Cokelat YenYen (Pusat Oleh-oleh Gang PU)**
+Pusat keripik pisang anekarasa cokelat lumer terpopuler yang wajib dibawa pulang!
 
-🌋 **4. Bendungan Batu Tegi & Wisata Alam Suoh**
-Waduk terbesar di Asia Tenggara dengan pemandangan danau perbukitan yang sangat megah.
-
-Ada yang paling membuatmu tertarik untuk dikunjungi di Tanggamus? 😊`,
-        suggested_queries: [
-          '🐬 Cara sewa jukung lumba-lumba Kiluan',
-          '📸 Rute ke Pantai Gigi Hiu',
-          '☕ Tempat ngeteh sejuk di Gisting',
-        ],
+Mana nih yang paling bikin kamu penasaran? 😊`,
+        suggested_queries: ['📍 Wisata hits Bandar Lampung', '🏖️ Pantai di Pesawaran', '💰 Estimasi biaya liburan'],
         destinations: [],
       };
     }
+  }
 
+  // B. Wisata / Beach Topic
+  if (effectiveTopic === 'wisata' || effectiveTopic === 'beach') {
     if (activeRegency === 'pesisir barat') {
       return {
         reply: `Tabik Pun! 🏄 **Kabupaten Pesisir Barat (Krui)** adalah surga wisata pantai samudra kelas dunia di Lampung!
@@ -211,6 +228,34 @@ Destinasi mana yang paling ingin kamu kunjungi di Krui? Muli siap bantu rutenya!
           '🏄 Sewa papan surfing Tanjung Setia',
           '🚤 Perahu penyeberangan Pulau Pisang',
           '🍲 Kuliner Ikan Tuhuk Krui',
+        ],
+        destinations: [],
+      };
+    }
+
+    if (activeRegency === 'tanggamus') {
+      return {
+        reply: `Tabik Pun! 🐬 **Kabupaten Tanggamus** terkenal banget dengan petualangan bahari laut lepas & gugusan karang eksotis dunia!
+
+Berikut destinasi wisata paling hits & wajib kamu kunjungi di Tanggamus:
+
+🐬 **1. Teluk Kiluan (Atraksi Lumba-Lumba Liar)**
+Pengalaman luar biasa naik perahu jukung tradisional ke laut lepas Teluk Semangka untuk melihat kawanan ratusan lumba-lumba melompat bebas!
+
+🪨 **2. Pantai Gigi Hiu (Pegadungan)**
+Gugusan tebing batu karang tajam menjulang tinggi seperti gigi hiu raksasa yang sangat ikonik & terkenal di kalangan fotografer dunia.
+
+🌿 **3. Air Terjun Way Lalaan & Kawasan Wisata Gisting**
+Air terjun bertingkat yang sejuk di kaki Gunung Tanggamus, dikelilingi kebun buah & taman bunga asri.
+
+🌋 **4. Bendungan Batu Tegi & Wisata Alam Suoh**
+Waduk terbesar di Asia Tenggara dengan pemandangan danau perbukitan yang sangat megah.
+
+Ada yang paling membuatmu tertarik untuk dikunjungi di Tanggamus? 😊`,
+        suggested_queries: [
+          '🐬 Cara sewa jukung lumba-lumba Kiluan',
+          '📸 Rute ke Pantai Gigi Hiu',
+          '☕ Tempat ngeteh sejuk di Gisting',
         ],
         destinations: [],
       };
