@@ -52,6 +52,32 @@ const getClientDestinations = async (): Promise<any[]> => {
   return clientDestinationsCache;
 };
 
+const resolveActiveRegency = (lowerMsg: string, history: ChatHistoryItem[]): string => {
+  // 1. Direct regency in current message (Highest Priority)
+  if (lowerMsg.includes('pesisir barat') || lowerMsg.includes('krui')) return 'pesisir barat';
+  if (lowerMsg.includes('pesawaran')) return 'pesawaran';
+  if (lowerMsg.includes('tanggamus')) return 'tanggamus';
+  if (lowerMsg.includes('bandar lampung') || lowerMsg.includes('bdl')) return 'bandar lampung';
+  if (lowerMsg.includes('tulang bawang') || lowerMsg.includes('tubaba')) return 'tulang bawang';
+  if (lowerMsg.includes('lampung selatan') || lowerMsg.includes('lamsel')) return 'lampung selatan';
+
+  // 2. Reverse History Scan (Most Recently Mentioned Regency First)
+  if (Array.isArray(history) && history.length > 0) {
+    const userMsgs = history.filter((h) => h.sender === 'user').reverse();
+    for (const h of userMsgs) {
+      const text = (h.text || '').toLowerCase();
+      if (text.includes('pesisir barat') || text.includes('krui')) return 'pesisir barat';
+      if (text.includes('pesawaran')) return 'pesawaran';
+      if (text.includes('tanggamus')) return 'tanggamus';
+      if (text.includes('bandar lampung') || text.includes('bdl')) return 'bandar lampung';
+      if (text.includes('tulang bawang') || text.includes('tubaba')) return 'tulang bawang';
+      if (text.includes('lampung selatan') || text.includes('lamsel')) return 'lampung selatan';
+    }
+  }
+
+  return '';
+};
+
 export const askRadenGajahChatbot = async (payload: AskChatbotPayload): Promise<ChatbotResponseData> => {
   try {
     const res = await apiClient.post('/chatbot/chat', payload);
@@ -65,12 +91,6 @@ export const askRadenGajahChatbot = async (payload: AskChatbotPayload): Promise<
   // Pure Client-Side RAG Engine
   const lowerMsg = payload.message.toLowerCase().trim();
   const cleanMsg = lowerMsg.replace(/[^a-z0-9\s]/gi, '').trim();
-
-  // Multi-turn Context Resolution
-  const historyText = Array.isArray(payload.history)
-    ? payload.history.map((h) => h.text.toLowerCase()).join(' ')
-    : '';
-  const combinedCtx = `${historyText} ${lowerMsg}`.trim();
 
   // Pure Greeting Detection
   const greetingWords = ['halo', 'hallo', 'hai', 'hi', 'hey', 'pagi', 'siang', 'sore', 'malam', 'tes', 'test', 'ping', 'p'];
@@ -94,24 +114,12 @@ export const askRadenGajahChatbot = async (payload: AskChatbotPayload): Promise<
   const msgIsBeach = /(pantai|pntai|pantaii|laut|snorkeling|surfing|beach)/i.test(lowerMsg);
   const msgIsFood = /(kuliner|kuliiner|kulinr|kulineran|makan|mkan|mkn|makanan|resto|restoran|seruit|warung)/i.test(lowerMsg);
 
-  const isFollowupQuery = lowerMsg.startsWith('kalo') || lowerMsg.startsWith('kalau') || lowerMsg.startsWith('bagaimana');
+  const isFollowupQuery = lowerMsg.startsWith('kalo') || lowerMsg.startsWith('kalau') || lowerMsg.startsWith('bagaimana') || lowerMsg.includes('nya');
 
-  // 2. Active Regency Resolution (Current Message First, Then History)
-  let activeRegency = '';
-  if (lowerMsg.includes('pesisir barat') || lowerMsg.includes('krui')) activeRegency = 'pesisir barat';
-  else if (lowerMsg.includes('pesawaran')) activeRegency = 'pesawaran';
-  else if (lowerMsg.includes('tanggamus')) activeRegency = 'tanggamus';
-  else if (lowerMsg.includes('bandar lampung') || lowerMsg.includes('bdl')) activeRegency = 'bandar lampung';
-  else if (lowerMsg.includes('tulang bawang') || lowerMsg.includes('tubaba')) activeRegency = 'tulang bawang';
-  else {
-    if (combinedCtx.includes('pesawaran')) activeRegency = 'pesawaran';
-    else if (combinedCtx.includes('tanggamus')) activeRegency = 'tanggamus';
-    else if (combinedCtx.includes('pesisir barat') || combinedCtx.includes('krui')) activeRegency = 'pesisir barat';
-    else if (combinedCtx.includes('bandar lampung') || combinedCtx.includes('bdl')) activeRegency = 'bandar lampung';
-    else if (combinedCtx.includes('tulang bawang') || combinedCtx.includes('tubaba')) activeRegency = 'tulang bawang';
-  }
+  // 2. Active Regency Resolution (Reverse History Scan)
+  const activeRegency = resolveActiveRegency(lowerMsg, payload.history || []);
 
-  // 3. Determine Effective Topic
+  // 3. Determine Effective Topic: Current Message explicit intent ALWAYS overrides history!
   let effectiveTopic = '';
   if (msgIsBeach) {
     effectiveTopic = 'beach';
@@ -219,34 +227,6 @@ Pusat keripik pisang anekarasa cokelat lumer terpopuler yang wajib dibawa pulang
 
   // B. Wisata / Beach Topic
   if (effectiveTopic === 'wisata' || effectiveTopic === 'beach') {
-    if (activeRegency === 'pesawaran') {
-      return {
-        reply: `Tabik Pun! 🤿 **Kabupaten Pesawaran** adalah rajanya wisata bahari, island hopping, & snorkeling di Lampung!
-
-Berikut destinasi wisata unggulan paling hits yang wajib kamu kunjungi di Pesawaran:
-
-🤿 **1. Pulau Pahawang (Spot Snorkeling Nemo)**
-Destinasi bahari kelas dunia tempat snorkeling terbaik melihat terumbu karang alami & ekosistem Ikan Nemo yang sangat bening.
-
-🏝️ **2. Pantai Sari Ringgung & Pasir Timbul**
-Pantai pasir putih populer dengan fenomena unik wahana Pasir Timbul mengapung di tengah laut.
-
-🌴 **3. Pulau Kelagian & Pantai Mutun**
-Pulau pasir putih halus berair laut tenang yang sangat cocok untuk liburan keluarga & wahana olahraga air.
-
-🌊 **4. Pantai Dewi Mandapa & Pulau Mahitam**
-Spot pantai estetik dengan hutan mangrove instagramable & daratan pasir timbul menuju Pulau Mahitam.
-
-Destinasi mana yang paling ingin kamu kunjungi di Pesawaran? 😊`,
-        suggested_queries: [
-          '🤿 Paket snorkeling Pulau Pahawang',
-          '🏖️ Tiket masuk Pantai Sari Ringgung',
-          '🍲 Kuliner Seruit Pesawaran',
-        ],
-        destinations: [],
-      };
-    }
-
     if (activeRegency === 'pesisir barat') {
       return {
         reply: `Tabik Pun! 🏄 **Kabupaten Pesisir Barat (Krui)** adalah surga wisata pantai samudra kelas dunia di Lampung!
@@ -270,6 +250,34 @@ Destinasi mana yang paling ingin kamu kunjungi di Krui? Muli siap bantu rutenya!
           '🏄 Sewa papan surfing Tanjung Setia',
           '🚤 Perahu penyeberangan Pulau Pisang',
           '🍲 Kuliner Ikan Tuhuk Krui',
+        ],
+        destinations: [],
+      };
+    }
+
+    if (activeRegency === 'pesawaran') {
+      return {
+        reply: `Tabik Pun! 🤿 **Kabupaten Pesawaran** adalah rajanya wisata bahari, island hopping, & snorkeling di Lampung!
+
+Berikut destinasi wisata unggulan paling hits yang wajib kamu kunjungi di Pesawaran:
+
+🤿 **1. Pulau Pahawang (Spot Snorkeling Nemo)**
+Destinasi bahari kelas dunia tempat snorkeling terbaik melihat terumbu karang alami & ekosistem Ikan Nemo yang sangat bening.
+
+🏝️ **2. Pantai Sari Ringgung & Pasir Timbul**
+Pantai pasir putih populer dengan fenomena unik wahana Pasir Timbul mengapung di tengah laut.
+
+🌴 **3. Pulau Kelagian & Pantai Mutun**
+Pulau pasir putih halus berair laut tenang yang sangat cocok untuk liburan keluarga & wahana olahraga air.
+
+🌊 **4. Pantai Dewi Mandapa & Pulau Mahitam**
+Spot pantai estetik dengan hutan mangrove instagramable & daratan pasir timbul menuju Pulau Mahitam.
+
+Destinasi mana yang paling ingin kamu kunjungi di Pesawaran? 😊`,
+        suggested_queries: [
+          '🤿 Paket snorkeling Pulau Pahawang',
+          '🏖️ Tiket masuk Pantai Sari Ringgung',
+          '🍲 Kuliner Seruit Pesawaran',
         ],
         destinations: [],
       };
