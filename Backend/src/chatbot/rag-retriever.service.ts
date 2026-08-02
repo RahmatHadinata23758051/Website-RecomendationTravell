@@ -49,9 +49,10 @@ export class RagRetrieverService implements OnModuleInit {
   private loadDestinationsData() {
     try {
       const posiblesPaths = [
+        path.join(process.cwd(), '..', 'Frontend', 'public', 'assets', 'data', 'public_destinations.json'),
+        path.join(process.cwd(), '..', 'Frontend', 'public', 'data', 'destinations.json'),
         path.join(process.cwd(), '..', 'Frontend', 'public', 'public_destinations.json'),
-        path.join(process.cwd(), 'public', 'public_destinations.json'),
-        path.join(process.cwd(), 'public_destinations.json'),
+        path.join(process.cwd(), 'public', 'assets', 'data', 'public_destinations.json'),
       ];
 
       let rawData = '';
@@ -66,14 +67,14 @@ export class RagRetrieverService implements OnModuleInit {
       if (rawData) {
         const parsed = JSON.parse(rawData);
         this.destinationsPool = parsed.map((item: any) => ({
-          id: item.id || item.canonicalId || `dest-${Math.random()}`,
+          id: item.canonical_id || item.id || item.canonicalId || `dest-${Math.random()}`,
           name: item.name || 'Destinasi Wisata Lampung',
-          location: item.location || item.formattedAddress || item.regency || 'Lampung',
-          regency: item.regency || item.city || 'Bandar Lampung',
-          category: item.category || 'Alam',
+          location: item.address || item.location || item.city_or_regency || 'Lampung',
+          regency: item.city_or_regency || item.regency || 'Bandar Lampung',
+          category: item.primary_category || item.category || 'Alam',
           rating: item.rating || 4.5,
-          price: item.price || 'Gratis / Terjangkau ($)',
-          numericPrice: item.numericPrice || 0,
+          price: item.price || (item.price_min_idr ? `Rp ${item.price_min_idr.toLocaleString('id-ID')}` : 'Terjangkau ($)'),
+          numericPrice: item.numericPrice || item.price_min_idr || 0,
           duration: item.duration || '1-2 jam',
           hours: item.hours || '08:00 - 17:00 WIB',
           description: item.description || item.summary || 'Destinasi wisata unggulan di Lampung.',
@@ -122,6 +123,7 @@ export class RagRetrieverService implements OnModuleInit {
       let score = 0;
       const lowerName = dest.name.toLowerCase();
       const lowerReg = dest.regency.toLowerCase();
+      const lowerLoc = dest.location.toLowerCase();
       const lowerCat = dest.category.toLowerCase();
       const lowerDesc = dest.description.toLowerCase();
 
@@ -130,9 +132,9 @@ export class RagRetrieverService implements OnModuleInit {
         score += 50;
       }
 
-      // Regency match
-      if (detectedRegency && lowerReg.includes(detectedRegency.toLowerCase())) {
-        score += 30;
+      // Regency / Location match
+      if (detectedRegency && (lowerReg.includes(detectedRegency.toLowerCase()) || lowerLoc.includes(detectedRegency.toLowerCase()))) {
+        score += 35;
       }
 
       // Category match
@@ -153,7 +155,7 @@ export class RagRetrieverService implements OnModuleInit {
       return { dest, score };
     });
 
-    // Sort by score descending and take top 5
+    // Filter score > 0 or top items
     scored.sort((a, b) => b.score - a.score);
     return scored.slice(0, 5).map((s) => s.dest);
   }
