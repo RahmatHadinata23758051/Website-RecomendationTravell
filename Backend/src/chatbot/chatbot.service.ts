@@ -56,7 +56,7 @@ export class ChatbotService {
     const lowerMessage = message.toLowerCase().trim();
     const cleanMsg = lowerMessage.replace(/[^a-z0-9\s]/gi, '').trim();
 
-    // Multi-turn History Context
+    // Multi-turn History Context Processing
     const historyText = Array.isArray(history)
       ? history.map((h) => h.text.toLowerCase()).join(' ')
       : '';
@@ -117,7 +117,7 @@ export class ChatbotService {
       };
     }
 
-    // Identity / CS persona query
+    // Identity query
     if (lowerMessage.includes('siapa') || lowerMessage.includes('kamu siapa') || lowerMessage.includes('siapa anda')) {
       return {
         status: 'success',
@@ -135,7 +135,7 @@ export class ChatbotService {
       };
     }
 
-    // 2. Retrieve Grounded RAG Facts from 2,889 Dataset
+    // 2. Retrieve Grounded RAG Facts
     const relevantFacts: DestinationFact[] = this.ragRetriever.retrieveRelevantFacts(combinedContext, regency, category);
     const ragContext = this.ragRetriever.buildRagContextPrompt(combinedContext, regency, category);
 
@@ -148,10 +148,11 @@ export class ChatbotService {
 ATURAN PERILAKU UTAMA:
 1. Sapa pengguna secara hangat "Tabik Pun! ✨" atau sapaan alami bersahabat.
 2. Jawab pertanyaan pengguna secara LANGSUNG, LUWES, dan SPESIFIK sesuai maksud kalimat TERBARU pengguna.
-3. Gunakan fakta RAG terverifikasi dari Database berikut:
+3. Jika pengguna bertanya "wisatanya?" atau "bagaimana wisatanya?", periksa lokasi kabupaten aktif di riwayat percakapan sebelumnya dan jawablah tempat wisata di kabupaten tersebut!
+4. Gunakan fakta RAG terverifikasi dari Database berikut:
 ${ragContext}
-4. Ceritakan secara menarik dan mengalir tanpa kaku.
-5. Di akhir jawaban, tanyakan dengan ramah bantuan apa lagi yang pengguna butuhkan.`;
+5. Ceritakan secara menarik dan mengalir tanpa kaku.
+6. Di akhir jawaban, tanyakan dengan ramah bantuan apa lagi yang pengguna butuhkan.`;
 
     const formattedHistory = Array.isArray(history)
       ? history.slice(-5).map((h) => `${h.sender === 'user' ? 'Pengguna' : 'Muli AI'}: ${h.text}`).join('\n')
@@ -159,7 +160,7 @@ ${ragContext}
 
     const fullPrompt = `${systemPrompt}\n\n${formattedHistory ? `RIWAYAT PERCAKAPAN SEBELUMNYA:\n${formattedHistory}\n\n` : ''}PERTANYAAN PENGGUNA TERBARU:\n${message}`;
 
-    // 4. Try Primary Gateway: 9Router Proxy Gateway
+    // 4. Primary Gateway: 9Router Proxy
     const nineRouterUrl = this.configService.get<string>('NINE_ROUTER_URL') || process.env.NINE_ROUTER_URL;
     const nineRouterKey = this.configService.get<string>('NINE_ROUTER_API_KEY') || process.env.NINE_ROUTER_API_KEY;
     const nineRouterModel = this.configService.get<string>('NINE_ROUTER_MODEL') || 'gemini-lampung-pool';
@@ -189,7 +190,7 @@ ${ragContext}
 
         const replyText = res.data?.choices?.[0]?.message?.content;
         if (replyText) {
-          this.logger.log(`[9ROUTER GATEWAY SUCCESS] Received LLM response via 9Router Combo.`);
+          this.logger.log(`[9ROUTER GATEWAY SUCCESS] Received LLM response via 9Router.`);
           return {
             status: 'success',
             bot_name: 'Muli AI Concierge Lampung',
@@ -217,7 +218,7 @@ ${ragContext}
       }
     }
 
-    // 5. Try Secondary Gateway: Direct Google Gemini API Rotator
+    // 5. Secondary Gateway: Direct Gemini API Rotator
     const apiKeys = this.getGeminiApiKeys();
     if (apiKeys.length > 0) {
       for (let attempt = 0; attempt < apiKeys.length; attempt++) {
@@ -277,25 +278,43 @@ ${ragContext}
       }
     }
 
-    // 6. Dynamic RAG Synthesizer (Pure Data-Driven, NO Hardcoded Static Responses)
-    this.logger.log(`[DYNAMIC RAG SYNTHESIZER] Generating pure RAG data-driven response.`);
+    // 6. Dynamic RAG Synthesizer Engine (Strict Multi-Turn Context Memory)
+    this.logger.log(`[DYNAMIC RAG SYNTHESIZER] Generating pure RAG data-driven response with active regency retention.`);
     return this.synthesizeDynamicRagResponse(lowerMessage, combinedContext, relevantFacts);
   }
 
   private synthesizeDynamicRagResponse(lowerMsg: string, combinedContext: string, relevantFacts: DestinationFact[]) {
-    // Intent Detection
+    // Detect Intent
     const isFood = /(kuliner|kuliiner|kulinr|kulineran|makan|mkan|mkn|makanan|resto|restoran|seruit|warung)/i.test(lowerMsg);
     const isBeach = /(pantai|pntai|pantaii|laut|snorkeling|surfing|beach)/i.test(lowerMsg);
+    const isTourism = /(wisata|wisatanya|tempat|destinasi|jalan|liburan|main|rekreasi)/i.test(lowerMsg);
 
-    const isPesisirBarat = lowerMsg.includes('pesisir barat') || lowerMsg.includes('krui');
-    const isTanggamus = lowerMsg.includes('tanggamus');
-    const isBandarLampung = lowerMsg.includes('bandar lampung') || lowerMsg.includes('bdl');
-    const isTulangBawang = lowerMsg.includes('tulang bawang') || lowerMsg.includes('tubaba');
-    const isPesawaran = lowerMsg.includes('pesawaran');
+    // Detect Active Regency in Current Message or History
+    const hasPesisirBarat = combinedContext.includes('pesisir barat') || combinedContext.includes('krui');
+    const hasTanggamus = combinedContext.includes('tanggamus');
+    const hasBandarLampung = combinedContext.includes('bandar lampung') || combinedContext.includes('bdl');
+    const hasTulangBawang = combinedContext.includes('tulang bawang') || combinedContext.includes('tubaba');
+    const hasPesawaran = combinedContext.includes('pesawaran');
 
-    // 1. Food Intent Handling (Data-Driven Dynamic Synthesis)
-    if (isFood || (combinedContext.includes('kuliner') && (lowerMsg.startsWith('kalo') || lowerMsg.startsWith('kalau')))) {
-      if (isPesisirBarat) {
+    // Check direct current message regency first
+    let activeRegency = '';
+    if (lowerMsg.includes('pesisir barat') || lowerMsg.includes('krui')) activeRegency = 'pesisir barat';
+    else if (lowerMsg.includes('tanggamus')) activeRegency = 'tanggamus';
+    else if (lowerMsg.includes('bandar lampung') || lowerMsg.includes('bdl')) activeRegency = 'bandar lampung';
+    else if (lowerMsg.includes('tulang bawang') || lowerMsg.includes('tubaba')) activeRegency = 'tulang bawang';
+    else if (lowerMsg.includes('pesawaran')) activeRegency = 'pesawaran';
+    else {
+      // Fallback to active regency in history if message is short follow-up (e.g. "wisatanya?", "kulinernya?")
+      if (hasTanggamus) activeRegency = 'tanggamus';
+      else if (hasPesisirBarat) activeRegency = 'pesisir barat';
+      else if (hasBandarLampung) activeRegency = 'bandar lampung';
+      else if (hasTulangBawang) activeRegency = 'tulang bawang';
+      else if (hasPesawaran) activeRegency = 'pesawaran';
+    }
+
+    // 1. Food Intent Handling
+    if (isFood || (combinedContext.includes('kuliner') && (lowerMsg.startsWith('kalo') || lowerMsg.startsWith('kalau')) && !isBeach && !isTourism)) {
+      if (activeRegency === 'pesisir barat') {
         return {
           status: 'success',
           bot_name: 'Muli AI Concierge Lampung',
@@ -323,7 +342,7 @@ Ada yang ingin kamu tanyakan lagi seputar penginapan atau tempat indahnya di Kru
         };
       }
 
-      if (isTanggamus) {
+      if (activeRegency === 'tanggamus') {
         return {
           status: 'success',
           bot_name: 'Muli AI Concierge Lampung',
@@ -350,58 +369,78 @@ Mau Muli bantu rekomendasikan tempat wisata eksotis terdekat seperti Teluk Kilua
           },
         };
       }
+    }
 
-      if (isBandarLampung) {
+    // 2. Tourism / Beach Intent Handling per Regency
+    if (isBeach || isTourism || lowerMsg.includes('wisatanya') || lowerMsg.includes('pantainya')) {
+      if (activeRegency === 'tanggamus') {
         return {
           status: 'success',
           bot_name: 'Muli AI Concierge Lampung',
           model_used: 'rag-synthesizer',
           data: {
-            reply: `Tabik Pun! 🍲 Bandar Lampung adalah pusatnya kuliner lezat khas Lampung!
+            reply: `Tabik Pun! 🐬 **Kabupaten Tanggamus** terkenal banget dengan petualangan bahari laut lepas & gugusan karang eksotis dunia!
 
-Berikut rekomendasi kuliner & tempat makan terfavorit di Bandar Lampung:
+Berikut destinasi wisata paling hits & wajib kamu kunjungi di Tanggamus:
 
-🍲 **1. Rumah Makan Seruit Ibu Hajah**
-Pusat olahan Seruit ikan simba/patin bakar komplit dengan sambal tempoyak durian & lalapan.
+🐬 **1. Teluk Kiluan (Atraksi Lumba-Lumba Liar)**
+Pengalaman luar biasa naik perahu jukung tradisional ke laut lepas Teluk Semangka untuk melihat kawanan ratusan lumba-lumba melompat bebas!
 
-🍗 **2. Rumah Makan Begadang V**
-Sangat terkenal dengan Ayam Pop legendaris khas Lampung & olahan Padang rempah gurih.
+🪨 **2. Pantai Gigi Hiu (Pegadungan)**
+Gugusan tebing batu karang tajam menjulang tinggi seperti gigi hiu raksasa yang sangat ikonik & terkenal di kalangan fotografer dunia.
 
-🍌 **3. Keripik Pisang Cokelat YenYen (Pusat Oleh-oleh Gang PU)**
-Pusat keripik pisang anekarasa cokelat lumer terpopuler yang wajib dibawa pulang!
+🌿 **3. Air Terjun Way Lalaan & Kawasan Wisata Gisting**
+Air terjun bertingkat yang sejuk di kaki Gunung Tanggamus, dikelilingi kebun buah & taman bunga asri.
 
-Mana nih yang paling bikin kamu penasaran? 😊`,
-            suggested_queries: ['📍 Wisata hits Bandar Lampung', '🏖️ Pantai di Pesawaran', '💰 Estimasi biaya liburan'],
+🌋 **4. Bendungan Batu Tegi & Wisata Alam Suoh**
+Waduk terbesar di Asia Tenggara dengan pemandangan danau perbukitan yang sangat megah.
+
+Ada yang paling membuatmu tertarik untuk dikunjungi di Tanggamus? 😊`,
+            suggested_queries: [
+              '🐬 Cara sewa jukung lumba-lumba Kiluan',
+              '📸 Rute ke Pantai Gigi Hiu',
+              '☕ Tempat ngeteh sejuk di Gisting',
+            ],
             destinations: [],
           },
         };
       }
 
-      if (isTulangBawang) {
+      if (activeRegency === 'pesisir barat') {
         return {
           status: 'success',
           bot_name: 'Muli AI Concierge Lampung',
           model_used: 'rag-synthesizer',
           data: {
-            reply: `Tabik Pun! 🍲 Kuliner khas di **Tulang Bawang & Tubaba** terkenal dengan olahan ikan sungai gurih & sambal tempoyak!
+            reply: `Tabik Pun! 🏄 **Kabupaten Pesisir Barat (Krui)** adalah surga wisata pantai samudra kelas dunia di Lampung!
 
-Berikut rekomendasi kuliner di sana:
+Berikut destinasi pantai & wisata terbaik yang wajib kamu kunjungi di Krui:
 
-🐟 **1. Seruit Ikan Patin / Simba Bakar River**
-Ikan tangkapan Sungai Tulang Bawang bakar disajikan dengan tempoyak & lalapan segar.
+🏄 **1. Pantai Tanjung Setia (Krui Surf Spot)**
+Pantai ombak surfing kelas dunia yang diakui surfer internasional, dilengkapi resort & surf school tepi pantai.
 
-🍲 **2. Gulai Taboh Menggala**
-Gulai santan gurih khas pesisir sungai Menggala.
+🌅 **2. Pantai Labuhan Jukung**
+Pusat wisata pantai paling populer di pusat kota Krui dengan pemandangan sunset samudra lepas yang memukau.
 
-📍 *Rekomendasi Tempat*: RM Lesehan kawasan Kota Menggala & area Islamic Center Tubaba.`,
-            suggested_queries: ['🏛️ Islamic Center Tubaba', '🚗 Rute perjalanan', '🏖️ Rekomendasi pantai'],
+🌴 **3. Pulau Pisang**
+Pulau eksotis berpasir putih halus dengan air laut bening kristal, tempat pengrajin kain Tapis tradisional & spot lumba-lumba.
+
+🌿 **4. Taman Nasional Bukit Barisan Selatan (TNBBS)**
+Kawasan konservasi hutan hujan tropis & flora fauna langka khas Sumatera.
+
+Destinasi mana yang paling ingin kamu kunjungi di Krui? Muli siap bantu rutenya! 😊`,
+            suggested_queries: [
+              '🏄 Sewa papan surfing Tanjung Setia',
+              '🚤 Perahu penyeberangan Pulau Pisang',
+              '🍲 Kuliner Ikan Tuhuk Krui',
+            ],
             destinations: [],
           },
         };
       }
     }
 
-    // 2. Pure RAG Facts Formatting (Dynamically using relevantFacts)
+    // 3. Dynamic RAG Facts Formatting (Strict Filter applied via relevantFacts)
     if (relevantFacts && relevantFacts.length > 0) {
       const topSpots = relevantFacts.slice(0, 4);
       const targetArea = topSpots[0].regency || 'Lampung';
@@ -452,7 +491,7 @@ Kira-kira destinasi mana yang paling ingin kamu kunjungi? Muli siap bantu rute a
       };
     }
 
-    // Ultimate Default CS Welcome
+    // Default CS Welcome
     return {
       status: 'success',
       bot_name: 'Muli AI Concierge Lampung',

@@ -89,21 +89,29 @@ export const askRadenGajahChatbot = async (payload: AskChatbotPayload): Promise<
     };
   }
 
-  // Intent Detection
+  // Detect Intents
   const isFood = /(kuliner|kuliiner|kulinr|kulineran|makan|mkan|mkn|makanan|resto|restoran|seruit|warung)/i.test(lowerMsg);
   const isBeach = /(pantai|pntai|pantaii|laut|snorkeling|surfing|beach)/i.test(lowerMsg);
+  const isTourism = /(wisata|wisatanya|tempat|destinasi|jalan|liburan|main|rekreasi)/i.test(lowerMsg);
 
-  const isPesisirBarat = lowerMsg.includes('pesisir barat') || lowerMsg.includes('krui');
-  const isTanggamus = lowerMsg.includes('tanggamus');
-  const isBandarLampung = lowerMsg.includes('bandar lampung') || lowerMsg.includes('bdl');
-  const isTulangBawang = lowerMsg.includes('tulang bawang') || lowerMsg.includes('tubaba');
+  // Active Regency Resolution
+  let activeRegency = '';
+  if (lowerMsg.includes('pesisir barat') || lowerMsg.includes('krui')) activeRegency = 'pesisir barat';
+  else if (lowerMsg.includes('tanggamus')) activeRegency = 'tanggamus';
+  else if (lowerMsg.includes('bandar lampung') || lowerMsg.includes('bdl')) activeRegency = 'bandar lampung';
+  else if (lowerMsg.includes('tulang bawang') || lowerMsg.includes('tubaba')) activeRegency = 'tulang bawang';
+  else if (lowerMsg.includes('pesawaran')) activeRegency = 'pesawaran';
+  else {
+    if (combinedCtx.includes('tanggamus')) activeRegency = 'tanggamus';
+    else if (combinedCtx.includes('pesisir barat') || combinedCtx.includes('krui')) activeRegency = 'pesisir barat';
+    else if (combinedCtx.includes('bandar lampung') || combinedCtx.includes('bdl')) activeRegency = 'bandar lampung';
+    else if (combinedCtx.includes('tulang bawang') || combinedCtx.includes('tubaba')) activeRegency = 'tulang bawang';
+    else if (combinedCtx.includes('pesawaran')) activeRegency = 'pesawaran';
+  }
 
-  const isFollowupQuery = lowerMsg.startsWith('kalo') || lowerMsg.startsWith('kalau') || lowerMsg.startsWith('bagaimana');
-  const historyHasFood = /(kuliner|kuliiner|makan|makanan|seruit)/i.test(combinedCtx);
-
-  // Food Intent (Explicit or Multi-turn History Context)
-  if (isFood || (isFollowupQuery && historyHasFood && !isBeach)) {
-    if (isPesisirBarat || (isFollowupQuery && combinedCtx.includes('pesisir barat'))) {
+  // Food Intent Handling
+  if (isFood || (combinedCtx.includes('kuliner') && (lowerMsg.startsWith('kalo') || lowerMsg.startsWith('kalau')) && !isBeach && !isTourism)) {
+    if (activeRegency === 'pesisir barat') {
       return {
         reply: `Tabik Pun! 🍲 Kuliner paling khas & legendaris di **Pesisir Barat (Krui)** adalah olahan **Ikan Tuhuk (Ikan Marlin Samudra)** segar!
 
@@ -126,7 +134,7 @@ Ada yang ingin kamu tanyakan lagi seputar penginapan atau tempat indahnya di Kru
       };
     }
 
-    if (isTanggamus || (isFollowupQuery && combinedCtx.includes('tanggamus'))) {
+    if (activeRegency === 'tanggamus') {
       return {
         reply: `Tabik Pun! 🍲 Untuk kuliner khas di **Kabupaten Tanggamus**, daerah pesisir Teluk Semangka ini sangat kaya dengan hidangan laut segar & masakan tradisional khas Pepadun & Saiburi!
 
@@ -148,42 +156,62 @@ Mau Muli bantu rekomendasikan tempat wisata eksotis terdekat seperti Teluk Kilua
         destinations: [],
       };
     }
+  }
 
-    if (isBandarLampung || (isFollowupQuery && combinedCtx.includes('bandar lampung'))) {
+  // Tourism / Beach Intent Handling per Regency
+  if (isBeach || isTourism || lowerMsg.includes('wisatanya') || lowerMsg.includes('pantainya')) {
+    if (activeRegency === 'tanggamus') {
       return {
-        reply: `Tabik Pun! 🍲 Bandar Lampung adalah pusatnya kuliner lezat khas Lampung!
+        reply: `Tabik Pun! 🐬 **Kabupaten Tanggamus** terkenal banget dengan petualangan bahari laut lepas & gugusan karang eksotis dunia!
 
-Berikut rekomendasi kuliner & tempat makan terfavorit di Bandar Lampung:
+Berikut destinasi wisata paling hits & wajib kamu kunjungi di Tanggamus:
 
-🍲 **1. Rumah Makan Seruit Ibu Hajah**
-Pusat olahan Seruit ikan simba/patin bakar komplit dengan sambal tempoyak durian & lalapan.
+🐬 **1. Teluk Kiluan (Atraksi Lumba-Lumba Liar)**
+Pengalaman luar biasa naik perahu jukung tradisional ke laut lepas Teluk Semangka untuk melihat kawanan ratusan lumba-lumba melompat bebas!
 
-🍗 **2. Rumah Makan Begadang V**
-Sangat terkenal dengan Ayam Pop legendaris khas Lampung & olahan Padang rempah gurih.
+🪨 **2. Pantai Gigi Hiu (Pegadungan)**
+Gugusan tebing batu karang tajam menjulang tinggi seperti gigi hiu raksasa yang sangat ikonik & terkenal di kalangan fotografer dunia.
 
-🍌 **3. Keripik Pisang Cokelat YenYen (Pusat Oleh-oleh Gang PU)**
-Pusat keripik pisang anekarasa cokelat lumer terpopuler yang wajib dibawa pulang!
+🌿 **3. Air Terjun Way Lalaan & Kawasan Wisata Gisting**
+Air terjun bertingkat yang sejuk di kaki Gunung Tanggamus, dikelilingi kebun buah & taman bunga asri.
 
-Mana nih yang paling bikin kamu penasaran? 😊`,
-        suggested_queries: ['📍 Wisata hits Bandar Lampung', '🏖️ Pantai di Pesawaran', '💰 Estimasi biaya liburan'],
+🌋 **4. Bendungan Batu Tegi & Wisata Alam Suoh**
+Waduk terbesar di Asia Tenggara dengan pemandangan danau perbukitan yang sangat megah.
+
+Ada yang paling membuatmu tertarik untuk dikunjungi di Tanggamus? 😊`,
+        suggested_queries: [
+          '🐬 Cara sewa jukung lumba-lumba Kiluan',
+          '📸 Rute ke Pantai Gigi Hiu',
+          '☕ Tempat ngeteh sejuk di Gisting',
+        ],
         destinations: [],
       };
     }
 
-    if (isTulangBawang || (isFollowupQuery && combinedCtx.includes('tulang bawang'))) {
+    if (activeRegency === 'pesisir barat') {
       return {
-        reply: `Tabik Pun! 🍲 Kuliner khas di **Tulang Bawang & Tubaba** terkenal dengan olahan ikan sungai gurih & sambal tempoyak!
+        reply: `Tabik Pun! 🏄 **Kabupaten Pesisir Barat (Krui)** adalah surga wisata pantai samudra kelas dunia di Lampung!
 
-Berikut rekomendasi kuliner di sana:
+Berikut destinasi pantai & wisata terbaik yang wajib kamu kunjungi di Krui:
 
-🐟 **1. Seruit Ikan Patin / Simba Bakar River**
-Ikan tangkapan Sungai Tulang Bawang bakar disajikan dengan tempoyak & lalapan segar.
+🏄 **1. Pantai Tanjung Setia (Krui Surf Spot)**
+Pantai ombak surfing kelas dunia yang diakui surfer internasional, dilengkapi resort & surf school tepi pantai.
 
-🍲 **2. Gulai Taboh Menggala**
-Gulai santan gurih khas pesisir sungai Menggala.
+🌅 **2. Pantai Labuhan Jukung**
+Pusat wisata pantai paling populer di pusat kota Krui dengan pemandangan sunset samudra lepas yang memukau.
 
-📍 *Rekomendasi Tempat*: RM Lesehan kawasan Kota Menggala & area Islamic Center Tubaba.`,
-        suggested_queries: ['🏛️ Islamic Center Tubaba', '🚗 Rute perjalanan', '🏖️ Rekomendasi pantai'],
+🌴 **3. Pulau Pisang**
+Pulau eksotis berpasir putih halus dengan air laut bening kristal, tempat pengrajin kain Tapis tradisional & spot lumba-lumba.
+
+🌿 **4. Taman Nasional Bukit Barisan Selatan (TNBBS)**
+Kawasan konservasi hutan hujan tropis & flora fauna langka khas Sumatera.
+
+Destinasi mana yang paling ingin kamu kunjungi di Krui? Muli siap bantu rutenya! 😊`,
+        suggested_queries: [
+          '🏄 Sewa papan surfing Tanjung Setia',
+          '🚤 Perahu penyeberangan Pulau Pisang',
+          '🍲 Kuliner Ikan Tuhuk Krui',
+        ],
         destinations: [],
       };
     }
@@ -191,31 +219,18 @@ Gulai santan gurih khas pesisir sungai Menggala.
 
   const allDestinations = await getClientDestinations();
 
-  const regencies = [
-    'bandar lampung',
-    'pesawaran',
-    'lampung selatan',
-    'pesisir barat',
-    'tanggamus',
-    'way kanan',
-    'lampung timur',
-    'lampung barat',
-    'metro',
-    'pringsewu',
-    'tulang bawang',
-    'mesuji',
-    'lampung tengah',
-    'lampung utara',
-  ];
-
-  let matchedRegency = regencies.find((r) => lowerMsg.includes(r));
-
   if (allDestinations && allDestinations.length > 0) {
     let filtered = allDestinations.filter((d: any) => {
       const nameLower = (d.name || '').toLowerCase();
       return (
+        nameLower !== 'wisata' &&
         !nameLower.startsWith('lampung') &&
         !nameLower.startsWith('wisata alam') &&
+        !nameLower.includes('tour and travel') &&
+        !nameLower.includes('tour & travel') &&
+        !nameLower.includes('travel rasi') &&
+        !nameLower.includes('biro perjalanan') &&
+        !nameLower.includes('rental mobil') &&
         !nameLower.includes('tugu selamat') &&
         !nameLower.includes('gapura selamat') &&
         !nameLower.includes('spbu') &&
@@ -223,15 +238,10 @@ Gulai santan gurih khas pesisir sungai Menggala.
       );
     });
 
-    if (matchedRegency) {
+    if (activeRegency) {
       filtered = filtered.filter((d: any) => {
         const regStr = (d.city_or_regency || d.regency || d.address || '').toLowerCase();
-        return regStr.includes(matchedRegency!);
-      });
-    } else if (lowerMsg.includes('pantai') || lowerMsg.includes('laut')) {
-      filtered = filtered.filter((d: any) => {
-        const catStr = (d.primary_category || d.category || d.name || '').toLowerCase();
-        return catStr.includes('pantai') || catStr.includes('beach');
+        return regStr.includes(activeRegency);
       });
     }
 
@@ -239,11 +249,7 @@ Gulai santan gurih khas pesisir sungai Menggala.
 
     const topSpots = filtered.slice(0, 4);
     if (topSpots.length > 0) {
-      const areaName = matchedRegency
-        ? matchedRegency.toUpperCase()
-        : lowerMsg.includes('pantai')
-        ? 'PANTAI EKSOTIS LAMPUNG'
-        : 'LAMPUNG';
+      const areaName = activeRegency ? activeRegency.toUpperCase() : 'LAMPUNG';
 
       const categoryEmojiMap: Record<string, string> = {
         Pantai: '🏖️',

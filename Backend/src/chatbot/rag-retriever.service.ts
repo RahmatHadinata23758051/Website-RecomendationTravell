@@ -80,14 +80,24 @@ export class RagRetrieverService implements OnModuleInit {
         this.destinationsPool = parsed
           .filter((item: any) => {
             const nameLower = (item.name || '').toLowerCase();
-            return (
-              !nameLower.startsWith('lampung') &&
-              !nameLower.startsWith('wisata alam') &&
-              !nameLower.includes('tugu selamat') &&
-              !nameLower.includes('gapura selamat') &&
-              !nameLower.includes('spbu') &&
-              !nameLower.includes('terminal')
-            );
+            const categoryLower = (item.primary_category || item.category || '').toLowerCase();
+            
+            // Filter out non-tourist spots like tour agencies, rental, gas stations, buses, generic titles
+            const isNonTourist =
+              nameLower === 'wisata' ||
+              nameLower.startsWith('lampung') ||
+              nameLower.startsWith('wisata alam') ||
+              nameLower.includes('tour and travel') ||
+              nameLower.includes('tour & travel') ||
+              nameLower.includes('travel rasi') ||
+              nameLower.includes('biro perjalanan') ||
+              nameLower.includes('rental mobil') ||
+              nameLower.includes('tugu selamat') ||
+              nameLower.includes('gapura selamat') ||
+              nameLower.includes('spbu') ||
+              nameLower.includes('terminal');
+
+            return !isNonTourist;
           })
           .map((item: any) => ({
             id: item.canonical_id || item.id || item.canonicalId || `dest-${Math.random()}`,
@@ -103,7 +113,7 @@ export class RagRetrieverService implements OnModuleInit {
             description: item.description || item.summary || 'Destinasi wisata unggulan di Lampung.',
             facilities: Array.isArray(item.facilities) ? item.facilities : ['Spot Foto', 'Parkir', 'Toilet'],
           }));
-        this.logger.log(`[RAG RETRIEVER] Indexed ${this.destinationsPool.length} clean destinations.`);
+        this.logger.log(`[RAG RETRIEVER] Indexed ${this.destinationsPool.length} clean tourist destinations.`);
       }
     } catch (err) {
       this.logger.error(`[RAG RETRIEVER] Failed to load dataset: ${err.message}`);
@@ -168,20 +178,6 @@ export class RagRetrieverService implements OnModuleInit {
           description: 'Pantai pasir putih populer dengan atraksi Pasir Timbul di tengah laut & wahana olahraga air.',
           facilities: ['Pasir Timbul', 'Restoran Apung', 'Gazebo', 'Parkir'],
         },
-        {
-          id: 'seed-5',
-          name: 'Restoran Seruit khas Lampung Ibu Hajah',
-          location: 'Kota Bandar Lampung',
-          regency: 'Kota Bandar Lampung',
-          category: 'Kuliner',
-          rating: 4.8,
-          price: 'Rp 35.000 / porsi',
-          numericPrice: 35000,
-          duration: '1 jam',
-          hours: '10:00 - 21:00 WIB',
-          description: 'Pusat olahan Seruit tradisional ikan simba/patin bakar diolah bersama sambal tempoyak durian & lalapan.',
-          facilities: ['Lesehan', 'Parkir Luas', 'AC', 'Lalapan Segar'],
-        },
       ];
     }
 
@@ -207,7 +203,7 @@ export class RagRetrieverService implements OnModuleInit {
       }
     }
 
-    // 2. Detect Category & Food Intent
+    // 2. Detect Category & Intent
     let detectedCategory = targetCategory;
     const isFoodIntent = /(kuliner|kuliiner|kulinr|kulineran|makan|mkan|mkn|makanan|resto|restoran|seruit|warung)/i.test(lowerQuery);
     const isBeachIntent = /(pantai|pntai|pantaii|laut|snorkeling|surfing|beach)/i.test(lowerQuery);
@@ -225,12 +221,26 @@ export class RagRetrieverService implements OnModuleInit {
       }
     }
 
-    // 3. Score candidates
-    const scored = pool.map((dest) => {
+    // 3. Strict Filter by Regency if detected
+    let candidates = pool;
+    if (detectedRegency) {
+      const regClean = detectedRegency.toLowerCase().replace(/(kabupaten|kota)\s+/, '');
+      candidates = pool.filter((dest) => {
+        const dReg = dest.regency.toLowerCase();
+        const dLoc = dest.location.toLowerCase();
+        return dReg.includes(regClean) || dLoc.includes(regClean);
+      });
+
+      // If strict filter has items, use candidates, else fallback to pool
+      if (candidates.length === 0) {
+        candidates = pool;
+      }
+    }
+
+    // 4. Score candidates
+    const scored = candidates.map((dest) => {
       let score = 0;
       const lowerName = dest.name.toLowerCase();
-      const lowerReg = dest.regency.toLowerCase();
-      const lowerLoc = dest.location.toLowerCase();
       const lowerCat = dest.category.toLowerCase();
       const lowerDesc = dest.description.toLowerCase();
 
@@ -239,20 +249,15 @@ export class RagRetrieverService implements OnModuleInit {
         score += 50;
       }
 
-      // Regency / Location match
-      if (detectedRegency && (lowerReg.includes(detectedRegency.toLowerCase()) || lowerLoc.includes(detectedRegency.toLowerCase()))) {
-        score += 40;
-      }
-
       // Category match
       if (detectedCategory && lowerCat.includes(detectedCategory.toLowerCase())) {
-        score += 25;
+        score += 30;
       }
 
-      // Keyword match in description
-      const queryWords = lowerQuery.split(/\s+/).filter((w) => w.length > 3);
+      // Keyword match (avoiding 'wisata' since it matches everything)
+      const queryWords = lowerQuery.split(/\s+/).filter((w) => w.length > 3 && w !== 'wisata' && w !== 'rekomendasi' && w !== 'pantai');
       for (const word of queryWords) {
-        if (lowerName.includes(word)) score += 10;
+        if (lowerName.includes(word)) score += 15;
         if (lowerDesc.includes(word)) score += 5;
       }
 
