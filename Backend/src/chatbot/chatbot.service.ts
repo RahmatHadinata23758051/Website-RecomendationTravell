@@ -77,7 +77,7 @@ export class ChatbotService {
         bot_name: 'Raden Gajah & Muli AI Concierge Lampung',
         data: {
           reply:
-            'Tabik Pun! Saya Raden Gajah & Muli, asisten khusus panduan wisata, budaya, dan kuliner khas Provinsi Lampung. Maaf, saya tidak dapat menjawab pertanyaan di luar seputar pariwisata Lampung. Ada yang ingin Anda tanyakan mengenai pantai, kuliner Seruit, atau destinasi wisata di Lampung?',
+            'Tabik Pun! Saya Muli, Customer Service & AI Concierge Resmi Wisata Lampung. Maaf, Muli hanya dapat menjawab pertanyaan seputar tempat wisata, kuliner, dan rute liburan di Lampung. Ada yang ingin Anda tanyakan seputar pantai atau tempat makan khas Lampung?',
           suggested_queries: [
             '🏖️ Rekomendasi pantai di Pesawaran',
             '🍲 Tempat makan Seruit khas Lampung',
@@ -95,30 +95,86 @@ export class ChatbotService {
     // 3. Determine Model (Hybrid Routing: Gemini 1.5 Flash vs Gemini 1.5 Pro)
     const isComplex = this.isComplexItineraryQuery(message);
     const targetModel = isComplex ? 'gemini-1.5-pro' : 'gemini-1.5-flash';
-    this.logger.log(`[HYBRID MODEL ROUTER] Query complexity: ${isComplex ? 'HIGH (Pro)' : 'NORMAL (Flash)'} -> Target: ${targetModel}`);
 
-    // 4. Construct System Prompt & Conversation History
-    const systemPrompt = `Anda adalah "Raden Gajah & Muli AI Concierge", pemandu wisata digital resmi Provinsi Lampung yang ramah, sopan, dan berwawasan luas.
+    // 4. System Prompt & History
+    const systemPrompt = `Anda adalah "Muli AI Concierge", Customer Service & Pemandu Wisata Digital Resmi Provinsi Lampung yang ramah, sopan, dan berwawasan luas.
 
 ATURAN UTAMA PERILAKU:
 1. Mulai jawaban dengan sapaan khas Lampung "Tabik Pun!" jika ini awal percakapan atau pertanyaan baru.
-2. Gunakan gaya bahasa hangat, sopan, dan ramah khas pemandu wisata lokal profesional.
+2. Gunakan gaya bahasa hangat, sopan, dan ramah khas Customer Service pemandu wisata lokal profesional.
 3. Jawab HANYA berdasarkan fakta terverifikasi dari RAG Database berikut:
 ${ragContext}
 4. Jika nama tempat dalam RAG Database cocok dengan pertanyaan pengguna, sebutkan nama tempat tersebut secara eksplisit beserta estimasi harga tiket, jam buka, dan lokasinya.
 5. Bersikap jujur dan transparan. Jika informasi tidak ada di database, sampaikan dengan ramah tanpa mengarang cerita palsu.
 6. Berikan respons yang jelas, rapi dengan poin-poin jika merekomendasikan beberapa tempat.`;
 
-    // Format 5-turn history
     const formattedHistory = Array.isArray(history)
       ? history.slice(-5).map((h) => `${h.sender === 'user' ? 'Pengguna' : 'Muli AI'}: ${h.text}`).join('\n')
       : '';
 
     const fullPrompt = `${systemPrompt}\n\n${formattedHistory ? `RIWAYAT PERCAKAPAN SEBELUMNYA:\n${formattedHistory}\n\n` : ''}PERTANYAAN PENGGUNA TERBARU:\n${message}`;
 
-    // 5. Try calling Gemini API via Multi-Key Load Balancer
-    const apiKeys = this.getGeminiApiKeys();
+    // 5. Check 9Router Gateway Integration First
+    const nineRouterUrl = this.configService.get<string>('NINE_ROUTER_URL') || process.env.NINE_ROUTER_URL;
+    const nineRouterKey = this.configService.get<string>('NINE_ROUTER_API_KEY') || process.env.NINE_ROUTER_API_KEY;
+    const nineRouterModel = this.configService.get<string>('NINE_ROUTER_MODEL') || 'gemini-lampung-pool';
 
+    if (nineRouterKey && nineRouterUrl) {
+      try {
+        this.logger.log(`[9ROUTER GATEWAY] Sending query to 9Router Proxy Combo: "${nineRouterModel}" at ${nineRouterUrl}`);
+        const endpoint = `${nineRouterUrl.replace(/\/$/, '')}/chat/completions`;
+        const payload = {
+          model: nineRouterModel,
+          messages: [
+            { role: 'system', content: systemPrompt },
+            { role: 'user', content: `${formattedHistory ? `RIWAYAT PERCAKAPAN SEBELUMNYA:\n${formattedHistory}\n\n` : ''}PERTANYAAN PENGGUNA TERBARU:\n${message}` },
+          ],
+          temperature: 0.7,
+          max_tokens: 800,
+        };
+
+        const res = await firstValueFrom(
+          this.httpService.post(endpoint, payload, {
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${nineRouterKey}`,
+            },
+            timeout: 10000,
+          }),
+        );
+
+        const replyText = res.data?.choices?.[0]?.message?.content;
+        if (replyText) {
+          this.logger.log(`[9ROUTER GATEWAY SUCCESS] Successfully received AI response via 9Router Combo.`);
+          return {
+            status: 'success',
+            bot_name: 'Muli AI Concierge Lampung (via 9Router Proxy)',
+            model_used: nineRouterModel,
+            data: {
+              reply: replyText,
+              suggested_queries: [
+                '🏖️ Rekomendasi pantai di Pesawaran',
+                '🍲 Kuliner Seruit khas Lampung',
+                '💰 Estimasi biaya liburan 2 hari',
+              ],
+              destinations: relevantFacts.slice(0, 3).map((f) => ({
+                id: f.id,
+                name: f.name,
+                location: f.location,
+                regency: f.regency,
+                price: f.price,
+                rating: f.rating,
+              })),
+            },
+          };
+        }
+      } catch (err) {
+        this.logger.warn(`[9ROUTER GATEWAY FAILOVER] 9Router proxy call failed (${err.message}). Falling back to direct Gemini multi-keys...`);
+      }
+    }
+
+    // 6. Direct Gemini API Multi-Key Rotator Fallback
+    const apiKeys = this.getGeminiApiKeys();
     if (apiKeys.length > 0) {
       for (let attempt = 0; attempt < apiKeys.length; attempt++) {
         const activeKey = apiKeys[this.keyIndex];
@@ -147,22 +203,19 @@ ${ragContext}
 
           const aiReply =
             response.data?.candidates?.[0]?.content?.parts?.[0]?.text ||
-            'Tabik Pun! Maaf, sistem sedang memproses informasi. Ada yang bisa saya bantu untuk wisata Lampung?';
-
-          // Extract suggested queries
-          const suggestions = [
-            '🏖️ Rekomendasi pantai di Pesawaran',
-            '🍲 Kuliner Seruit khas Lampung',
-            '💰 Estimasi biaya liburan 2 hari',
-          ];
+            'Tabik Pun! Maaf, sistem sedang memproses informasi. Ada yang bisa Muli bantu untuk wisata Lampung?';
 
           return {
             status: 'success',
-            bot_name: 'Raden Gajah & Muli AI Concierge Lampung',
+            bot_name: 'Muli AI Concierge Lampung',
             model_used: targetModel,
             data: {
               reply: aiReply,
-              suggested_queries: suggestions,
+              suggested_queries: [
+                '🏖️ Rekomendasi pantai di Pesawaran',
+                '🍲 Kuliner Seruit khas Lampung',
+                '💰 Estimasi biaya liburan 2 hari',
+              ],
               destinations: relevantFacts.slice(0, 3).map((f) => ({
                 id: f.id,
                 name: f.name,
@@ -182,15 +235,15 @@ ${ragContext}
       }
     }
 
-    // 6. Local Knowledge Base Fallback Shield (100% Zero Crash Guarantee)
-    this.logger.warn(`[CHATBOT FALLBACK SHIELD] All API keys depleted or network down. Triggering Local Knowledge Base.`);
+    // 7. Local Knowledge Base Fallback Shield (100% Zero Crash Guarantee)
+    this.logger.warn(`[CHATBOT FALLBACK SHIELD] Triggering Local Knowledge Base.`);
     return this.executeLocalKbFallback(message, relevantFacts);
   }
 
   private executeLocalKbFallback(message: string, relevantFacts: DestinationFact[]) {
     const lower = message.toLowerCase();
     let reply =
-      'Tabik Pun! Saya Raden Gajah & Muli AI, pemandu wisata resmi Provinsi Lampung. Selamat datang di Kelana Lampung!';
+      'Tabik Pun! Saya Muli, Customer Service & AI Concierge Resmi Wisata Lampung. Selamat datang di Kelana Lampung!';
 
     if (relevantFacts.length > 0) {
       const topSpot = relevantFacts[0];
@@ -208,7 +261,7 @@ ${ragContext}
 
     return {
       status: 'success',
-      bot_name: 'Raden Gajah & Muli AI Concierge Lampung',
+      bot_name: 'Muli AI Concierge Lampung',
       model_used: 'local-kb-fallback',
       data: {
         reply,
