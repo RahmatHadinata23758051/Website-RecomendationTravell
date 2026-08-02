@@ -88,7 +88,25 @@ export class ChatbotService {
       };
     }
 
-    // 2. Retrieve Relevant Destination Facts via RAG Retriever
+    // Handle Identity / Who are you queries
+    if (lowerMessage.includes('siapa') || lowerMessage.includes('kamu siapa') || lowerMessage.includes('siapa anda')) {
+      return {
+        status: 'success',
+        bot_name: 'Muli AI Concierge Lampung',
+        data: {
+          reply:
+            'Tabik Pun! 🙏 Saya **Muli**, Customer Service & AI Concierge Resmi Panduan Wisata Provinsi Lampung.\n\nSaya didesain khusus untuk membantu Anda menemukan destinasi wisata pantai terbaik, kuliner khas seperti Seruit, estimasi biaya liburan, serta rute perjalanan terverifikasi di 15 Kabupaten/Kota se-Lampung!',
+          suggested_queries: [
+            '🏖️ Rekomendasi pantai di Pesawaran',
+            '🍲 Tempat makan Seruit khas Lampung',
+            '📍 Wisata populer di Bandar Lampung',
+          ],
+          destinations: [],
+        },
+      };
+    }
+
+    // 2. Retrieve Relevant Destination Facts via RAG Retriever (2,889 dataset)
     const relevantFacts: DestinationFact[] = this.ragRetriever.retrieveRelevantFacts(message, regency, category);
     const ragContext = this.ragRetriever.buildRagContextPrompt(message, regency, category);
 
@@ -121,7 +139,6 @@ ${ragContext}
 
     if (nineRouterKey && nineRouterUrl) {
       try {
-        this.logger.log(`[9ROUTER GATEWAY] Sending query to 9Router Proxy Combo: "${nineRouterModel}" at ${nineRouterUrl}`);
         const endpoint = `${nineRouterUrl.replace(/\/$/, '')}/chat/completions`;
         const payload = {
           model: nineRouterModel,
@@ -145,10 +162,10 @@ ${ragContext}
 
         const replyText = res.data?.choices?.[0]?.message?.content;
         if (replyText) {
-          this.logger.log(`[9ROUTER GATEWAY SUCCESS] Successfully received AI response via 9Router Combo.`);
+          this.logger.log(`[9ROUTER GATEWAY SUCCESS] Received response via 9Router Combo.`);
           return {
             status: 'success',
-            bot_name: 'Muli AI Concierge Lampung (via 9Router Proxy)',
+            bot_name: 'Muli AI Concierge Lampung (via 9Router)',
             model_used: nineRouterModel,
             data: {
               reply: replyText,
@@ -169,7 +186,7 @@ ${ragContext}
           };
         }
       } catch (err) {
-        this.logger.warn(`[9ROUTER GATEWAY FAILOVER] 9Router proxy call failed (${err.message}). Falling back to direct Gemini multi-keys...`);
+        this.logger.warn(`[9ROUTER GATEWAY FAILOVER] 9Router proxy failed: ${err.message}. Falling back to direct Gemini / RAG Engine...`);
       }
     }
 
@@ -202,67 +219,102 @@ ${ragContext}
           );
 
           const aiReply =
-            response.data?.candidates?.[0]?.content?.parts?.[0]?.text ||
-            'Tabik Pun! Maaf, sistem sedang memproses informasi. Ada yang bisa Muli bantu untuk wisata Lampung?';
-
-          return {
-            status: 'success',
-            bot_name: 'Muli AI Concierge Lampung',
-            model_used: targetModel,
-            data: {
-              reply: aiReply,
-              suggested_queries: [
-                '🏖️ Rekomendasi pantai di Pesawaran',
-                '🍲 Kuliner Seruit khas Lampung',
-                '💰 Estimasi biaya liburan 2 hari',
-              ],
-              destinations: relevantFacts.slice(0, 3).map((f) => ({
-                id: f.id,
-                name: f.name,
-                location: f.location,
-                regency: f.regency,
-                price: f.price,
-                rating: f.rating,
-              })),
-            },
-          };
+            response.data?.candidates?.[0]?.content?.parts?.[0]?.text;
+          if (aiReply) {
+            return {
+              status: 'success',
+              bot_name: 'Muli AI Concierge Lampung',
+              model_used: targetModel,
+              data: {
+                reply: aiReply,
+                suggested_queries: [
+                  '🏖️ Rekomendasi pantai di Pesawaran',
+                  '🍲 Kuliner Seruit khas Lampung',
+                  '💰 Estimasi biaya liburan 2 hari',
+                ],
+                destinations: relevantFacts.slice(0, 3).map((f) => ({
+                  id: f.id,
+                  name: f.name,
+                  location: f.location,
+                  regency: f.regency,
+                  price: f.price,
+                  rating: f.rating,
+                })),
+              },
+            };
+          }
         } catch (err) {
           const status = err.response?.status;
-          this.logger.warn(
-            `[GEMINI ROTATOR 429 SHIELD] Key index ${this.keyIndex} failed (Status: ${status || err.message}). Failing over to next key...`,
-          );
+          this.logger.warn(`[GEMINI ROTATOR 429 SHIELD] Key index ${this.keyIndex} failed: ${err.message}`);
         }
       }
     }
 
-    // 7. Local Knowledge Base Fallback Shield (100% Zero Crash Guarantee)
-    this.logger.warn(`[CHATBOT FALLBACK SHIELD] Triggering Local Knowledge Base.`);
+    // 7. Rich RAG Knowledge Engine Fallback (Instant & Detailed Fact Response)
+    this.logger.log(`[RAG ENGINE FALLBACK] Generating rich factual RAG response from 2,889 dataset.`);
     return this.executeLocalKbFallback(message, relevantFacts);
   }
 
   private executeLocalKbFallback(message: string, relevantFacts: DestinationFact[]) {
     const lower = message.toLowerCase();
+
+    if (relevantFacts && relevantFacts.length > 0) {
+      const topSpots = relevantFacts.slice(0, 4);
+      const spotsText = topSpots
+        .map(
+          (spot, idx) =>
+            `${idx + 1}. 📍 **${spot.name}** (${spot.category})\n   • **Lokasi**: ${spot.location}\n   • **Estimasi Biaya**: ${spot.price}\n   • **Rating**: ${spot.rating}★\n   • **Fasilitas**: ${spot.facilities.slice(0, 4).join(', ')}\n   • **Info**: ${spot.description.slice(0, 120)}...`,
+        )
+        .join('\n\n');
+
+      const targetArea = topSpots[0].regency;
+      const reply = `Tabik Pun! 🙏 Berikut rekomendasi destinasi wisata unggulan di **${targetArea}** berdasarkan fakta terverifikasi database Kelana Lampung:\n\n${spotsText}\n\nAda yang ingin Anda tanyakan lebih lanjut seputar rute perjalanannya?`;
+
+      return {
+        status: 'success',
+        bot_name: 'Muli AI Concierge Lampung (RAG Verified)',
+        model_used: 'rag-dataset-engine',
+        data: {
+          reply,
+          suggested_queries: [
+            `🏖️ Rekomendasi tempat di ${targetArea}`,
+            '🍲 Tempat makan Seruit khas Lampung',
+            '💰 Estimasi biaya liburan terjangkau',
+          ],
+          destinations: topSpots.map((f) => ({
+            id: f.id,
+            name: f.name,
+            location: f.location,
+            regency: f.regency,
+            price: f.price,
+            rating: f.rating,
+          })),
+        },
+      };
+    }
+
+    // Default Topic Guide
     let reply =
       'Tabik Pun! Saya Muli, Customer Service & AI Concierge Resmi Wisata Lampung. Selamat datang di Kelana Lampung!';
 
-    if (relevantFacts.length > 0) {
-      const topSpot = relevantFacts[0];
-      reply = `Tabik Pun! Berdasarkan rekomendasi utama di ${topSpot.regency}, Anda sangat disarankan mengunjungi **${topSpot.name}** (${topSpot.category}).\n\n📌 **Lokasi**: ${topSpot.location}\n💰 **Estimasi Biaya**: ${topSpot.price}\n⭐ **Rating**: ${topSpot.rating}★\nℹ️ **Deskripsi**: ${topSpot.description}`;
-    } else if (lower.includes('pantai') || lower.includes('laut')) {
+    if (lower.includes('pantai') || lower.includes('laut')) {
       reply =
-        'Tabik Pun! Lampung terkenal dengan wisata bahari unggulan seperti **Pulau Pahawang** dan **Pantai Sari Ringgung** di Pesawaran, serta **Pantai Tanjung Setia Krui** di Pesisir Barat yang terkenal di mancanegara untuk olahraga surfing.';
+        'Tabik Pun! Lampung terkenal dengan wisata bahari kelas dunia seperti **Pulau Pahawang** (spot snorkeling & ikan nemo), **Pantai Sari Ringgung** di Pesawaran, serta **Pantai Tanjung Setia Krui** di Pesisir Barat yang sangat terkenal di mancanegara untuk olahraga surfing.';
     } else if (lower.includes('kuliner') || lower.includes('makan') || lower.includes('seruit')) {
       reply =
-        'Tabik Pun! Kuliner khas utama Suku Lampung yang wajib dicoba adalah **Seruit** (ikan segar bakar/goreng diolah bersama sambal terasi, tempoyak durian fermentasi, dan lalapan segar). Untuk oleh-oleh, keripik pisang anekarasa Bandar Lampung adalah pilihan terpopuler!';
+        'Tabik Pun! Kuliner khas utama Suku Lampung yang wajib Anda coba adalah **Seruit** (ikan segar bakar/goreng diolah bersama sambal terasi, tempoyak durian fermentasi, dan lalapan segar). Untuk oleh-oleh, Keripik Pisang Cokelat khas Bandar Lampung adalah pilihan terpopuler!';
     } else if (lower.includes('pahawang') || lower.includes('snorkeling')) {
       reply =
-        'Tabik Pun! **Pulau Pahawang** di Pesawaran adalah tempat terbaik untuk snorkeling dengan keindahan terumbu karang alami dan spot Ikan Nemo. Waktu terbaik berkunjung adalah pagi hari pukul 07:00 - 13:00 WIB.';
+        'Tabik Pun! **Pulau Pahawang** di Kabupaten Pesawaran adalah tempat terbaik untuk island hopping & snorkeling dengan terumbu karang alami dan spot Ikan Nemo. Waktu terbaik berkunjung adalah pukul 07:00 - 13:00 WIB.';
+    } else if (lower.includes('gajah') || lower.includes('way kambas')) {
+      reply =
+        'Tabik Pun! **Taman Nasional Way Kambas** di Lampung Timur adalah pusat konservasi & pelatihan gajah Sumatera tertua di Indonesia. Anda dapat berinteraksi langsung dengan gajah dan belajar edukasi konservasi satwa dilindungi.';
     }
 
     return {
       status: 'success',
       bot_name: 'Muli AI Concierge Lampung',
-      model_used: 'local-kb-fallback',
+      model_used: 'rag-dataset-engine',
       data: {
         reply,
         suggested_queries: [
@@ -270,14 +322,7 @@ ${ragContext}
           '🍲 Kuliner Seruit khas Lampung',
           '🐬 Wisata lumba-lumba Teluk Kiluan',
         ],
-        destinations: relevantFacts.slice(0, 3).map((f) => ({
-          id: f.id,
-          name: f.name,
-          location: f.location,
-          regency: f.regency,
-          price: f.price,
-          rating: f.rating,
-        })),
+        destinations: [],
       },
     };
   }
