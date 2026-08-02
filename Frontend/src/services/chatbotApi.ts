@@ -62,7 +62,7 @@ export const askRadenGajahChatbot = async (payload: AskChatbotPayload): Promise<
     console.warn('[CHATBOT API CLIENT FALLBACK TRIGGERED]', err);
   }
 
-  // Pure Client-Side RAG Engine
+  // Pure Client-Side RAG Engine (Humanized Gemini Tone)
   const lowerMsg = payload.message.toLowerCase();
   const allDestinations = await getClientDestinations();
 
@@ -105,7 +105,6 @@ export const askRadenGajahChatbot = async (payload: AskChatbotPayload): Promise<
       });
     }
 
-    // Sort by rating descending
     filtered.sort((a: any, b: any) => (b.rating || 4.0) - (a.rating || 4.0));
 
     const topSpots = filtered.slice(0, 4);
@@ -116,23 +115,39 @@ export const askRadenGajahChatbot = async (payload: AskChatbotPayload): Promise<
         ? 'PANTAI EKSOTIS LAMPUNG'
         : 'LAMPUNG';
 
+      const categoryEmojiMap: Record<string, string> = {
+        Pantai: '🏖️',
+        Alam: '🌿',
+        Budaya: '🏛️',
+        Kuliner: '🍲',
+        Adventure: '🏄',
+      };
+
       const spotsText = topSpots
-        .map((spot: any, idx: number) => {
+        .map((spot: any) => {
           const name = spot.name || 'Wisata Lampung';
           const cat = spot.primary_category || spot.category || 'Wisata';
+          const emoji = categoryEmojiMap[cat] || '📍';
           const loc = spot.address || spot.city_or_regency || spot.location || 'Lampung';
           const rating = spot.rating || 4.5;
-          const price = spot.price || (spot.price_min_idr ? `Rp ${spot.price_min_idr.toLocaleString('id-ID')}` : 'Gratis / Terjangkau ($)');
-          const desc = (spot.description || spot.summary || 'Destinasi wisata unggulan dengan pemandangan eksotis di Lampung.').slice(0, 120);
+          const price = spot.price || (spot.price_min_idr ? `Rp ${spot.price_min_idr.toLocaleString('id-ID')}` : 'Terjangkau ($)');
+          const desc = spot.description || spot.summary || 'Destinasi wisata unggulan khas Lampung yang indah & berkesan.';
+          const cleanDesc = desc.slice(0, 110);
 
-          return `${idx + 1}. 📍 **${name}** (${cat})\n   • **Lokasi**: ${loc}\n   • **Estimasi Biaya**: ${price}\n   • **Rating**: ${rating}★\n   • **Info**: ${desc}...`;
+          return `${emoji} **${name}**\n${cleanDesc}...\n• 📍 *${loc}* | ⭐ *${rating}★* | 💰 *${price}*`;
         })
         .join('\n\n');
 
       return {
-        reply: `Tabik Pun! 🙏 Berikut rekomendasi tempat wisata unggulan di **${areaName}** berdasarkan data terverifikasi Kelana Lampung:\n\n${spotsText}\n\nAda yang ingin Muli bantu untuk rute perjalanannya?`,
+        reply: `Tabik Pun! ✨ Wah, pilihan yang luar biasa! **${areaName}** memang punya destinasi wisata menarik yang siap bikin liburanmu berkesan!
+
+Berikut beberapa tempat rekomendasi pilihan Muli yang wajib banget kamu kunjungi di sana:
+
+${spotsText}
+
+Kira-kira destinasi mana nih yang paling bikin kamu penasaran? Muli siap bantu susunkan rute perjalanan atau rekomendasi tempat makan di sekitarnya! 😊`,
         suggested_queries: [
-          `🏖️ Rekomendasi pantai di ${areaName}`,
+          `🏖️ Rekomendasi tempat di ${areaName}`,
           '🍲 Tempat makan Seruit khas Lampung',
           '💰 Estimasi biaya liburan terjangkau',
         ],
@@ -152,7 +167,7 @@ export const askRadenGajahChatbot = async (payload: AskChatbotPayload): Promise<
   if (lowerMsg.includes('siapa') || lowerMsg.includes('kamu')) {
     return {
       reply:
-        'Tabik Pun! 🙏 Saya **Muli**, Customer Service & AI Concierge Resmi Panduan Wisata Provinsi Lampung.\n\nSaya didesain khusus untuk membantu Anda menemukan destinasi wisata pantai terbaik, kuliner khas seperti Seruit, estimasi biaya liburan, serta rute perjalanan terverifikasi di 15 Kabupaten/Kota se-Lampung!',
+        'Tabik Pun! 🙏 Halo! Saya **Muli**, Customer Service & AI Concierge Resmi Panduan Wisata Provinsi Lampung.\n\nSaya hadir untuk menemani liburanmu! Kamu bisa tanya Muli apa saja seputar rekomendasi pantai eksotis, wisata alam hits, kuliner tradisional seperti Seruit, estimasi biaya liburan, sampai rekomendasi tempat inap terbaik di 15 Kabupaten/Kota se-Lampung. Ada yang bisa Muli bantu hari ini?',
       suggested_queries: [
         '🏖️ Rekomendasi pantai di Pesawaran',
         '🍲 Tempat makan Seruit khas Lampung',
@@ -165,7 +180,7 @@ export const askRadenGajahChatbot = async (payload: AskChatbotPayload): Promise<
   // Ultimate Default Fallback
   return {
     reply:
-      'Tabik Pun! 🙏 Saya Muli, Customer Service & AI Concierge Resmi Wisata Lampung.\n\nLampung memiliki keindahan wisata luar biasa! Untuk wisata bahari, Anda dapat mengunjungi **Pulau Pahawang** di Pesawaran & **Pantai Tanjung Setia** di Krui. Untuk kuliner khas, cobalah **Seruit** dan Keripik Pisang Cokelat khas Bandar Lampung!',
+      'Tabik Pun! ✨ Halo! Saya Muli, Customer Service & AI Concierge Resmi Wisata Lampung.\n\nLampung memiliki keindahan wisata luar biasa! Untuk wisata bahari, Anda dapat mengunjungi **Pulau Pahawang** di Pesawaran & **Pantai Tanjung Setia** di Krui. Untuk kuliner khas, cobalah **Seruit** dan Keripik Pisang Cokelat khas Bandar Lampung!',
     suggested_queries: [
       '🏖️ Rekomendasi pantai di Pesawaran',
       '🍲 Kuliner Seruit khas Lampung',

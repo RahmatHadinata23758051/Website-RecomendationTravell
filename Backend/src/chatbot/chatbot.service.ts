@@ -77,7 +77,7 @@ export class ChatbotService {
         bot_name: 'Raden Gajah & Muli AI Concierge Lampung',
         data: {
           reply:
-            'Tabik Pun! Saya Muli, Customer Service & AI Concierge Resmi Wisata Lampung. Maaf, Muli hanya dapat menjawab pertanyaan seputar tempat wisata, kuliner, dan rute liburan di Lampung. Ada yang ingin Anda tanyakan seputar pantai atau tempat makan khas Lampung?',
+            'Tabik Pun! 🙏 Saya Muli, Customer Service & AI Concierge Resmi Wisata Lampung. Maaf ya, Muli khusus membantu seputar keindahan pariwisata, kuliner khas, dan panduan liburan di Lampung. Ada tempat wisata atau kuliner yang ingin kamu tanyakan?',
           suggested_queries: [
             '🏖️ Rekomendasi pantai di Pesawaran',
             '🍲 Tempat makan Seruit khas Lampung',
@@ -95,7 +95,7 @@ export class ChatbotService {
         bot_name: 'Muli AI Concierge Lampung',
         data: {
           reply:
-            'Tabik Pun! 🙏 Saya **Muli**, Customer Service & AI Concierge Resmi Panduan Wisata Provinsi Lampung.\n\nSaya didesain khusus untuk membantu Anda menemukan destinasi wisata pantai terbaik, kuliner khas seperti Seruit, estimasi biaya liburan, serta rute perjalanan terverifikasi di 15 Kabupaten/Kota se-Lampung!',
+            'Tabik Pun! 🙏 Halo! Saya **Muli**, Customer Service & AI Concierge Resmi Panduan Wisata Provinsi Lampung.\n\nSaya hadir untuk menemani liburanmu! Kamu bisa tanya Muli apa saja seputar rekomendasi pantai eksotis, wisata alam hits, kuliner tradisional seperti Seruit, estimasi biaya liburan, sampai rekomendasi tempat inap terbaik di 15 Kabupaten/Kota se-Lampung. Ada yang bisa Muli bantu hari ini?',
           suggested_queries: [
             '🏖️ Rekomendasi pantai di Pesawaran',
             '🍲 Tempat makan Seruit khas Lampung',
@@ -114,17 +114,16 @@ export class ChatbotService {
     const isComplex = this.isComplexItineraryQuery(message);
     const targetModel = isComplex ? 'gemini-1.5-pro' : 'gemini-1.5-flash';
 
-    // 4. System Prompt & History
-    const systemPrompt = `Anda adalah "Muli AI Concierge", Customer Service & Pemandu Wisata Digital Resmi Provinsi Lampung yang ramah, sopan, dan berwawasan luas.
+    // 4. System Prompt & History (Natural Gemini Conversational Tone)
+    const systemPrompt = `Anda adalah "Muli AI Concierge", Pemandu Wisata Digital & Customer Service Resmi Provinsi Lampung yang sangat ramah, hangat, luwes, dan berwawasan luas (gaya tutur luwes seperti AI Gemini).
 
 ATURAN UTAMA PERILAKU:
-1. Mulai jawaban dengan sapaan khas Lampung "Tabik Pun!" jika ini awal percakapan atau pertanyaan baru.
-2. Gunakan gaya bahasa hangat, sopan, dan ramah khas Customer Service pemandu wisata lokal profesional.
-3. Jawab HANYA berdasarkan fakta terverifikasi dari RAG Database berikut:
+1. Mulai jawaban dengan sapaan hangat "Tabik Pun! ✨" atau sapaan ramah alami.
+2. Gunakan bahasa Indonesia yang santai, luwes, komunikatif, bersahabat, dan TIDAK KAKU seperti laporan teknis.
+3. Gunakan fakta dari RAG Database berikut sebagai acuan tempat:
 ${ragContext}
-4. Jika nama tempat dalam RAG Database cocok dengan pertanyaan pengguna, sebutkan nama tempat tersebut secara eksplisit beserta estimasi harga tiket, jam buka, dan lokasinya.
-5. Bersikap jujur dan transparan. Jika informasi tidak ada di database, sampaikan dengan ramah tanpa mengarang cerita palsu.
-6. Berikan respons yang jelas, rapi dengan poin-poin jika merekomendasikan beberapa tempat.`;
+4. Saat merekomendasikan tempat, ceritakan dengan gaya narasi menarik. Sebutkan nama tempat, daya tarik utama, lokasi singkat, dan perkiraan biaya/rating secara mengalir.
+5. Di akhir jawaban, tanyakan dengan ramah bantuan apa lagi yang pengguna butuhkan (misal: rute perjalanan, kuliner terdekat, atau penginapan).`;
 
     const formattedHistory = Array.isArray(history)
       ? history.slice(-5).map((h) => `${h.sender === 'user' ? 'Pengguna' : 'Muli AI'}: ${h.text}`).join('\n')
@@ -165,7 +164,7 @@ ${ragContext}
           this.logger.log(`[9ROUTER GATEWAY SUCCESS] Received response via 9Router Combo.`);
           return {
             status: 'success',
-            bot_name: 'Muli AI Concierge Lampung (via 9Router)',
+            bot_name: 'Muli AI Concierge Lampung',
             model_used: nineRouterModel,
             data: {
               reply: replyText,
@@ -250,8 +249,8 @@ ${ragContext}
       }
     }
 
-    // 7. Rich RAG Knowledge Engine Fallback (Instant & Detailed Fact Response)
-    this.logger.log(`[RAG ENGINE FALLBACK] Generating rich factual RAG response from 2,889 dataset.`);
+    // 7. Humanized RAG Knowledge Engine Fallback (Warm Conversational Tone)
+    this.logger.log(`[RAG ENGINE FALLBACK] Generating warm conversational RAG response from dataset.`);
     return this.executeLocalKbFallback(message, relevantFacts);
   }
 
@@ -260,15 +259,34 @@ ${ragContext}
 
     if (relevantFacts && relevantFacts.length > 0) {
       const topSpots = relevantFacts.slice(0, 4);
+      const targetArea = topSpots[0].regency || 'Lampung';
+
+      const categoryEmojiMap: Record<string, string> = {
+        Pantai: '🏖️',
+        Alam: '🌿',
+        Budaya: '🏛️',
+        Kuliner: '🍲',
+        Adventure: '🏄',
+      };
+
       const spotsText = topSpots
-        .map(
-          (spot, idx) =>
-            `${idx + 1}. 📍 **${spot.name}** (${spot.category})\n   • **Lokasi**: ${spot.location}\n   • **Estimasi Biaya**: ${spot.price}\n   • **Rating**: ${spot.rating}★\n   • **Fasilitas**: ${spot.facilities.slice(0, 4).join(', ')}\n   • **Info**: ${spot.description.slice(0, 120)}...`,
-        )
+        .map((spot) => {
+          const emoji = categoryEmojiMap[spot.category] || '📍';
+          const cleanDesc = spot.description && spot.description.length > 10
+            ? spot.description.slice(0, 110)
+            : 'Destinasi indah khas Lampung yang sangat cocok untuk dinikmati bersama keluarga atau teman-teman.';
+
+          return `${emoji} **${spot.name}**\n${cleanDesc}\n• 📍 *${spot.location}* | ⭐ *${spot.rating}★* | 💰 *${spot.price}*`;
+        })
         .join('\n\n');
 
-      const targetArea = topSpots[0].regency;
-      const reply = `Tabik Pun! 🙏 Berikut rekomendasi destinasi wisata unggulan di **${targetArea}** berdasarkan fakta terverifikasi database Kelana Lampung:\n\n${spotsText}\n\nAda yang ingin Anda tanyakan lebih lanjut seputar rute perjalanannya?`;
+      const reply = `Tabik Pun! ✨ Wah, pilihan yang luar biasa! **${targetArea}** memang punya destinasi wisata menarik yang siap bikin liburanmu berkesan!
+
+Berikut beberapa tempat rekomendasi pilihan Muli yang wajib banget kamu kunjungi di sana:
+
+${spotsText}
+
+Kira-kira destinasi mana nih yang paling bikin kamu penasaran? Muli siap bantu susunkan rute perjalanan atau rekomendasi tempat makan di sekitarnya! 😊`;
 
       return {
         status: 'success',
@@ -293,22 +311,22 @@ ${ragContext}
       };
     }
 
-    // Default Topic Guide
+    // Default Conversational Topic Guide
     let reply =
-      'Tabik Pun! Saya Muli, Customer Service & AI Concierge Resmi Wisata Lampung. Selamat datang di Kelana Lampung!';
+      'Tabik Pun! ✨ Halo! Saya Muli, Customer Service & AI Concierge Resmi Wisata Lampung. Senang sekali bisa menyambutmu di Kelana Lampung!';
 
     if (lower.includes('pantai') || lower.includes('laut')) {
       reply =
-        'Tabik Pun! Lampung terkenal dengan wisata bahari kelas dunia seperti **Pulau Pahawang** (spot snorkeling & ikan nemo), **Pantai Sari Ringgung** di Pesawaran, serta **Pantai Tanjung Setia Krui** di Pesisir Barat yang sangat terkenal di mancanegara untuk olahraga surfing.';
+        'Tabik Pun! ✨ Kalau kamu suka wisata bahari, Lampung itu rajanya! Kamu wajib coba snorkeling melihat Ikan Nemo di **Pulau Pahawang**, pantai pasir putih **Sari Ringgung** di Pesawaran, atau merasakan ombak surfing kelas dunia di **Pantai Tanjung Setia Krui**, Pesisir Barat! 🌊\n\nMau Muli rekomendasikan pantai di kabupaten tertentu?';
     } else if (lower.includes('kuliner') || lower.includes('makan') || lower.includes('seruit')) {
       reply =
-        'Tabik Pun! Kuliner khas utama Suku Lampung yang wajib Anda coba adalah **Seruit** (ikan segar bakar/goreng diolah bersama sambal terasi, tempoyak durian fermentasi, dan lalapan segar). Untuk oleh-oleh, Keripik Pisang Cokelat khas Bandar Lampung adalah pilihan terpopuler!';
+        'Tabik Pun! 🍲 Bicara soal kuliner khas Lampung, juara utamanya tentu saja **Seruit**! Ikan segar bakar yang disajikan dengan sambal tempoyak durian khas, sambal terasi, dan lalapan segar. Untuk buah tangan, Keripik Pisang Cokelat khas Bandar Lampung adalah favorit yang wajib dibeli!\n\nMau Muli pilihkan tempat makan Seruit paling enak di Bandar Lampung?';
     } else if (lower.includes('pahawang') || lower.includes('snorkeling')) {
       reply =
-        'Tabik Pun! **Pulau Pahawang** di Kabupaten Pesawaran adalah tempat terbaik untuk island hopping & snorkeling dengan terumbu karang alami dan spot Ikan Nemo. Waktu terbaik berkunjung adalah pukul 07:00 - 13:00 WIB.';
+        'Tabik Pun! 🏝️ **Pulau Pahawang** di Pesawaran itu destinasi favorit banget untuk island hopping dan snorkeling! Air lautnya jernih dengan terumbu karang alami dan spot foto foto ikan nemo yang ikonik.\n\nWaktu terbaik berkunjung adalah pagi hari sekitar jam 07:00 - 13:00 WIB. Mau Muli bantu rekomendasikan paket open trip atau spot foto cantiknya?';
     } else if (lower.includes('gajah') || lower.includes('way kambas')) {
       reply =
-        'Tabik Pun! **Taman Nasional Way Kambas** di Lampung Timur adalah pusat konservasi & pelatihan gajah Sumatera tertua di Indonesia. Anda dapat berinteraksi langsung dengan gajah dan belajar edukasi konservasi satwa dilindungi.';
+        'Tabik Pun! 🐘 **Taman Nasional Way Kambas** di Lampung Timur adalah salah satu pusat konservasi & sekolah gajah tertua di Asia! Di sini kamu bisa berinteraksi langsung dengan gajah Sumatera yang ramah dan belajar konservasi alam.\n\nAda yang ingin kamu tanyakan mengenai rute menuju ke sana?';
     }
 
     return {
