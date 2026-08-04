@@ -16,6 +16,15 @@ export class ChatbotService {
     private readonly ragRetriever: RagRetrieverService,
   ) {}
 
+  private cleanFormattingAndEmojis(text: string): string {
+    if (!text) return '';
+    return text
+      .replace(/\*\*/g, '')
+      .replace(/[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{1F600}-\u{1F64F}\u{1F680}-\u{1F6FF}]/gu, '')
+      .replace(/\n\s*\n\s*\n/g, '\n\n')
+      .trim();
+  }
+
   private getGeminiApiKeys(): string[] {
     const rawKeys =
       this.configService.get<string>('GEMINI_API_KEYS') ||
@@ -72,11 +81,11 @@ export class ChatbotService {
         bot_name: 'Muli AI Concierge Lampung',
         data: {
           reply:
-            'Tabik Pun! ✨ Halo! Saya **Muli**, Customer Service & AI Concierge Resmi Panduan Wisata Provinsi Lampung. Selamat datang di Kelana Lampung!\n\nAda yang bisa Muli bantu untuk liburanmu hari ini? Kamu bisa bertanya seputar rekomendasi pantai eksotis, wisata alam hits, tempat makan Seruit khas Lampung, atau estimasi biaya liburan! 😊',
+            'Tabik Pun! Halo! Saya Muli, Customer Service & AI Concierge Resmi Panduan Wisata Provinsi Lampung. Selamat datang di Kelana Lampung!\n\nAda yang bisa Muli bantu untuk liburanmu hari ini? Kamu bisa bertanya seputar rekomendasi pantai eksotis, wisata alam hits, tempat makan Seruit khas Lampung, atau estimasi biaya liburan!',
           suggested_queries: [
-            '🏖️ Rekomendasi pantai di Pesawaran',
-            '🍲 Tempat makan Seruit khas Lampung',
-            '📍 Wisata populer di Bandar Lampung',
+            'Rekomendasi pantai di Pesawaran',
+            'Tempat makan Seruit khas Lampung',
+            'Wisata populer di Bandar Lampung',
           ],
           destinations: [],
         },
@@ -106,11 +115,11 @@ export class ChatbotService {
         bot_name: 'Raden Gajah & Muli AI Concierge Lampung',
         data: {
           reply:
-            'Tabik Pun! 🙏 Saya Muli, Customer Service & AI Concierge Resmi Wisata Lampung. Maaf ya, Muli khusus membantu seputar keindahan pariwisata, kuliner khas, dan panduan liburan di Lampung. Ada tempat wisata atau kuliner yang ingin kamu tanyakan?',
+            'Tabik Pun! Saya Muli, Customer Service & AI Concierge Resmi Wisata Lampung. Maaf ya, Muli khusus membantu seputar keindahan pariwisata, kuliner khas, dan panduan liburan di Lampung. Ada tempat wisata atau kuliner yang ingin kamu tanyakan?',
           suggested_queries: [
-            '🏖️ Rekomendasi pantai di Pesawaran',
-            '🍲 Tempat makan Seruit khas Lampung',
-            '🐬 Wisata lumba-lumba Teluk Kiluan',
+            'Rekomendasi pantai di Pesawaran',
+            'Tempat makan Seruit khas Lampung',
+            'Wisata lumba-lumba Teluk Kiluan',
           ],
           destinations: [],
         },
@@ -124,11 +133,11 @@ export class ChatbotService {
         bot_name: 'Muli AI Concierge Lampung',
         data: {
           reply:
-            'Tabik Pun! 🙏 Halo! Saya **Muli**, Customer Service & AI Concierge Resmi Panduan Wisata Provinsi Lampung.\n\nSaya hadir untuk menemani liburanmu! Kamu bisa tanya Muli apa saja seputar rekomendasi pantai eksotis, wisata alam hits, kuliner tradisional seperti Seruit, estimasi biaya liburan, sampai rekomendasi tempat inap terbaik di 15 Kabupaten/Kota se-Lampung. Ada yang bisa Muli bantu hari ini?',
+            'Tabik Pun! Halo! Saya Muli, Customer Service & AI Concierge Resmi Panduan Wisata Provinsi Lampung.\n\nSaya hadir untuk menemani liburanmu! Kamu bisa tanya Muli apa saja seputar rekomendasi pantai eksotis, wisata alam hits, kuliner tradisional seperti Seruit, estimasi biaya liburan, sampai rekomendasi tempat inap terbaik di 15 Kabupaten/Kota se-Lampung. Ada yang bisa Muli bantu hari ini?',
           suggested_queries: [
-            '🏖️ Rekomendasi pantai di Pesawaran',
-            '🍲 Tempat makan Seruit khas Lampung',
-            '📍 Wisata populer di Bandar Lampung',
+            'Rekomendasi pantai di Pesawaran',
+            'Tempat makan Seruit khas Lampung',
+            'Wisata populer di Bandar Lampung',
           ],
           destinations: [],
         },
@@ -143,15 +152,17 @@ export class ChatbotService {
     const isComplex = this.isComplexItineraryQuery(message);
     const targetModel = isComplex ? 'gemini-1.5-pro' : 'gemini-1.5-flash';
 
-    const systemPrompt = `Anda adalah "Muli AI Concierge", Customer Service & Pemandu Wisata Digital Resmi Provinsi Lampung yang sangat ramah, hangat, luwes, dan cerdas (gaya komunikasi natural seperti AI Gemini).
+    const systemPrompt = `Anda adalah "Muli AI Concierge", Customer Service & Pemandu Wisata Digital Resmi Provinsi Lampung yang sangat ramah, hangat, luwes, dan cerdas.
 
-ATURAN PERILAKU UTAMA:
-1. Sapa pengguna secara hangat "Tabik Pun! ✨" atau sapaan alami bersahabat.
-2. Jawab pertanyaan pengguna secara LANGSUNG, LUWES, dan SPESIFIK sesuai maksud kalimat TERBARU pengguna. Jika pengguna menyebut kata "wisata", berikan tempat wisata (bukan kuliner)!
-3. Gunakan fakta RAG terverifikasi dari Database berikut:
+ATURAN PERILAKU DAN FORMAT UTAMA:
+1. Sapa pengguna secara hangat "Tabik Pun!".
+2. DILARANG MENGGUNAKAN SIMBOL TEKS TEBAL MARKDOWN (DILARANG MENGGUNAKAN SIMBOL **). Tuliskan nama tempat dan judul secara bersih tanpa bintang dua.
+3. DILARANG MENGGUNAKAN EMOJI APAPUN dalam seluruh jawaban.
+4. Jawab pertanyaan pengguna secara LANGSUNG dan SPESIFIK sesuai maksud kalimat TERBARU pengguna dan kabupaten yang diminta. Jika pengguna menyebut kata "wisata", berikan tempat wisata (bukan kuliner)!
+5. Gunakan fakta RAG terverifikasi dari Database berikut:
 ${ragContext}
-4. Ceritakan secara menarik dan mengalir tanpa kaku.
-5. Di akhir jawaban, tanyakan dengan ramah bantuan apa lagi yang pengguna butuhkan.`;
+6. Ceritakan secara menarik dan mengalir tanpa kaku.
+7. Di akhir jawaban, tanyakan dengan ramah bantuan apa lagi yang pengguna butuhkan.`;
 
     const formattedHistory = Array.isArray(history)
       ? history.slice(-5).map((h) => `${h.sender === 'user' ? 'Pengguna' : 'Muli AI'}: ${h.text}`).join('\n')
@@ -195,11 +206,11 @@ ${ragContext}
             bot_name: 'Muli AI Concierge Lampung',
             model_used: nineRouterModel,
             data: {
-              reply: replyText,
+              reply: this.cleanFormattingAndEmojis(replyText),
               suggested_queries: [
-                '🏖️ Rekomendasi pantai di Pesawaran',
-                '🍲 Kuliner Seruit khas Lampung',
-                '💰 Estimasi biaya liburan 2 hari',
+                'Rekomendasi pantai di Pesawaran',
+                'Kuliner Seruit khas Lampung',
+                'Estimasi biaya liburan 2 hari',
               ],
               destinations: relevantFacts.slice(0, 3).map((f) => ({
                 id: f.id,
@@ -254,11 +265,11 @@ ${ragContext}
               bot_name: 'Muli AI Concierge Lampung',
               model_used: targetModel,
               data: {
-                reply: aiReply,
+                reply: this.cleanFormattingAndEmojis(aiReply),
                 suggested_queries: [
-                  '🏖️ Rekomendasi pantai di Pesawaran',
-                  '🍲 Kuliner Seruit khas Lampung',
-                  '💰 Estimasi biaya liburan 2 hari',
+                  'Rekomendasi pantai di Pesawaran',
+                  'Kuliner Seruit khas Lampung',
+                  'Estimasi biaya liburan 2 hari',
                 ],
                 destinations: relevantFacts.slice(0, 3).map((f) => ({
                   id: f.id,
@@ -277,19 +288,28 @@ ${ragContext}
       }
     }
 
-    // 6. Dynamic RAG Synthesizer Engine (Reverse History Regency Memory)
-    this.logger.log(`[DYNAMIC RAG SYNTHESIZER] Generating pure RAG data-driven response with reverse history regency memory.`);
+    // 6. Dynamic RAG Synthesizer Engine (Strict Regency & Formatting Enforcement)
+    this.logger.log(`[DYNAMIC RAG SYNTHESIZER] Generating pure RAG data-driven response without bold and emojis.`);
     return this.synthesizeDynamicRagResponse(lowerMessage, combinedContext, history, relevantFacts);
   }
 
   private resolveActiveRegency(lowerMsg: string, history: any[]): string {
     // 1. Direct regency in current message (Highest Priority)
     if (lowerMsg.includes('pesisir barat') || lowerMsg.includes('krui')) return 'pesisir barat';
+    if (lowerMsg.includes('lampung barat') || lowerMsg.includes('lambar') || lowerMsg.includes('liwa')) return 'lampung barat';
     if (lowerMsg.includes('pesawaran')) return 'pesawaran';
-    if (lowerMsg.includes('tanggamus')) return 'tanggamus';
+    if (lowerMsg.includes('tanggamus') || lowerMsg.includes('gisting')) return 'tanggamus';
     if (lowerMsg.includes('bandar lampung') || lowerMsg.includes('bdl')) return 'bandar lampung';
-    if (lowerMsg.includes('tulang bawang') || lowerMsg.includes('tubaba')) return 'tulang bawang';
-    if (lowerMsg.includes('lampung selatan') || lowerMsg.includes('lamsel')) return 'lampung selatan';
+    if (lowerMsg.includes('lampung selatan') || lowerMsg.includes('lamsel') || lowerMsg.includes('kalianda')) return 'lampung selatan';
+    if (lowerMsg.includes('tulang bawang barat') || lowerMsg.includes('tubaba')) return 'tulang bawang barat';
+    if (lowerMsg.includes('tulang bawang') || lowerMsg.includes('menggala')) return 'tulang bawang';
+    if (lowerMsg.includes('lampung timur') || lowerMsg.includes('lamtim')) return 'lampung timur';
+    if (lowerMsg.includes('lampung tengah') || lowerMsg.includes('lamteng')) return 'lampung tengah';
+    if (lowerMsg.includes('lampung utara') || lowerMsg.includes('lamut')) return 'lampung utara';
+    if (lowerMsg.includes('way kanan')) return 'way kanan';
+    if (lowerMsg.includes('metro')) return 'metro';
+    if (lowerMsg.includes('pringsewu')) return 'pringsewu';
+    if (lowerMsg.includes('mesuji')) return 'mesuji';
 
     // 2. Reverse History Scan (Most Recently Mentioned Regency First)
     if (Array.isArray(history) && history.length > 0) {
@@ -297,11 +317,20 @@ ${ragContext}
       for (const h of userMsgs) {
         const text = (h.text || '').toLowerCase();
         if (text.includes('pesisir barat') || text.includes('krui')) return 'pesisir barat';
+        if (text.includes('lampung barat') || text.includes('lambar') || text.includes('liwa')) return 'lampung barat';
         if (text.includes('pesawaran')) return 'pesawaran';
-        if (text.includes('tanggamus')) return 'tanggamus';
+        if (text.includes('tanggamus') || text.includes('gisting')) return 'tanggamus';
         if (text.includes('bandar lampung') || text.includes('bdl')) return 'bandar lampung';
-        if (text.includes('tulang bawang') || text.includes('tubaba')) return 'tulang bawang';
-        if (text.includes('lampung selatan') || text.includes('lamsel')) return 'lampung selatan';
+        if (text.includes('lampung selatan') || text.includes('lamsel') || text.includes('kalianda')) return 'lampung selatan';
+        if (text.includes('tulang bawang barat') || text.includes('tubaba')) return 'tulang bawang barat';
+        if (text.includes('tulang bawang') || text.includes('menggala')) return 'tulang bawang';
+        if (text.includes('lampung timur') || text.includes('lamtim')) return 'lampung timur';
+        if (text.includes('lampung tengah') || text.includes('lamteng')) return 'lampung tengah';
+        if (text.includes('lampung utara') || text.includes('lamut')) return 'lampung utara';
+        if (text.includes('way kanan')) return 'way kanan';
+        if (text.includes('metro')) return 'metro';
+        if (text.includes('pringsewu')) return 'pringsewu';
+        if (text.includes('mesuji')) return 'mesuji';
       }
     }
 
@@ -342,27 +371,27 @@ ${ragContext}
 
     // A. Food Topic
     if (effectiveTopic === 'food') {
+      if (activeRegency === 'lampung barat') {
+        return {
+          status: 'success',
+          bot_name: 'Muli AI Concierge Lampung',
+          model_used: 'rag-synthesizer',
+          data: {
+            reply: `Tabik Pun! Kuliner khas Kabupaten Lampung Barat sangat dipengaruhi hidangan dataran tinggi pegunungan dan olahan ikan Danau Ranau.\n\nBerikut kuliner khas paling nikmat di Liwa / Lampung Barat:\n\n1. Kopi Robusta Petik Merah Liwa\nKopi hitam beraroma harum khas pegunungan Liwa yang terkenal hingga pasar internasional.\n\n2. Gulai Taboh Ikan Mas / Mujair Danau Ranau\nGulai santan rempah gurih khas Liwa dengan ikan segar hasil tangkapan Danau Ranau.\n\n3. Gabus Pasir Khas Liwa\nCamilan krispi tradisional khas warga lokal Liwa.\n\n📍 Rekomendasi Tempat: Kedai kopi dan rumah makan lesehan di sekitar Kota Liwa dan pesisir Danau Ranau!`,
+            suggested_queries: ['Wisata di Lampung Barat', 'Danau Ranau Liwa', 'Estimasi biaya liburan'],
+            destinations: [],
+          },
+        };
+      }
+
       if (activeRegency === 'pesawaran') {
         return {
           status: 'success',
           bot_name: 'Muli AI Concierge Lampung',
           model_used: 'rag-synthesizer',
           data: {
-            reply: `Tabik Pun! 🍲 Kuliner paling khas & lezat di **Kabupaten Pesawaran** adalah olahan **Seruit Ikan Simba & Sambal Rampai** segar yang dinikmati tepi pantai!
-
-Berikut rekomendasi kuliner mantap di Pesawaran:
-
-🐟 **1. Seruit Ikan Bakar Simba / Patin**
-Ikan segar bakar bumbu gurih khas Pesawaran yang dinikmati bersama sambal tempoyak durian & lalapan segar.
-
-🦐 **2. Seafood Olahan Laut Ketapang**
-Hasil tangkapan nelayan segar seperti kepiting, cumi bakar, & udang goreng mentega di sekitar Dermaga Ketapang.
-
-🥥 **3. Es Kelapa Muda Pasir Putih**
-Minuman penyegar khas pantai Pesawaran sambil menikmati pemandangan laut jernih.
-
-📍 *Rekomendasi Tempat*: Rumah makan lesehan seafood tepi Pantai Mutun, Sari Ringgung, & kawasan Dermaga Ketapang!`,
-            suggested_queries: ['🏖️ Pantai di Pesawaran', '🤿 Snorkeling Pulau Pahawang', '💰 Estimasi biaya liburan'],
+            reply: `Tabik Pun! Kuliner paling khas & lezat di Kabupaten Pesawaran adalah olahan Seruit Ikan Simba & Sambal Rampai segar yang dinikmati tepi pantai!\n\nBerikut rekomendasi kuliner mantap di Pesawaran:\n\n1. Seruit Ikan Bakar Simba / Patin\nIkan segar bakar bumbu gurih khas Pesawaran yang dinikmati bersama sambal tempoyak durian & lalapan segar.\n\n2. Seafood Olahan Laut Ketapang\nHasil tangkapan nelayan segar seperti kepiting, cumi bakar, & udang goreng mentega di sekitar Dermaga Ketapang.\n\n3. Es Kelapa Muda Pasir Putih\nMinuman penyegar khas pantai Pesawaran sambil menikmati pemandangan laut jernih.\n\n📍 Rekomendasi Tempat: Rumah makan lesehan seafood tepi Pantai Mutun, Sari Ringgung, & kawasan Dermaga Ketapang!`,
+            suggested_queries: ['Pantai di Pesawaran', 'Snorkeling Pulau Pahawang', 'Estimasi biaya liburan'],
             destinations: [],
           },
         };
@@ -374,21 +403,8 @@ Minuman penyegar khas pantai Pesawaran sambil menikmati pemandangan laut jernih.
           bot_name: 'Muli AI Concierge Lampung',
           model_used: 'rag-synthesizer',
           data: {
-            reply: `Tabik Pun! 🍲 Kuliner paling khas & legendaris di **Pesisir Barat (Krui)** adalah olahan **Ikan Tuhuk (Ikan Marlin Samudra)** segar!
-
-Berikut kuliner terbaik di Krui yang wajib banget kamu coba:
-
-🐟 **1. Gulai Taboh Ikan Tuhuk**
-Kuah gurih santan kelapa muda rempah khas Krui dengan potongan tebal daging marlin empuk.
-
-🍢 **2. Sate Ikan Tuhuk Krui**
-Sate daging marlin segar bakar bumbu kecap pedas gurih khas pesisir samudra.
-
-🍲 **3. Seruit Ikan Laut & Tempoyak Durian**
-Ikan laut bakar disajikan dengan tempoyak durian fermentasi dan lalapan segar.
-
-📍 *Rekomendasi Tempat*: Kamu bisa mencicipinya di **Kedai Nelayan Vanie** (Jl. Lintas Barat Sumatra) atau resto seafood sepanjang pantai Tanjung Setia & Labuhan Jukung!`,
-            suggested_queries: ['🏖️ Pantai di Pesisir Barat', '🏄 Surfing Tanjung Setia', '💰 Estimasi biaya liburan'],
+            reply: `Tabik Pun! Kuliner paling khas & legendaris di Pesisir Barat (Krui) adalah olahan Ikan Tuhuk (Ikan Marlin Samudra) segar!\n\nBerikut kuliner terbaik di Krui yang wajib banget kamu coba:\n\n1. Gulai Taboh Ikan Tuhuk\nKuah gurih santan kelapa muda rempah khas Krui dengan potongan tebal daging marlin empuk.\n\n2. Sate Ikan Tuhuk Krui\nSate daging marlin segar bakar bumbu kecap pedas gurih khas pesisir samudra.\n\n3. Seruit Ikan Laut & Tempoyak Durian\nIkan laut bakar disajikan dengan tempoyak durian fermentasi dan lalapan segar.\n\n📍 Rekomendasi Tempat: Kamu bisa mencicipinya di Kedai Nelayan Vanie (Jl. Lintas Barat Sumatra) atau resto seafood sepanjang pantai Tanjung Setia & Labuhan Jukung!`,
+            suggested_queries: ['Pantai di Pesisir Barat', 'Surfing Tanjung Setia', 'Estimasi biaya liburan'],
             destinations: [],
           },
         };
@@ -400,21 +416,8 @@ Ikan laut bakar disajikan dengan tempoyak durian fermentasi dan lalapan segar.
           bot_name: 'Muli AI Concierge Lampung',
           model_used: 'rag-synthesizer',
           data: {
-            reply: `Tabik Pun! 🍲 Untuk kuliner khas di **Kabupaten Tanggamus**, daerah pesisir Teluk Semangka ini sangat kaya dengan hidangan laut segar & masakan tradisional khas Pepadun & Saiburi!
-
-Berikut rekomendasi kuliner mantap di Tanggamus:
-
-🐟 **1. Seruit Ikan Simba / Kerapu Laut Semangka**
-Ikan laut segar bakar khas Kota Agung disajikan dengan sambal tempoyak durian & lalapan segar.
-
-🍲 **2. Gulai Taboh Ikan Kering / Basah**
-Gulai santan kaya bumbu rempah tradisional khas pesisir Kota Agung & Gisting.
-
-☕ **3. Kopi Robusta Gisting Tanggamus**
-Kopi lereng Gunung Tanggamus yang sangat harum & nikmat dinikmati di udara sejuk Gisting.
-
-📍 *Rekomendasi Tempat*: Rumah makan lesehan seafood di sekitar Dermaga Kota Agung atau kawasan wisata Gisting!`,
-            suggested_queries: ['🐬 Wisata lumba-lumba Teluk Kiluan', '🪨 Pantai Gigi Hiu', '🌿 Udara sejuk Gisting'],
+            reply: `Tabik Pun! Untuk kuliner khas di Kabupaten Tanggamus, daerah pesisir Teluk Semangka ini sangat kaya dengan hidangan laut segar & masakan tradisional khas Pepadun & Saiburi!\n\nBerikut rekomendasi kuliner mantap di Tanggamus:\n\n1. Seruit Ikan Simba / Kerapu Laut Semangka\nIkan laut segar bakar khas Kota Agung disajikan dengan sambal tempoyak durian & lalapan segar.\n\n2. Gulai Taboh Ikan Kering / Basah\nGulai santan kaya bumbu rempah tradisional khas pesisir Kota Agung & Gisting.\n\n3. Kopi Robusta Gisting Tanggamus\nKopi lereng Gunung Tanggamus yang sangat harum & nikmat dinikmati di udara sejuk Gisting.\n\n📍 Rekomendasi Tempat: Rumah makan lesehan seafood di sekitar Dermaga Kota Agung atau kawasan wisata Gisting!`,
+            suggested_queries: ['Wisata lumba-lumba Teluk Kiluan', 'Pantai Gigi Hiu', 'Udara sejuk Gisting'],
             destinations: [],
           },
         };
@@ -426,19 +429,8 @@ Kopi lereng Gunung Tanggamus yang sangat harum & nikmat dinikmati di udara sejuk
           bot_name: 'Muli AI Concierge Lampung',
           model_used: 'rag-synthesizer',
           data: {
-            reply: `Tabik Pun! 🍲 Bandar Lampung adalah pusatnya kuliner lezat khas Lampung!
-
-Berikut rekomendasi kuliner & tempat makan terfavorit di Bandar Lampung:
-
-🍲 **1. Rumah Makan Seruit Ibu Hajah**
-Pusat olahan Seruit ikan simba/patin bakar komplit dengan sambal tempoyak durian & lalapan.
-
-🍗 **2. Rumah Makan Begadang V**
-Sangat terkenal dengan Ayam Pop legendaris khas Lampung & olahan Padang rempah gurih.
-
-🍌 **3. Keripik Pisang Cokelat YenYen (Pusat Oleh-oleh Gang PU)**
-Pusat keripik pisang anekarasa cokelat lumer terpopuler yang wajib dibawa pulang!`,
-            suggested_queries: ['📍 Wisata hits Bandar Lampung', '🏖️ Pantai di Pesawaran', '💰 Estimasi biaya liburan'],
+            reply: `Tabik Pun! Bandar Lampung adalah pusatnya kuliner lezat khas Lampung!\n\nBerikut rekomendasi kuliner & tempat makan terfavorit di Bandar Lampung:\n\n1. Rumah Makan Seruit Ibu Hajah\nPusat olahan Seruit ikan simba/patin bakar komplit dengan sambal tempoyak durian & lalapan.\n\n2. Rumah Makan Begadang V\nSangat terkenal dengan Ayam Pop legendaris khas Lampung & olahan Padang rempah gurih.\n\n3. Keripik Pisang Cokelat YenYen (Pusat Oleh-oleh Gang PU)\nPusat keripik pisang anekarasa cokelat lumer terpopuler yang wajib dibawa pulang!`,
+            suggested_queries: ['Wisata hits Bandar Lampung', 'Pantai di Pesawaran', 'Estimasi biaya liburan'],
             destinations: [],
           },
         };
@@ -447,33 +439,34 @@ Pusat keripik pisang anekarasa cokelat lumer terpopuler yang wajib dibawa pulang
 
     // B. Wisata / Beach Topic
     if (effectiveTopic === 'wisata' || effectiveTopic === 'beach') {
+      if (activeRegency === 'lampung barat') {
+        return {
+          status: 'success',
+          bot_name: 'Muli AI Concierge Lampung',
+          model_used: 'rag-synthesizer',
+          data: {
+            reply: `Tabik Pun! Kabupaten Lampung Barat adalah daerah pegunungan sejuk di kaki Gunung Pesagi dengan pemandangan danau vulkanik dan kebun kopi legendaris di Lampung.\n\nBerikut destinasi wisata unggulan paling hits di Lampung Barat:\n\n1. Danau Ranau & Gunung Pesagi\nDanau vulkanik terbesar kedua di Sumatra dengan latar Gunung Pesagi yang sangat megah dan udara sejuk pegunungan.\n\n2. Kawah Keramikan Suoh\nKawasan geowisata vulkanik dengan danau tiga warna dan kawah cair panas bumi yang sangat unik.\n\n3. Bukit Nebung Liwa (Negeri di Atas Awan)\nSpot swafoto bukit panorama dengan pemandangan lautan awan putih di pagi hari.\n\n4. Agrowisata Kebun Kopi Robusta Liwa\nHamparan kebun kopi khas dataran tinggi Liwa untuk menikmati proses petik kopi dan menyeduh kopi segar.\n\nDestinasi mana yang paling ingin kamu kunjungi di Lampung Barat? Muli siap bantu rutenya!`,
+            suggested_queries: [
+              'Kuliner kopi Robusta Liwa',
+              'Rute Danau Ranau',
+              'Estimasi biaya liburan',
+            ],
+            destinations: [],
+          },
+        };
+      }
+
       if (activeRegency === 'pesisir barat') {
         return {
           status: 'success',
           bot_name: 'Muli AI Concierge Lampung',
           model_used: 'rag-synthesizer',
           data: {
-            reply: `Tabik Pun! 🏄 **Kabupaten Pesisir Barat (Krui)** adalah surga wisata pantai samudra kelas dunia di Lampung!
-
-Berikut destinasi pantai & wisata terbaik yang wajib kamu kunjungi di Krui:
-
-🏄 **1. Pantai Tanjung Setia (Krui Surf Spot)**
-Pantai ombak surfing kelas dunia yang diakui surfer internasional, dilengkapi resort & surf school tepi pantai.
-
-🌅 **2. Pantai Labuhan Jukung**
-Pusat wisata pantai paling populer di pusat kota Krui dengan pemandangan sunset samudra lepas yang memukau.
-
-🌴 **3. Pulau Pisang**
-Pulau eksotis berpasir putih halus dengan air laut bening kristal, tempat pengrajin kain Tapis tradisional & spot lumba-lumba.
-
-🌿 **4. Taman Nasional Bukit Barisan Selatan (TNBBS)**
-Kawasan konservasi hutan hujan tropis & flora fauna langka khas Sumatera.
-
-Destinasi mana yang paling ingin kamu kunjungi di Krui? Muli siap bantu rutenya! 😊`,
+            reply: `Tabik Pun! Kabupaten Pesisir Barat (Krui) adalah surga wisata pantai samudra kelas dunia di Lampung!\n\nBerikut destinasi pantai & wisata terbaik yang wajib kamu kunjungi di Krui:\n\n1. Pantai Tanjung Setia (Krui Surf Spot)\nPantai ombak surfing kelas dunia yang diakui surfer internasional, dilengkapi resort & surf school tepi pantai.\n\n2. Pantai Labuhan Jukung\nPusat wisata pantai paling populer di pusat kota Krui dengan pemandangan sunset samudra lepas yang memukau.\n\n3. Pulau Pisang\nPulau eksotis berpasir putih halus dengan air laut bening kristal, tempat pengrajin kain Tapis tradisional & spot lumba-lumba.\n\n4. Taman Nasional Bukit Barisan Selatan (TNBBS)\nKawasan konservasi hutan hujan tropis & flora fauna langka khas Sumatera.\n\nDestinasi mana yang paling ingin kamu kunjungi di Krui? Muli siap bantu rutenya!`,
             suggested_queries: [
-              '🏄 Sewa papan surfing Tanjung Setia',
-              '🚤 Perahu penyeberangan Pulau Pisang',
-              '🍲 Kuliner Ikan Tuhuk Krui',
+              'Sewa papan surfing Tanjung Setia',
+              'Perahu penyeberangan Pulau Pisang',
+              'Kuliner Ikan Tuhuk Krui',
             ],
             destinations: [],
           },
@@ -486,27 +479,11 @@ Destinasi mana yang paling ingin kamu kunjungi di Krui? Muli siap bantu rutenya!
           bot_name: 'Muli AI Concierge Lampung',
           model_used: 'rag-synthesizer',
           data: {
-            reply: `Tabik Pun! 🤿 **Kabupaten Pesawaran** adalah rajanya wisata bahari, island hopping, & snorkeling di Lampung!
-
-Berikut destinasi wisata unggulan paling hits yang wajib kamu kunjungi di Pesawaran:
-
-🤿 **1. Pulau Pahawang (Spot Snorkeling Nemo)**
-Destinasi bahari kelas dunia tempat snorkeling terbaik melihat terumbu karang alami & ekosistem Ikan Nemo yang sangat bening.
-
-🏝️ **2. Pantai Sari Ringgung & Pasir Timbul**
-Pantai pasir putih populer dengan fenomena unik wahana Pasir Timbul mengapung di tengah laut.
-
-🌴 **3. Pulau Kelagian & Pantai Mutun**
-Pulau pasir putih halus berair laut tenang yang sangat cocok untuk liburan keluarga & wahana olahraga air.
-
-🌊 **4. Pantai Dewi Mandapa & Pulau Mahitam**
-Spot pantai estetik dengan hutan mangrove instagramable & daratan pasir timbul menuju Pulau Mahitam.
-
-Destinasi mana yang paling ingin kamu kunjungi di Pesawaran? 😊`,
+            reply: `Tabik Pun! Kabupaten Pesawaran adalah rajanya wisata bahari, island hopping, & snorkeling di Lampung!\n\nBerikut destinasi wisata unggulan paling hits yang wajib kamu kunjungi di Pesawaran:\n\n1. Pulau Pahawang (Spot Snorkeling Nemo)\nDestinasi bahari kelas dunia tempat snorkeling terbaik melihat terumbu karang alami & ekosistem Ikan Nemo yang sangat bening.\n\n2. Pantai Sari Ringgung & Pasir Timbul\nPantai pasir putih populer dengan fenomena unik wahana Pasir Timbul mengapung di tengah laut.\n\n3. Pulau Kelagian & Pantai Mutun\nPulau pasir putih halus berair laut tenang yang sangat cocok untuk liburan keluarga & wahana olahraga air.\n\n4. Pantai Dewi Mandapa & Pulau Mahitam\nSpot pantai estetik dengan hutan mangrove instagramable & daratan pasir timbul menuju Pulau Mahitam.\n\nDestinasi mana yang paling ingin kamu kunjungi di Pesawaran? Muli siap bantu!`,
             suggested_queries: [
-              '🤿 Paket snorkeling Pulau Pahawang',
-              '🏖️ Tiket masuk Pantai Sari Ringgung',
-              '🍲 Kuliner Seruit Pesawaran',
+              'Paket snorkeling Pulau Pahawang',
+              'Tiket masuk Pantai Sari Ringgung',
+              'Kuliner Seruit Pesawaran',
             ],
             destinations: [],
           },
@@ -519,27 +496,11 @@ Destinasi mana yang paling ingin kamu kunjungi di Pesawaran? 😊`,
           bot_name: 'Muli AI Concierge Lampung',
           model_used: 'rag-synthesizer',
           data: {
-            reply: `Tabik Pun! 🐬 **Kabupaten Tanggamus** terkenal banget dengan petualangan bahari laut lepas & gugusan karang eksotis dunia!
-
-Berikut destinasi wisata paling hits & wajib kamu kunjungi di Tanggamus:
-
-🐬 **1. Teluk Kiluan (Atraksi Lumba-Lumba Liar)**
-Pengalaman luar biasa naik perahu jukung tradisional ke laut lepas Teluk Semangka untuk melihat kawanan ratusan lumba-lumba melompat bebas!
-
-🪨 **2. Pantai Gigi Hiu (Pegadungan)**
-Gugusan tebing batu karang tajam menjulang tinggi seperti gigi hiu raksasa yang sangat ikonik & terkenal di kalangan fotografer dunia.
-
-🌿 **3. Air Terjun Way Lalaan & Kawasan Wisata Gisting**
-Air terjun bertingkat yang sejuk di kaki Gunung Tanggamus, dikelilingi kebun buah & taman bunga asri.
-
-🌋 **4. Bendungan Batu Tegi & Wisata Alam Suoh**
-Waduk terbesar di Asia Tenggara dengan pemandangan danau perbukitan yang sangat megah.
-
-Ada yang paling membuatmu tertarik untuk dikunjungi di Tanggamus? 😊`,
+            reply: `Tabik Pun! Kabupaten Tanggamus terkenal banget dengan petualangan bahari laut lepas & gugusan karang eksotis dunia!\n\nBerikut destinasi wisata paling hits & wajib kamu kunjungi di Tanggamus:\n\n1. Teluk Kiluan (Atraksi Lumba-Lumba Liar)\nPengalaman luar biasa naik perahu jukung tradisional ke laut lepas Teluk Semangka untuk melihat kawanan ratusan lumba-lumba melompat bebas!\n\n2. Pantai Gigi Hiu (Pegadungan)\nGugusan tebing batu karang tajam menjulang tinggi seperti gigi hiu raksasa yang sangat ikonik & terkenal di kalangan fotografer dunia.\n\n3. Air Terjun Way Lalaan & Kawasan Wisata Gisting\nAir terjun bertingkat yang sejuk di kaki Gunung Tanggamus, dikelilingi kebun buah & taman bunga asri.\n\n4. Bendungan Batu Tegi & Wisata Alam Suoh\nWaduk terbesar di Asia Tenggara dengan pemandangan danau perbukitan yang sangat megah.\n\nAda yang paling membuatmu tertarik untuk dikunjungi di Tanggamus?`,
             suggested_queries: [
-              '🐬 Cara sewa jukung lumba-lumba Kiluan',
-              '📸 Rute ke Pantai Gigi Hiu',
-              '☕ Tempat ngeteh sejuk di Gisting',
+              'Cara sewa jukung lumba-lumba Kiluan',
+              'Rute ke Pantai Gigi Hiu',
+              'Tempat ngeteh sejuk di Gisting',
             ],
             destinations: [],
           },
@@ -552,22 +513,13 @@ Ada yang paling membuatmu tertarik untuk dikunjungi di Tanggamus? 😊`,
       const topSpots = relevantFacts.slice(0, 4);
       const targetArea = topSpots[0].regency || 'Lampung';
 
-      const categoryEmojiMap: Record<string, string> = {
-        Pantai: '🏖️',
-        Alam: '🌿',
-        Budaya: '🏛️',
-        Kuliner: '🍲',
-        Adventure: '🏄',
-      };
-
       const spotsText = topSpots
         .map((spot) => {
-          const emoji = categoryEmojiMap[spot.category] || '📍';
           const descSnippet = spot.description && spot.description.length > 10
             ? spot.description.slice(0, 110)
             : 'Destinasi wisata favorit khas Lampung dengan pemandangan memukau.';
 
-          return `${emoji} **${spot.name}** (${spot.category})\n${descSnippet}...\n• 📍 *${spot.location}* | ⭐ *${spot.rating}★* | 💰 *${spot.price}*`;
+          return `${spot.name} (${spot.category})\n${descSnippet}...\n• *${spot.location}* | *${spot.rating} Stars* | *${spot.price}*`;
         })
         .join('\n\n');
 
@@ -576,15 +528,11 @@ Ada yang paling membuatmu tertarik untuk dikunjungi di Tanggamus? 😊`,
         bot_name: 'Muli AI Concierge Lampung (RAG Grounded)',
         model_used: 'rag-synthesizer',
         data: {
-          reply: `Tabik Pun! ✨ Berikut rekomendasi destinasi unggulan di **${targetArea}** berdasarkan fakta terverifikasi database Kelana Lampung:
-
-${spotsText}
-
-Kira-kira destinasi mana yang paling ingin kamu kunjungi? Muli siap bantu rute atau rekomendasi tempat makan di sekitarnya! 😊`,
+          reply: `Tabik Pun! Berikut rekomendasi destinasi unggulan di ${targetArea} berdasarkan fakta terverifikasi database Kelana Lampung:\n\n${spotsText}\n\nKira-kira destinasi mana yang paling ingin kamu kunjungi? Muli siap bantu rute atau rekomendasi tempat makan di sekitarnya!`,
           suggested_queries: [
-            `🏖️ Rekomendasi tempat di ${targetArea}`,
-            '🍲 Tempat makan Seruit khas Lampung',
-            '💰 Estimasi biaya liburan',
+            `Rekomendasi tempat di ${targetArea}`,
+            'Tempat makan Seruit khas Lampung',
+            'Estimasi biaya liburan',
           ],
           destinations: topSpots.map((f) => ({
             id: f.id,
@@ -605,11 +553,11 @@ Kira-kira destinasi mana yang paling ingin kamu kunjungi? Muli siap bantu rute a
       model_used: 'rag-synthesizer',
       data: {
         reply:
-          'Tabik Pun! ✨ Halo! Saya Muli, Customer Service & AI Concierge Resmi Wisata Lampung.\n\nAda yang bisa Muli bantu untuk liburanmu hari ini? Kamu bisa bertanya rekomendasi pantai di Pesawaran/Krui, kuliner khas Seruit, atau wisata populer di 15 Kabupaten/Kota Lampung! 😊',
+          'Tabik Pun! Halo! Saya Muli, Customer Service & AI Concierge Resmi Wisata Lampung.\n\nAda yang bisa Muli bantu untuk liburanmu hari ini? Kamu bisa bertanya rekomendasi pantai di Pesawaran/Krui, kuliner khas Seruit, atau wisata populer di 15 Kabupaten/Kota Lampung!',
         suggested_queries: [
-          '🏖️ Rekomendasi pantai di Pesawaran',
-          '🍲 Kuliner Seruit khas Lampung',
-          '🐬 Wisata lumba-lumba Teluk Kiluan',
+          'Rekomendasi pantai di Pesawaran',
+          'Kuliner Seruit khas Lampung',
+          'Wisata lumba-lumba Teluk Kiluan',
         ],
         destinations: [],
       },
