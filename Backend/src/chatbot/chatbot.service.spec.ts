@@ -111,6 +111,11 @@ describe('ChatbotService', () => {
     expect(res.data.reply).toBeDefined();
     expect(res.data.destinations).toBeDefined();
     expect(res.data.destinations.length).toBeGreaterThan(0);
+    expect(res.data.destinations[0]).toEqual(expect.objectContaining({
+      category: expect.any(String),
+      hours: expect.any(String),
+      highlight: expect.any(String),
+    }));
     expect(mockPrismaService.user.findUnique).not.toHaveBeenCalled();
   });
 
