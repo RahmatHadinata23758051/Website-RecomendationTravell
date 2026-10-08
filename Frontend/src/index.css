@@ -5,6 +5,11 @@
 @tailwind utilities;
 
 @layer base {
+  :focus-visible {
+    outline: 3px solid #0A7A6A;
+    outline-offset: 3px;
+  }
+
   body {
     background-color: #F4F8FA;
     background-image: 
