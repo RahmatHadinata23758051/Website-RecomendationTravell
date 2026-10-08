@@ -1,5 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { PlacesSubmissionService } from './places-submission.service';
+import { SubmissionDedupService } from './submission-dedup.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { SubmitPlaceDto } from './dto/submit-place.dto';
 import { NotFoundException, ForbiddenException } from '@nestjs/common';
@@ -17,6 +18,10 @@ describe('PlacesSubmissionService', () => {
     },
   };
 
+  const mockDedupService = {
+    checkDuplicate: jest.fn().mockResolvedValue({ isDuplicate: false }),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -24,6 +29,10 @@ describe('PlacesSubmissionService', () => {
         {
           provide: PrismaService,
           useValue: mockPrisma,
+        },
+        {
+          provide: SubmissionDedupService,
+          useValue: mockDedupService,
         },
       ],
     }).compile();

@@ -3,8 +3,10 @@ import {
   Logger,
   NotFoundException,
   ForbiddenException,
+  ConflictException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { SubmissionDedupService } from './submission-dedup.service';
 import { SubmitPlaceDto } from './dto/submit-place.dto';
 import { MySubmissionsDto, QuerySubmissionsDto } from './dto/query-submissions.dto';
 import { Prisma } from '@prisma/client';
@@ -13,7 +15,10 @@ import { Prisma } from '@prisma/client';
 export class PlacesSubmissionService {
   private readonly logger = new Logger(PlacesSubmissionService.name);
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly dedupService: SubmissionDedupService,
+  ) {}
 
   async submitPlace(
     userId: string,
@@ -21,6 +26,31 @@ export class PlacesSubmissionService {
     ipAddress?: string,
     userAgent?: string,
   ) {
+    const dedupResult = await this.dedupService.checkDuplicate(
+      dto.cityRegency,
+      dto.name,
+      dto.latitude,
+      dto.longitude,
+    );
+
+    if (dedupResult.isDuplicate) {
+      if (dedupResult.existingCanonicalId) {
+        throw new ConflictException({
+          message: 'Destinasi wisata ini sudah terdaftar di katalog utama Lampung',
+          duplicateOfId: dedupResult.existingCanonicalId,
+          confidence: dedupResult.confidence,
+          matchedField: dedupResult.matchedField,
+        });
+      } else {
+        throw new ConflictException({
+          message: 'Pengajuan untuk tempat wisata ini sudah ada dalam antrean moderasi',
+          duplicateOfId: dedupResult.existingSubmissionId,
+          confidence: dedupResult.confidence,
+          matchedField: dedupResult.matchedField,
+        });
+      }
+    }
+
     const submission = await this.prisma.placeSubmission.create({
       data: {
         submitterId: userId,
