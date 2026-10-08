@@ -53,7 +53,7 @@ export const RadenGajahChatWidget: React.FC = () => {
     {
       label: 'Pantai Pesawaran',
       query: 'Rekomendasi pantai di Pesawaran',
-      icon: <Palmtree className="h-3.5 w-3.5 text-teal-600" />,
+      icon: <Palmtree className="h-3.5 w-3.5 text-teal-800" />,
     },
     {
       label: 'Kuliner Seruit',
@@ -140,7 +140,7 @@ export const RadenGajahChatWidget: React.FC = () => {
   };
 
   return (
-    <div className="fixed bottom-6 right-6 z-50 font-sans">
+    <div className="fixed bottom-4 right-3 z-50 max-w-[calc(100vw-1.5rem)] font-sans sm:bottom-6 sm:right-6">
       {/* ------------------ PREMIUM CS FLOATING TOGGLE BUTTON ------------------ */}
       {!isOpen && (
         <button
@@ -179,7 +179,7 @@ export const RadenGajahChatWidget: React.FC = () => {
 
       {/* ------------------ FLOATING CHAT WINDOW ------------------ */}
       {isOpen && (
-        <div className="flex h-[580px] w-[380px] sm:w-[420px] flex-col overflow-hidden rounded-3xl border border-[#EBE0C9] bg-white shadow-2xl transition-all duration-300">
+        <div className="flex h-[min(580px,85vh)] w-[calc(100vw-1.5rem)] sm:w-[380px] max-w-[420px] flex-col overflow-hidden rounded-3xl border border-[#EBE0C9] bg-white shadow-2xl transition-all duration-300">
           {/* CS HEADER */}
           <div className="flex items-center justify-between border-b border-[#E2D6BE] bg-gradient-to-r from-[#0F766E] via-[#0D9488] to-[#047857] px-5 py-3.5 text-white shadow-sm">
             <div className="flex items-center gap-3">
