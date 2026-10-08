@@ -787,7 +787,7 @@ export const ProfilePage: React.FC = () => {
                     colorClass = 'text-red-500 bg-red-50';
                   } else if (act.iconType === 'map') {
                     IconComp = Compass;
-                    colorClass = 'text-teal-600 bg-teal-50';
+                    colorClass = 'text-teal-800 bg-teal-50';
                   } else if (act.iconType === 'user') {
                     IconComp = UserIcon;
                     colorClass = 'text-blue-500 bg-blue-50';
@@ -1091,7 +1091,7 @@ export const ProfilePage: React.FC = () => {
                   colorClass = 'text-red-500 bg-red-50';
                 } else if (act.iconType === 'map') {
                   IconComp = Compass;
-                  colorClass = 'text-teal-600 bg-teal-50';
+                  colorClass = 'text-teal-800 bg-teal-50';
                 } else if (act.iconType === 'user') {
                   IconComp = UserIcon;
                   colorClass = 'text-blue-500 bg-blue-50';
