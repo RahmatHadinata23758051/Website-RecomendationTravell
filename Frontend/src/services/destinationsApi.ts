@@ -1,7 +1,5 @@
-import axios from 'axios';
 import { Destination } from '../pages/ExplorePage';
-
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api/v1';
+import { apiClient } from '../lib/api';
 
 export interface DestinationsQuery {
   category?: string;
@@ -30,7 +28,7 @@ export const fetchRealDestinations = async (query: DestinationsQuery = {}): Prom
 
   // 1. Try NestJS Backend API
   try {
-    const response = await axios.get(`${API_BASE_URL}/destinations`, {
+    const response = await apiClient.get('/destinations', {
       params: {
         category: query.category && query.category !== 'Semua' ? query.category : undefined,
         city_or_regency: query.city_or_regency && query.city_or_regency !== 'Semua' ? query.city_or_regency : undefined,
@@ -49,28 +47,7 @@ export const fetchRealDestinations = async (query: DestinationsQuery = {}): Prom
     // Silent fallback
   }
 
-  // 2. Try FastAPI ML Engine directly
-  try {
-    const fastApiRes = await axios.get('http://localhost:8000/api/v1/destinations', {
-      params: {
-        category: query.category && query.category !== 'Semua' ? query.category : undefined,
-        city_or_regency: query.city_or_regency && query.city_or_regency !== 'Semua' ? query.city_or_regency : undefined,
-        search: query.search || undefined,
-        page,
-        limit,
-      },
-      timeout: 2500,
-    });
-
-    const data = fastApiRes.data;
-    if (data && data.destinations && Array.isArray(data.destinations) && data.destinations.length > 0) {
-      return data.destinations.map((item: any) => mapApiToDestination(item));
-    }
-  } catch (err) {
-    // Silent fallback
-  }
-
-  // 3. Fallback to local static JSON dataset with Robust Regency Matching
+  // 2. Fallback to local static JSON dataset with Robust Regency Matching
   try {
     if (!staticDestinationsCache) {
       const staticRes = await fetch('/assets/data/public_destinations.json');
@@ -221,7 +198,7 @@ export interface SwapSlotPayload {
 export const generateAiPlannerItinerary = async (payload: GeneratePlannerPayload): Promise<any> => {
   // 1. Try NestJS Backend API
   try {
-    const response = await axios.post(`${API_BASE_URL}/planner/generate`, payload, { timeout: 3500 });
+    const response = await apiClient.post('/planner/generate', payload, { timeout: 3500 });
     if (response.data && (response.data.status === 'success' || response.data.itinerary)) {
       return response.data;
     }
@@ -229,17 +206,7 @@ export const generateAiPlannerItinerary = async (payload: GeneratePlannerPayload
     // Silent fallback
   }
 
-  // 2. Try FastAPI Python ML API directly
-  try {
-    const fastApiRes = await axios.post('http://localhost:8000/api/v1/planner/generate', payload, { timeout: 3500 });
-    if (fastApiRes.data && (fastApiRes.data.status === 'success' || fastApiRes.data.itinerary)) {
-      return fastApiRes.data;
-    }
-  } catch (e) {
-    // Silent fallback
-  }
-
-  // 3. Robust Real-Data Client Spatial Planner Engine
+  // 2. Robust Real-Data Client Spatial Planner Engine
   try {
     if (!staticDestinationsCache) {
       const staticRes = await fetch('/assets/data/public_destinations.json');
@@ -441,7 +408,7 @@ export const generateAiPlannerItinerary = async (payload: GeneratePlannerPayload
 export const swapPlannerSlotApi = async (payload: SwapSlotPayload): Promise<any[]> => {
   // 1. Try NestJS Backend API
   try {
-    const response = await axios.post(`${API_BASE_URL}/planner/swap-slot`, payload, { timeout: 3500 });
+    const response = await apiClient.post('/planner/swap-slot', payload, { timeout: 3500 });
     if (response.data && Array.isArray(response.data.alternatives) && response.data.alternatives.length > 0) {
       return response.data.alternatives;
     }
@@ -449,17 +416,7 @@ export const swapPlannerSlotApi = async (payload: SwapSlotPayload): Promise<any[
     // Silent fallback
   }
 
-  // 2. Try FastAPI Python ML API directly
-  try {
-    const fastApiRes = await axios.post('http://localhost:8000/api/v1/planner/swap-slot', payload, { timeout: 3500 });
-    if (fastApiRes.data && Array.isArray(fastApiRes.data.alternatives) && fastApiRes.data.alternatives.length > 0) {
-      return fastApiRes.data.alternatives;
-    }
-  } catch (err) {
-    // Silent fallback
-  }
-
-  // 3. Robust Real-Data Client Swap Engine
+  // 2. Robust Real-Data Client Swap Engine
   try {
     if (!staticDestinationsCache) {
       const staticRes = await fetch('/assets/data/public_destinations.json');
