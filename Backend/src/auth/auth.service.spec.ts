@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
+import { createHash } from 'crypto';
 import { AuthService } from './auth.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { RedisService } from '../redis/redis.service';
@@ -39,6 +40,8 @@ describe('AuthService', () => {
   };
 
   beforeEach(async () => {
+    jest.clearAllMocks();
+    mockRedisService.get.mockResolvedValue(null);
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         AuthService,
@@ -57,20 +60,34 @@ describe('AuthService', () => {
     expect(service).toBeDefined();
   });
 
-  it('should blacklist refresh token on logout', async () => {
-    await service.logout('test-refresh-token');
+  it('should blacklist refresh token on logout with a SHA-256 hashed key', async () => {
+    const token = 'test-refresh-token';
+    const tokenHash = createHash('sha256').update(token).digest('hex');
+
+    await service.logout(token);
+
     expect(mockRedisService.set).toHaveBeenCalledWith(
-      'blacklist:refresh:test-refresh-token',
+      `blacklist:token:${tokenHash}`,
       'revoked',
       expect.any(Number),
     );
+    expect(`blacklist:token:${tokenHash}`).not.toContain(token);
   });
 
   it('should throw UnauthorizedException when refresh token is blacklisted', async () => {
-    mockRedisService.get.mockResolvedValueOnce('revoked');
+    const blacklistedToken = 'blacklisted-token';
+    const tokenHash = createHash('sha256').update(blacklistedToken).digest('hex');
+
+    mockRedisService.get.mockImplementation(async (key: string) => {
+      if (key === `blacklist:token:${tokenHash}`) {
+        return 'revoked';
+      }
+      return null;
+    });
     mockJwtService.verifyAsync.mockResolvedValueOnce({ sub: 'user-1', email: 'test@test.com', role: 'USER' });
 
-    await expect(service.refreshToken('blacklisted-token')).rejects.toThrow('Refresh token has been revoked');
+    await expect(service.refreshToken(blacklistedToken)).rejects.toThrow('Refresh token has been revoked');
+    expect(mockRedisService.get).toHaveBeenCalledWith(`blacklist:token:${tokenHash}`);
   });
 
   it('should blacklist old refresh token when issuing new tokens', async () => {
@@ -83,8 +100,9 @@ describe('AuthService', () => {
     });
 
     await service.refreshToken('valid-token');
+    const tokenHash = createHash('sha256').update('valid-token').digest('hex');
     expect(mockRedisService.set).toHaveBeenCalledWith(
-      'blacklist:refresh:valid-token',
+      `blacklist:token:${tokenHash}`,
       'revoked',
       expect.any(Number),
     );
