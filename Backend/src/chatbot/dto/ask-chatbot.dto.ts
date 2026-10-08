@@ -1,4 +1,12 @@
-import { IsNotEmpty, IsOptional, IsString, MinLength, IsArray } from 'class-validator';
+import {
+  IsArray,
+  IsIn,
+  IsNotEmpty,
+  IsObject,
+  IsOptional,
+  IsString,
+  MinLength,
+} from 'class-validator';
 
 export class ChatHistoryItemDto {
   @IsNotEmpty()
@@ -31,4 +39,22 @@ export class AskChatbotDto {
   @IsOptional()
   @IsString()
   regency?: string;
+
+  /** The client may explicitly describe the mode; the JWT remains authoritative. */
+  @IsOptional()
+  @IsIn(['public', 'authenticated'])
+  mode?: 'public' | 'authenticated';
+
+  /** Used by trusted callers that already resolved a user context. */
+  @IsOptional()
+  @IsString()
+  userId?: string;
+
+  /** Optional client context (for example preferences) for non-session integrations. */
+  @IsOptional()
+  @IsObject()
+  userContext?: {
+    preferences?: string[];
+    itineraries?: Array<{ title?: string; daysJson?: unknown }>;
+  };
 }

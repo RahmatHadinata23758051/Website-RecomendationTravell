@@ -26,6 +26,8 @@ export interface AskChatbotPayload {
   history?: ChatHistoryItem[];
   category?: string;
   regency?: string;
+  mode?: 'public' | 'authenticated';
+  userId?: string;
 }
 
 // Client-side dataset loader

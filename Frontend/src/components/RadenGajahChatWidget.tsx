@@ -20,6 +20,7 @@ import {
   ChatHistoryItem,
   RecommendedDestinationFact,
 } from '../services/chatbotApi';
+import { useAuth } from '../context/AuthContext';
 
 interface ChatMessage {
   id: string;
@@ -39,11 +40,14 @@ export const RadenGajahChatWidget: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [inputMessage, setInputMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const { isAuthenticated } = useAuth();
 
   const initialWelcomeMessage: ChatMessage = {
     id: 'msg-welcome',
     sender: 'bot',
-    text: 'Tabik Pun! Saya Muli, Customer Service & AI Concierge Resmi Wisata Lampung. Ada yang bisa Muli bantu untuk rencana liburan Anda hari ini?',
+    text: isAuthenticated
+      ? 'Tabik Pun! Selamat datang kembali! Saya Muli, Personal AI Concierge Anda. Dengan login, Muli bisa mengakses preferensi dan itinerary tersimpan untuk saran yang lebih personal. Ada yang bisa Muli bantu hari ini?'
+      : 'Tabik Pun! Saya Muli, Customer Service & AI Concierge Resmi Wisata Lampung. Mode Publik aktif — tanya seputar pantai, kuliner, atau tips liburan umum. Login untuk membuka fitur perencanaan perjalanan personal & akses itinerary tersimpan!',
     timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
   };
 
@@ -109,6 +113,7 @@ export const RadenGajahChatWidget: React.FC = () => {
       const responseData = await askRadenGajahChatbot({
         message: query,
         history,
+        mode: isAuthenticated ? 'authenticated' : 'public',
       });
 
       const botMsg: ChatMessage = {
@@ -209,7 +214,12 @@ export const RadenGajahChatWidget: React.FC = () => {
               </div>
             </div>
 
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-2">
+              <span className="rounded-full border border-emerald-200/40 bg-white/10 px-2 py-1 text-[9px] font-bold uppercase tracking-wide text-emerald-50">
+                {isAuthenticated ? 'Personal' : 'Publik'}
+              </span>
+
+              <div className="flex items-center gap-1">
               <button
                 onClick={handleResetChat}
                 title="Bersihkan Percakapan"
@@ -225,6 +235,7 @@ export const RadenGajahChatWidget: React.FC = () => {
               >
                 <X className="h-5 w-5" />
               </button>
+              </div>
             </div>
           </div>
 
