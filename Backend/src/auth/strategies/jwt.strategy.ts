@@ -16,12 +16,15 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
     configService: ConfigService,
     private readonly prisma: PrismaService,
   ) {
+    const accessSecret = configService.get<string>('JWT_ACCESS_SECRET');
+    if (!accessSecret && process.env.NODE_ENV === 'production') {
+      throw new Error('JWT_ACCESS_SECRET must be configured in production');
+    }
+
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       ignoreExpiration: false,
-      secretOrKey:
-        configService.get<string>('JWT_ACCESS_SECRET') ||
-        'super-secret-access-key-lampung-2026',
+      secretOrKey: accessSecret || 'super-secret-access-key-lampung-2026',
     });
   }
 

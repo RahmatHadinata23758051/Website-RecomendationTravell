@@ -12,16 +12,19 @@ import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 
 import { ActivityService } from '../activity/activity.service';
+import { RedisService } from '../redis/redis.service';
 
 @Injectable()
 export class AuthService {
   private readonly saltRounds = 12;
+  private readonly refreshTokenTtlSeconds = 7 * 24 * 60 * 60;
 
   constructor(
     private readonly prisma: PrismaService,
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
     private readonly activityService: ActivityService,
+    private readonly redisService: RedisService,
   ) {}
 
   async register(registerDto: RegisterDto) {
@@ -188,16 +191,31 @@ export class AuthService {
     return user;
   }
 
+  async logout(refreshTokenString?: string): Promise<void> {
+    if (refreshTokenString) {
+      await this.redisService.set(
+        `blacklist:refresh:${refreshTokenString}`,
+        'revoked',
+        this.refreshTokenTtlSeconds,
+      );
+    }
+  }
+
   async refreshToken(refreshTokenString: string) {
     if (!refreshTokenString) {
       throw new UnauthorizedException('Refresh token is missing');
     }
 
+    const isBlacklisted = await this.redisService.get(
+      `blacklist:refresh:${refreshTokenString}`,
+    );
+    if (isBlacklisted) {
+      throw new UnauthorizedException('Refresh token has been revoked');
+    }
+
     try {
       const payload = await this.jwtService.verifyAsync(refreshTokenString, {
-        secret:
-          this.configService.get<string>('JWT_REFRESH_SECRET') ||
-          'super-secret-refresh-key-lampung-2026',
+        secret: this.getJwtSecret('JWT_REFRESH_SECRET', 'super-secret-refresh-key-lampung-2026'),
       });
 
       const user = await this.prisma.user.findUnique({
@@ -208,6 +226,13 @@ export class AuthService {
         throw new UnauthorizedException('User no longer exists');
       }
 
+      // Invalidate old token to prevent token reuse
+      await this.redisService.set(
+        `blacklist:refresh:${refreshTokenString}`,
+        'revoked',
+        this.refreshTokenTtlSeconds,
+      );
+
       const tokens = await this.generateTokens(user.id, user.email, user.role);
 
       return {
@@ -215,6 +240,9 @@ export class AuthService {
         refreshToken: tokens.refreshToken,
       };
     } catch (err) {
+      if (err instanceof UnauthorizedException) {
+        throw err;
+      }
       throw new UnauthorizedException('Invalid or expired refresh token');
     }
   }
@@ -222,12 +250,14 @@ export class AuthService {
   private async generateTokens(userId: string, email: string, role: string) {
     const payload = { sub: userId, email, role };
 
-    const accessSecret =
-      this.configService.get<string>('JWT_ACCESS_SECRET') ||
-      'super-secret-access-key-lampung-2026';
-    const refreshSecret =
-      this.configService.get<string>('JWT_REFRESH_SECRET') ||
-      'super-secret-refresh-key-lampung-2026';
+    const accessSecret = this.getJwtSecret(
+      'JWT_ACCESS_SECRET',
+      'super-secret-access-key-lampung-2026',
+    );
+    const refreshSecret = this.getJwtSecret(
+      'JWT_REFRESH_SECRET',
+      'super-secret-refresh-key-lampung-2026',
+    );
 
     const [accessToken, refreshToken] = await Promise.all([
       this.jwtService.signAsync(payload, {
@@ -241,5 +271,15 @@ export class AuthService {
     ]);
 
     return { accessToken, refreshToken };
+  }
+
+  private getJwtSecret(key: string, fallback: string): string {
+    const value = this.configService.get<string>(key);
+    if (!value && process.env.NODE_ENV === 'production') {
+      throw new InternalServerErrorException(
+        `${key} must be explicitly configured in production`,
+      );
+    }
+    return value || fallback;
   }
 }
