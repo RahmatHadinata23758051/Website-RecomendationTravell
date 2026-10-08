@@ -88,9 +88,21 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
   async invalidateByPrefix(prefix: string): Promise<void> {
     if (this.client && this.client.status === 'ready') {
       try {
-        const keys = await this.client.keys(`${prefix}*`);
-        if (keys.length > 0) {
-          await this.client.del(...keys);
+        const stream = this.client.scanStream({
+          match: `${prefix}*`,
+          count: 100,
+        });
+        const keysToDelete: string[] = [];
+        for await (const resultKeys of stream) {
+          if (Array.isArray(resultKeys) && resultKeys.length > 0) {
+            keysToDelete.push(...resultKeys);
+          }
+        }
+        if (keysToDelete.length > 0) {
+          for (let i = 0; i < keysToDelete.length; i += 100) {
+            const chunk = keysToDelete.slice(i, i + 100);
+            await this.client.del(...chunk);
+          }
         }
       } catch (e) {
         // fallback

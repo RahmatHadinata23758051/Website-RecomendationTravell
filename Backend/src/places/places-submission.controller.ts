@@ -20,7 +20,7 @@ import {
 import { PlacesSubmissionService } from './places-submission.service';
 import { SubmitPlaceDto } from './dto/submit-place.dto';
 import { QuerySubmissionsDto, MySubmissionsDto } from './dto/query-submissions.dto';
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { JwtAuthGuard, OptionalJwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
 @ApiTags('Place Submissions')
 @Controller('api/v1/places/submissions')
@@ -52,6 +52,7 @@ export class PlacesSubmissionController {
   }
 
   @Get(':id')
+  @UseGuards(OptionalJwtAuthGuard)
   @ApiOperation({ summary: 'Get submission details by ID' })
   @ApiParam({ name: 'id', description: 'Submission UUID' })
   @ApiResponse({ status: 200, description: 'Submission detail' })
