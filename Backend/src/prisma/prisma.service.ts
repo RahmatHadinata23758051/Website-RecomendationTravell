@@ -14,7 +14,7 @@ export class PrismaService
         db: {
           url:
             process.env.DATABASE_URL ||
-            'postgresql://postgres:password@localhost:5432/traveller_db?schema=public',
+            'postgresql://postgres:123@localhost:5432/traveller_db?schema=public',
         },
       },
     });
