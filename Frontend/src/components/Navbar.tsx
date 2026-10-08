@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Heart, LogOut, Menu, X, User as UserIcon, MapPin } from 'lucide-react';
+import { Heart, LogOut, Menu, X, User as UserIcon, MapPin, ShieldCheck } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 export const Navbar: React.FC = () => {
@@ -119,6 +119,28 @@ export const Navbar: React.FC = () => {
               <span className="h-0.5 w-5 bg-[#0D9488] rounded-full mt-1 animate-in fade-in duration-200" />
             )}
           </Link>
+          {user?.role === 'ADMIN' && (
+            <Link
+              to="/admin/submissions"
+              className="flex flex-col items-center group"
+            >
+              <div className="flex items-center gap-1.5">
+                <span
+                  className={`text-xs font-semibold transition-colors ${
+                    isActive('/admin/submissions') ? 'text-[#0D9488] font-bold' : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  Moderasi
+                </span>
+                <span className="px-1.5 py-0.5 text-[9px] font-bold bg-[#FEF3C7] text-[#92400E] rounded-full uppercase">
+                  Admin
+                </span>
+              </div>
+              {isActive('/admin/submissions') && (
+                <span className="h-0.5 w-5 bg-[#0D9488] rounded-full mt-1 animate-in fade-in duration-200" />
+              )}
+            </Link>
+          )}
         </nav>
 
         {/* Right Auth Action Buttons Matching Mockup */}
@@ -157,6 +179,16 @@ export const Navbar: React.FC = () => {
                     <MapPin className="w-3.5 h-3.5 text-[#0D9488]" />
                     <span>Pengajuan tempat</span>
                   </Link>
+                  {user?.role === 'ADMIN' && (
+                    <Link
+                      to="/admin/submissions"
+                      onClick={() => setIsProfileDropdownOpen(false)}
+                      className="w-full text-left px-4 py-2 text-xs text-slate-700 hover:bg-slate-50 flex items-center gap-2 transition-colors border-t border-slate-100"
+                    >
+                      <ShieldCheck className="w-3.5 h-3.5 text-[#0D9488]" />
+                      <span>Moderasi pengajuan</span>
+                    </Link>
+                  )}
                   <button
                     onClick={() => {
                       setIsProfileDropdownOpen(false);
@@ -230,6 +262,15 @@ export const Navbar: React.FC = () => {
           >
             Favorite
           </Link>
+          {user?.role === 'ADMIN' && (
+            <Link
+              to="/admin/submissions"
+              onClick={() => setIsMobileMenuOpen(false)}
+              className="flex items-center gap-2 py-2 text-xs font-semibold text-teal-700"
+            >
+              <ShieldCheck className="h-3.5 w-3.5" /> Moderasi pengajuan
+            </Link>
+          )}
           <div className="pt-2 border-t border-slate-100 flex gap-2">
             {!isAuthenticated ? (
               <>
