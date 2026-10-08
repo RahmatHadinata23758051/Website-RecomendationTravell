@@ -3,7 +3,11 @@ import { PlacesSubmissionService } from './places-submission.service';
 import { SubmissionDedupService } from './submission-dedup.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { SubmitPlaceDto } from './dto/submit-place.dto';
-import { NotFoundException, ForbiddenException } from '@nestjs/common';
+import {
+  NotFoundException,
+  ForbiddenException,
+  BadRequestException,
+} from '@nestjs/common';
 
 describe('PlacesSubmissionService', () => {
   let service: PlacesSubmissionService;
@@ -15,6 +19,7 @@ describe('PlacesSubmissionService', () => {
       findMany: jest.fn(),
       findUnique: jest.fn(),
       count: jest.fn(),
+      update: jest.fn(),
     },
   };
 
@@ -136,6 +141,164 @@ describe('PlacesSubmissionService', () => {
 
       const result = await service.getSubmissionById('sub-1', 'user-1');
       expect(result).toEqual(submission);
+    });
+
+    it('should return full details for admin including votes and comments', async () => {
+      const submission = {
+        id: 'sub-1',
+        submitterId: 'user-other',
+        status: 'PENDING',
+        votes: [{ id: 'vote-1', userId: 'user-1', voteType: 'UPVOTE' }],
+        comments: [
+          { id: 'comment-1', userId: 'user-2', content: 'Nice place!', isInternal: false },
+        ],
+      };
+      mockPrisma.placeSubmission.findUnique.mockResolvedValue(submission);
+
+      const result = await service.getSubmissionById('sub-1', 'admin-1', true);
+      expect(result).toEqual(submission);
+      expect(result.votes).toHaveLength(1);
+      expect(result.comments).toHaveLength(1);
+    });
+  });
+
+  describe('getModerationQueue', () => {
+    it('should return paginated submissions for admin with filters', async () => {
+      const items = [
+        { id: 'sub-1', status: 'PENDING', cityRegency: 'Kabupaten Tanggamus' },
+        { id: 'sub-2', status: 'UNDER_REVIEW', cityRegency: 'Kabupaten Pesawaran' },
+      ];
+      mockPrisma.placeSubmission.findMany.mockResolvedValue(items);
+      mockPrisma.placeSubmission.count.mockResolvedValue(2);
+
+      const result = await service.getModerationQueue({
+        status: 'PENDING',
+        cityRegency: 'Kabupaten Tanggamus',
+        page: 1,
+        limit: 10,
+        sortBy: 'submittedAt',
+        sortOrder: 'desc',
+      });
+
+      expect(result.data).toEqual(items);
+      expect(result.meta).toEqual({ page: 1, limit: 10, total: 2, totalPages: 1 });
+      expect(mockPrisma.placeSubmission.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: {
+            status: 'PENDING',
+            cityRegency: 'Kabupaten Tanggamus',
+          },
+          skip: 0,
+          take: 10,
+        }),
+      );
+    });
+
+    it('should return all statuses when no status filter provided', async () => {
+      const items = [{ id: 'sub-1' }, { id: 'sub-2' }];
+      mockPrisma.placeSubmission.findMany.mockResolvedValue(items);
+      mockPrisma.placeSubmission.count.mockResolvedValue(2);
+
+      const result = await service.getModerationQueue({});
+
+      expect(result.data).toEqual(items);
+      expect(mockPrisma.placeSubmission.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: {},
+        }),
+      );
+    });
+  });
+
+  describe('moderateSubmission', () => {
+    it('should approve submission and set moderator', async () => {
+      const existingSubmission = { id: 'sub-1', status: 'PENDING' };
+      const updatedSubmission = { ...existingSubmission, status: 'APPROVED', moderatorId: 'admin-1' };
+
+      mockPrisma.placeSubmission.findUnique.mockResolvedValue(existingSubmission);
+      mockPrisma.placeSubmission.update.mockResolvedValue(updatedSubmission);
+
+      const result = await service.moderateSubmission(
+        'sub-1',
+        'admin-1',
+        'APPROVE',
+        'Layak untuk disetujui',
+      );
+
+      expect(result.status).toBe('APPROVED');
+      expect(result.moderatorId).toBe('admin-1');
+      expect(mockPrisma.placeSubmission.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { id: 'sub-1' },
+          data: expect.objectContaining({
+            status: 'APPROVED',
+            moderator: { connect: { id: 'admin-1' } },
+          }),
+        }),
+      );
+    });
+
+    it('should reject submission with required rejection reason', async () => {
+      const existingSubmission = { id: 'sub-1', status: 'PENDING' };
+      const updatedSubmission = {
+        ...existingSubmission,
+        status: 'REJECTED',
+        rejectionReason: 'Data tidak lengkap',
+      };
+
+      mockPrisma.placeSubmission.findUnique.mockResolvedValue(existingSubmission);
+      mockPrisma.placeSubmission.update.mockResolvedValue(updatedSubmission);
+
+      const result = await service.moderateSubmission(
+        'sub-1',
+        'admin-1',
+        'REJECT',
+        'Perlu verifikasi ulang',
+        'Data tidak lengkap',
+      );
+
+      expect(result.status).toBe('REJECTED');
+      expect(result.rejectionReason).toBe('Data tidak lengkap');
+    });
+
+    it('should throw BadRequestException when rejecting without rejection reason', async () => {
+      mockPrisma.placeSubmission.findUnique.mockResolvedValue({ id: 'sub-1' });
+
+      await expect(
+        service.moderateSubmission('sub-1', 'admin-1', 'REJECT'),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it('should mark as duplicate with required duplicateOfId', async () => {
+      const existingSubmission = { id: 'sub-1', status: 'PENDING' };
+      const updatedSubmission = {
+        ...existingSubmission,
+        status: 'DUPLICATE',
+        duplicateOfId: 'canonical-123',
+      };
+
+      mockPrisma.placeSubmission.findUnique.mockResolvedValue(existingSubmission);
+      mockPrisma.placeSubmission.update.mockResolvedValue(updatedSubmission);
+
+      const result = await service.moderateSubmission(
+        'sub-1',
+        'admin-1',
+        'MARK_DUPLICATE',
+        'Duplikat dengan katalog utama',
+        undefined,
+        'canonical-123',
+      );
+
+      expect(result.status).toBe('DUPLICATE');
+      expect(result.duplicateOfId).toBe('canonical-123');
+    });
+
+    it('should throw BadRequestException when marking duplicate without duplicateOfId', async () => {
+      mockPrisma.placeSubmission.findUnique.mockResolvedValue({ id: 'sub-1' });
+
+      await expect(
+        service.moderateSubmission('sub-1', 'admin-1', 'MARK_DUPLICATE'),
+      ).rejects.toThrow(BadRequestException);
     });
   });
 });

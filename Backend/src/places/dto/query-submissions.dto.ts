@@ -11,6 +11,16 @@ import { Type } from 'class-transformer';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { PlaceSubmissionStatus, PlaceSubmissionSource } from '@prisma/client';
 
+export const SUBMISSION_SORT_FIELDS = [
+  'submittedAt',
+  'updatedAt',
+  'name',
+  'cityRegency',
+  'status',
+] as const;
+
+export type SubmissionSortField = (typeof SUBMISSION_SORT_FIELDS)[number];
+
 export class QuerySubmissionsDto {
   @ApiPropertyOptional({ description: 'Filter by submission status', enum: PlaceSubmissionStatus })
   @IsOptional()
@@ -42,10 +52,14 @@ export class QuerySubmissionsDto {
   @Max(100)
   limit?: number = 20;
 
-  @ApiPropertyOptional({ description: 'Sort by field', example: 'submittedAt' })
+  @ApiPropertyOptional({
+    description: 'Sort by field',
+    enum: SUBMISSION_SORT_FIELDS,
+    default: 'submittedAt',
+  })
   @IsOptional()
-  @IsString()
-  sortBy?: string = 'submittedAt';
+  @IsIn(SUBMISSION_SORT_FIELDS)
+  sortBy?: SubmissionSortField = 'submittedAt';
 
   @ApiPropertyOptional({ description: 'Sort order', enum: ['asc', 'desc'] })
   @IsOptional()
