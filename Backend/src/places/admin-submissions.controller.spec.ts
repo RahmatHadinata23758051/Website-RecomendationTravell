@@ -11,6 +11,7 @@ describe('AdminSubmissionsController', () => {
     getModerationQueue: jest.fn(),
     getSubmissionDetailForAdmin: jest.fn(),
     moderateSubmission: jest.fn(),
+    retryPromotion: jest.fn(),
   };
 
   beforeEach(async () => {
@@ -70,5 +71,15 @@ describe('AdminSubmissionsController', () => {
       undefined,
       undefined,
     );
+  });
+
+  it('should retry promotion for approved submission', async () => {
+    const expected = { id: 'sub-1', status: 'APPROVED', promotedAt: new Date() };
+    mockService.retryPromotion.mockResolvedValue(expected);
+
+    const result = await controller.retryPromotion('sub-1', { user: { id: 'admin-1', role: 'ADMIN' } });
+
+    expect(result).toEqual(expected);
+    expect(mockService.retryPromotion).toHaveBeenCalledWith('sub-1', 'admin-1');
   });
 });
