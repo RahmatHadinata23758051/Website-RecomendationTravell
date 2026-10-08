@@ -182,28 +182,17 @@ export interface SwapSlotPayload {
 }
 
 export const generateAiPlannerItinerary = async (payload: GeneratePlannerPayload): Promise<any> => {
-  // Try NestJS Backend API
-  try {
-    const response = await apiClient.post('/planner/generate', payload, { timeout: 3500 });
-    if (response.data && (response.data.status === 'success' || response.data.itinerary)) {
-      return response.data;
-    }
-  } catch (err) {
-    // When backend fails, return clean null/empty result rather than pretending successful live results
+  const response = await apiClient.post('/planner/generate', payload, { timeout: 3500 });
+  if (response.data && (response.data.status === 'success' || response.data.itinerary)) {
+    return response.data;
   }
-
-  return null;
+  throw new Error(response.data?.message || 'Gagal membuat itinerary');
 };
 
 export const swapPlannerSlotApi = async (payload: SwapSlotPayload): Promise<any[]> => {
-  try {
-    const response = await apiClient.post('/planner/swap-slot', payload, { timeout: 3500 });
-    if (response.data && Array.isArray(response.data.alternatives)) {
-      return response.data.alternatives;
-    }
-  } catch (e) {
-    // When backend fails, return clean empty list
+  const response = await apiClient.post('/planner/swap-slot', payload, { timeout: 3500 });
+  if (response.data && Array.isArray(response.data.alternatives)) {
+    return response.data.alternatives;
   }
-
-  return [];
+  throw new Error(response.data?.message || 'Gagal memuat alternatif spot');
 };

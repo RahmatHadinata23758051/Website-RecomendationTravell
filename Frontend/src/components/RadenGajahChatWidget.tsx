@@ -14,6 +14,7 @@ import {
   BadgePercent,
   ShieldCheck,
   Headphones,
+  AlertTriangle,
 } from 'lucide-react';
 import {
   askRadenGajahChatbot,
@@ -21,6 +22,7 @@ import {
   RecommendedDestinationFact,
 } from '../services/chatbotApi';
 import { useAuth } from '../context/AuthContext';
+import { getApiErrorMessage } from '../lib/api';
 
 interface ChatMessage {
   id: string;
@@ -40,6 +42,7 @@ export const RadenGajahChatWidget: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [inputMessage, setInputMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
   const { isAuthenticated } = useAuth();
 
   const initialWelcomeMessage: ChatMessage = {
@@ -102,6 +105,7 @@ export const RadenGajahChatWidget: React.FC = () => {
 
     setMessages((prev) => [...prev, userMsg]);
     setInputMessage('');
+    setErrorMessage('');
     setIsLoading(true);
 
     const history: ChatHistoryItem[] = messages.slice(-5).map((m) => ({
@@ -126,15 +130,9 @@ export const RadenGajahChatWidget: React.FC = () => {
 
       setMessages((prev) => [...prev, botMsg]);
     } catch (err) {
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: `bot-err-${Date.now()}`,
-          sender: 'bot',
-          text: 'Tabik Pun! Maaf, terjadi kendala sinyal sementara. Ada yang bisa Muli bantu untuk rekomendasi tempat wisata Lampung lainnya?',
-          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        },
-      ]);
+      setErrorMessage(
+        getApiErrorMessage(err, 'Layanan AI Muli sedang tidak tersedia. Silakan coba lagi.'),
+      );
     } finally {
       setIsLoading(false);
     }
@@ -142,6 +140,7 @@ export const RadenGajahChatWidget: React.FC = () => {
 
   const handleResetChat = () => {
     setMessages([initialWelcomeMessage]);
+    setErrorMessage('');
   };
 
   return (
@@ -321,6 +320,24 @@ export const RadenGajahChatWidget: React.FC = () => {
             <div ref={messagesEndRef} />
           </div>
 
+          {/* AI ERROR STATE (honest: no fabricated fallback reply) */}
+          {errorMessage && (
+            <div
+              role="alert"
+              className="flex items-start gap-2 border-t border-red-200 bg-red-50 px-3 py-2.5 text-[11px] text-red-800"
+            >
+              <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-red-600" />
+              <p className="flex-1 leading-snug">{errorMessage}</p>
+              <button
+                type="button"
+                onClick={() => setErrorMessage('')}
+                className="shrink-0 rounded-md px-1.5 py-0.5 font-semibold text-red-700 hover:bg-red-100"
+              >
+                Tutup
+              </button>
+            </div>
+          )}
+
           {/* QUICK SUGGESTION PILLS WITH REACT ICONS */}
           <div className="border-t border-[#EAE0D0] bg-[#FFFDF8] px-3 py-2 flex items-center gap-1.5 overflow-x-auto no-scrollbar">
             {quickPillsList.map((item, idx) => (
@@ -354,6 +371,7 @@ export const RadenGajahChatWidget: React.FC = () => {
 
             <button
               type="submit"
+              aria-label="Kirim pesan ke Muli"
               disabled={!inputMessage.trim() || isLoading}
               className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#0F766E] text-white transition-all hover:bg-[#0D9488] disabled:opacity-40 disabled:hover:bg-[#0F766E]"
             >

@@ -10,6 +10,8 @@ interface ErrorBoundaryProps {
 
 interface ErrorBoundaryState {
   hasError: boolean;
+  error?: Error;
+  showDetails: boolean;
 }
 
 /**
@@ -17,10 +19,10 @@ interface ErrorBoundaryState {
  * The boundary can be reset without a full page reload after a transient error.
  */
 export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
-  public state: ErrorBoundaryState = { hasError: false };
+  public state: ErrorBoundaryState = { hasError: false, showDetails: false };
 
-  public static getDerivedStateFromError(): ErrorBoundaryState {
-    return { hasError: true };
+  public static getDerivedStateFromError(error: Error): ErrorBoundaryState {
+    return { hasError: true, error, showDetails: false };
   }
 
   public componentDidCatch(error: Error, errorInfo: ErrorInfo): void {
@@ -28,7 +30,15 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
   }
 
   private handleRetry = (): void => {
-    this.setState({ hasError: false });
+    this.setState({ hasError: false, error: undefined, showDetails: false });
+  };
+
+  private handleReload = (): void => {
+    window.location.reload();
+  };
+
+  private toggleDetails = (): void => {
+    this.setState((state) => ({ showDetails: !state.showDetails }));
   };
 
   public render(): ReactNode {
@@ -43,22 +53,53 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
         aria-live="assertive"
       >
         <section className="w-full max-w-lg rounded-3xl border border-slate-200 bg-white p-6 text-center shadow-xl shadow-slate-900/5 sm:p-10">
-          <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-rose-50 text-2xl text-rose-600" aria-hidden="true">
+          <div
+            className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-rose-50 text-2xl text-rose-600"
+            aria-hidden="true"
+          >
             !
           </div>
           <h1 className="font-display text-2xl font-extrabold text-slate-900 sm:text-3xl">
             Terjadi kesalahan
           </h1>
           <p className="mx-auto mt-3 max-w-md text-sm leading-6 text-slate-500 sm:text-base">
-            Halaman ini mengalami kendala. Coba muat ulang tampilan untuk melanjutkan perjalanan Anda.
+            Halaman ini mengalami kendala. Anda dapat mencoba memulihkan tampilan atau memuat ulang aplikasi.
           </p>
-          <button
-            type="button"
-            onClick={this.handleRetry}
-            className="mt-7 min-h-11 rounded-full bg-teal-600 px-7 py-3 text-sm font-bold text-white shadow-lg shadow-teal-600/20 transition hover:bg-teal-700 focus:outline-none focus:ring-4 focus:ring-teal-500/20"
-          >
-            Coba lagi
-          </button>
+
+          <div className="mt-7 flex flex-col justify-center gap-3 sm:flex-row">
+            <button
+              type="button"
+              onClick={this.handleRetry}
+              className="min-h-11 rounded-full bg-teal-600 px-7 py-3 text-sm font-bold text-white shadow-lg shadow-teal-600/20 transition hover:bg-teal-700 focus:outline-none focus:ring-4 focus:ring-teal-500/20"
+            >
+              Coba lagi
+            </button>
+            <button
+              type="button"
+              onClick={this.handleReload}
+              className="min-h-11 rounded-full border border-slate-200 bg-white px-7 py-3 text-sm font-bold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50 focus:outline-none focus:ring-4 focus:ring-slate-500/10"
+            >
+              Muat ulang halaman
+            </button>
+          </div>
+
+          {this.state.error && (
+            <div className="mt-6 text-left">
+              <button
+                type="button"
+                onClick={this.toggleDetails}
+                aria-expanded={this.state.showDetails}
+                className="text-xs font-semibold text-slate-500 underline decoration-slate-300 underline-offset-4 hover:text-slate-700"
+              >
+                {this.state.showDetails ? 'Sembunyikan detail teknis' : 'Tampilkan detail teknis'}
+              </button>
+              {this.state.showDetails && (
+                <pre className="mt-3 max-h-32 overflow-auto rounded-xl bg-slate-950 p-3 text-left text-[10px] leading-5 text-slate-200">
+                  {this.state.error.message || 'Unknown render error'}
+                </pre>
+              )}
+            </div>
+          )}
         </section>
       </main>
     );

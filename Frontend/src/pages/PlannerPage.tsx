@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import {
   Sparkles,
   Calendar,
@@ -26,7 +26,7 @@ import {
 import { RouteMap3D, RouteSlot } from '../components/RouteMap3D';
 import { generateAiPlannerItinerary, swapPlannerSlotApi } from '../services/destinationsApi';
 import { useAuth } from '../context/AuthContext';
-import { apiClient } from '../lib/api';
+import { apiClient, getApiErrorMessage } from '../lib/api';
 import { logUserActivity } from '../services/activitiesApi';
 import { WeatherWidget } from '../components/WeatherWidget';
 
@@ -52,6 +52,7 @@ export const PlannerPage: React.FC = () => {
   // Generator & Interactive State
   const [isGenerating, setIsGenerating] = useState<boolean>(false);
   const [generatedItinerary, setGeneratedItinerary] = useState<DaySchedule[] | null>(null);
+  const [generateError, setGenerateError] = useState<string | null>(null);
   const [activeDayTab, setActiveDayTab] = useState<number>(1);
   const [selectedSlotIndex, setSelectedSlotIndex] = useState<number | null>(null);
 
@@ -147,11 +148,12 @@ export const PlannerPage: React.FC = () => {
     setTimeout(() => setToastMessage(null), 3000);
   };
 
-  // AI Generator Handler with Live API & Fallback
+  // AI Generator Handler (server-side planner only; failures surface honestly)
   const handleGenerateItinerary = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsGenerating(true);
     setGeneratedItinerary(null);
+    setGenerateError(null);
     setSelectedSlotIndex(null);
 
     const catsPayload = selectedCategories.includes('Semua')
@@ -168,114 +170,22 @@ export const PlannerPage: React.FC = () => {
         duration_days: durationDays,
       });
 
-      if (response && response.itinerary && Array.isArray(response.itinerary) && response.itinerary.length > 0) {
-        setGeneratedItinerary(response.itinerary);
-        setIsGenerating(false);
+      const itinerary = response?.itinerary;
+      if (Array.isArray(itinerary) && itinerary.length > 0) {
+        setGeneratedItinerary(itinerary);
         setActiveDayTab(1);
         triggerToast(`Itinerary AI ${selectedRegency} Berhasil Dibuat!`);
-        return;
+      } else {
+        setGenerateError('Server tidak mengembalikan itinerary. Coba ubah preferensi atau coba lagi.');
       }
     } catch (err) {
-      console.warn('Live API itinerary failed, using client fallback', err);
-    }
-
-    const regencyCoordsMap: Record<string, { lat: number; lng: number }> = {
-      'Kota Bandar Lampung': { lat: -5.4129, lng: 105.2589 },
-      'Kabupaten Pesawaran': { lat: -5.5248, lng: 105.1500 },
-      'Kabupaten Pesisir Barat': { lat: -5.2130, lng: 103.9573 },
-      'Kabupaten Lampung Selatan': { lat: -5.6503, lng: 105.5189 },
-      'Kabupaten Lampung Barat': { lat: -5.0820, lng: 104.2164 },
-      'Kabupaten Tanggamus': { lat: -5.4680, lng: 104.6855 },
-      'Kabupaten Way Kanan': { lat: -4.5776, lng: 104.5609 },
-      'Kabupaten Lampung Timur': { lat: -5.2053, lng: 105.6165 },
-      'Kabupaten Lampung Tengah': { lat: -4.8840, lng: 105.2429 },
-      'Kabupaten Lampung Utara': { lat: -4.8609, lng: 104.7337 },
-      'Kota Metro': { lat: -5.1266, lng: 105.3099 },
-      'Kabupaten Pringsewu': { lat: -5.3761, lng: 104.9670 },
-      'Kabupaten Tulang Bawang': { lat: -4.3516, lng: 105.4805 },
-      'Kabupaten Tulang Bawang Barat': { lat: -4.4540, lng: 105.0930 },
-      'Kabupaten Mesuji': { lat: -4.0312, lng: 105.3776 },
-    };
-
-    const targetCoords = regencyCoordsMap[selectedRegency] || { lat: -5.4292, lng: 105.2611 };
-
-    // Fallback Mock Result if Live API unavailable
-    setTimeout(() => {
-      let mockResult: DaySchedule[] = [];
-      const primaryCat = !selectedCategories.includes('Semua') ? selectedCategories[0] : 'Pantai';
-
-      let spotCost1 = 15000;
-      let foodCost = 20000;
-      let spotCost2 = 15000;
-      let tipPrefix = 'Tipe Backpacker (Hemat)';
-
-      if (selectedBudget === 'Standar') {
-        spotCost1 = 35000;
-        foodCost = 45000;
-        spotCost2 = 35000;
-        tipPrefix = 'Tipe Standar';
-      } else if (selectedBudget === 'Mewah' || selectedBudget === 'Sultan') {
-        spotCost1 = 85000;
-        foodCost = 120000;
-        spotCost2 = 95000;
-        tipPrefix = 'Tipe Mewah (Sultan)';
-      }
-
-      for (let d = 1; d <= durationDays; d++) {
-        mockResult.push({
-          dayNumber: d,
-          title: `Hari ${d}: Jelajah Wisata ${selectedRegency}`,
-          slots: [
-            {
-              canonical_id: `mock-${d}-1`,
-              time: '08:30 - 11:30 WIB',
-              activityTitle: `Destinasi Wisata Unggulan ${selectedRegency}`,
-              category: primaryCat,
-              location: `Kawasan Wisata ${selectedRegency}`,
-              estimatedCost: `Rp ${spotCost1.toLocaleString('id-ID')} / orang`,
-              numericCost: spotCost1,
-              coords: [targetCoords.lat + (d - 1) * 0.02, targetCoords.lng + (d - 1) * 0.015],
-              image: '/assets/images/heroes/hero-pahawang-bg.png',
-              aiTip: `[${tipPrefix}] Spot unggulan terpopuler di ${selectedRegency} dengan lanskap eksotik.`,
-              travelTime: 'Lokasi awal hari',
-            },
-            {
-              canonical_id: `mock-${d}-2`,
-              time: '12:00 - 14:00 WIB',
-              activityTitle: `Makan Siang & Kuliner Khas ${selectedRegency}`,
-              category: 'Kuliner',
-              location: `Pusat Kuliner ${selectedRegency}`,
-              estimatedCost: `Rp ${foodCost.toLocaleString('id-ID')} / orang`,
-              numericCost: foodCost,
-              coords: [targetCoords.lat + (d - 1) * 0.02 + 0.012, targetCoords.lng + (d - 1) * 0.015 + 0.01],
-              image: 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=800&q=80',
-              aiTip: `[${tipPrefix}] Mencicipi masakan khas Lampung otentik dengan racikan rempah istimewa.`,
-              travelTime: '15 menit perjalanan',
-            },
-            {
-              canonical_id: `mock-${d}-3`,
-              time: '15:30 - 18:30 WIB',
-              activityTitle: `Pesona Sunset & Bukit Panorama ${selectedRegency}`,
-              category: 'Alam',
-              location: `Dataran Tinggi ${selectedRegency}`,
-              estimatedCost: `Rp ${spotCost2.toLocaleString('id-ID')} / orang`,
-              numericCost: spotCost2,
-              coords: [targetCoords.lat + (d - 1) * 0.02 - 0.015, targetCoords.lng + (d - 1) * 0.015 - 0.012],
-              image: 'https://images.unsplash.com/photo-1432405972618-c60b0225b8f9?auto=format&fit=crop&w=800&q=80',
-              aiTip: `[${tipPrefix}] Spot foto matahari terbenam paling indah dan adem.`,
-              travelTime: '20 menit perjalanan',
-            },
-          ],
-        });
-      }
-
-      setGeneratedItinerary(mockResult);
+      setGenerateError(
+        getApiErrorMessage(err, 'Gagal membuat itinerary. Silakan coba beberapa saat lagi.'),
+      );
+    } finally {
       setIsGenerating(false);
-      setActiveDayTab(1);
-      triggerToast(`Itinerary AI ${selectedRegency} Berhasil Dibuat!`);
-    }, 1200);
+    }
   };
-
   // Open Swap Slot Modal & Fetch Alternatives
   const handleOpenSwapModal = async (slot: ItinerarySlot, dayNumber: number, slotIndex: number) => {
     setSwapTargetInfo({ dayNumber, slotIndex, slot });
@@ -286,14 +196,19 @@ export const PlannerPage: React.FC = () => {
       ? (generatedItinerary.flatMap((d) => d.slots.map((s) => s.canonical_id).filter(Boolean)) as string[])
       : [];
 
-    const alternatives = await swapPlannerSlotApi({
-      city_or_regency: selectedRegency,
-      category: slot.category,
-      exclude_ids: currentExcludeIds,
-    });
-
-    setSwapAlternatives(alternatives);
-    setIsLoadingSwap(false);
+    try {
+      const alternatives = await swapPlannerSlotApi({
+        city_or_regency: selectedRegency,
+        category: slot.category,
+        exclude_ids: currentExcludeIds,
+      });
+      setSwapAlternatives(alternatives);
+    } catch (err) {
+      setSwapAlternatives([]);
+      triggerToast(getApiErrorMessage(err, 'Gagal memuat alternatif spot.'));
+    } finally {
+      setIsLoadingSwap(false);
+    }
   };
 
   // Replace Slot with Selected Alternative
@@ -605,6 +520,32 @@ export const PlannerPage: React.FC = () => {
             </button>
           </div>
         </form>
+
+        {/* HONEST ERROR STATE */}
+        {generateError && !isGenerating && (
+          <div
+            role="alert"
+            className="rounded-[28px] border border-rose-200 bg-rose-50/80 p-6 sm:p-8 text-center space-y-3 shadow-sm"
+          >
+            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-rose-100 text-rose-600">
+              <Info className="h-6 w-6" />
+            </div>
+            <h3 className="font-display text-lg font-bold text-rose-900">
+              Gagal Menyusun Itinerary
+            </h3>
+            <p className="mx-auto max-w-md text-xs sm:text-sm text-rose-700 leading-relaxed">
+              {generateError}
+            </p>
+            <button
+              type="button"
+              onClick={handleGenerateItinerary}
+              className="mt-2 inline-flex items-center gap-2 rounded-xl bg-rose-600 px-5 py-2.5 text-xs font-bold text-white shadow-sm transition hover:bg-rose-700 active:scale-95"
+            >
+              <RefreshCw className="h-3.5 w-3.5" />
+              <span>Coba Lagi</span>
+            </button>
+          </div>
+        )}
 
         {/* LOADING ANIMATED STATE */}
         {isGenerating && (

@@ -1,4 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { ServiceUnavailableException } from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
 import { ConfigService } from '@nestjs/config';
 import { of } from 'rxjs';
@@ -184,5 +185,34 @@ describe('ChatbotService', () => {
     expect(systemPromptMessage).toContain('KONTEKS PRIBADI PENGGUNA');
     expect(systemPromptMessage).toContain('Seruit');
     expect(systemPromptMessage).toContain('Kuliner Tour Bandar Lampung');
+  });
+
+  it('should throw ServiceUnavailableException when 9Router is not configured', async () => {
+    const freshModule = await Test.createTestingModule({
+      providers: [
+        ChatbotService,
+        { provide: HttpService, useValue: mockHttpService },
+        {
+          provide: ConfigService,
+          useValue: {
+            get: jest.fn().mockReturnValue(null),
+          },
+        },
+        { provide: PrismaService, useValue: mockPrismaService },
+        {
+          provide: RagRetrieverService,
+          useValue: {
+            retrieveRelevantFacts: jest.fn().mockReturnValue([]),
+            buildRagContextPrompt: jest.fn().mockReturnValue(''),
+          },
+        },
+      ],
+    }).compile();
+
+    const freshService = freshModule.get(ChatbotService);
+
+    await expect(
+      freshService.askChatbot({ message: 'Rekomendasi pantai' }),
+    ).rejects.toThrow(ServiceUnavailableException);
   });
 });

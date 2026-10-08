@@ -22,6 +22,41 @@ apiClient.interceptors.request.use((config) => {
   return config;
 });
 
+/**
+ * Turns any thrown value (axios error, Error, string, unknown) into a
+ * user-facing Indonesian message. Prefers the backend's `message` field,
+ * distinguishes network failures from server errors, and never returns an
+ * empty string.
+ */
+export function getApiErrorMessage(error: unknown, fallback = 'Terjadi kesalahan. Silakan coba lagi.'): string {
+  const err = error as { response?: { status?: number; data?: { message?: unknown } }; request?: unknown; message?: unknown };
+
+  if (err?.response) {
+    const serverMessage = err.response.data?.message;
+    if (Array.isArray(serverMessage) && serverMessage.length > 0) {
+      return serverMessage.filter((m) => typeof m === 'string').join(', ');
+    }
+    if (typeof serverMessage === 'string' && serverMessage.trim()) {
+      return serverMessage;
+    }
+    if (err.response.status === 503) {
+      return 'Layanan sedang tidak tersedia. Silakan coba lagi beberapa saat lagi.';
+    }
+    if (err.response.status && err.response.status >= 500) {
+      return 'Server sedang bermasalah. Silakan coba lagi nanti.';
+    }
+    return fallback;
+  }
+
+  if (err?.request) {
+    return 'Tidak dapat terhubung ke server. Periksa koneksi internet Anda.';
+  }
+
+  if (typeof error === 'string' && error.trim()) return error;
+  if (typeof err?.message === 'string' && err.message.trim()) return err.message;
+  return fallback;
+}
+
 // Response Interceptor for automatic Token Refreshing on 401 Unauthorized
 apiClient.interceptors.response.use(
   (response) => response,
