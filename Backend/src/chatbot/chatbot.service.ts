@@ -1,4 +1,5 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, Optional } from '@nestjs/common';
+import { PrismaService } from '../prisma/prisma.service';
 import { ConfigService } from '@nestjs/config';
 import { HttpService } from '@nestjs/axios';
 import { firstValueFrom } from 'rxjs';
@@ -14,7 +15,51 @@ export class ChatbotService {
     private readonly configService: ConfigService,
     private readonly httpService: HttpService,
     private readonly ragRetriever: RagRetrieverService,
+    @Optional() private readonly prisma?: PrismaService,
   ) {}
+
+  private async resolvePersonalContext(dto: AskChatbotDto): Promise<string> {
+    const suppliedContext = dto.userContext;
+    let preferences = suppliedContext?.preferences || [];
+    let itineraries = suppliedContext?.itineraries || [];
+
+    // The user id from the optional JWT is trusted by the controller. Fetching
+    // here keeps public requests independent from the database and means a
+    // stale/invalid optional session can never turn a public chat into a 401.
+    if (dto.userId && this.prisma) {
+      try {
+        const user = await this.prisma.user.findUnique({
+          where: { id: dto.userId },
+          select: {
+            fullName: true,
+            preferences: true,
+            itineraries: {
+              orderBy: { updatedAt: 'desc' },
+              take: 3,
+              select: { title: true, daysJson: true },
+            },
+          },
+        });
+        if (user) {
+          preferences = user.preferences || preferences;
+          itineraries = user.itineraries || itineraries;
+        }
+      } catch (error) {
+        this.logger.warn(`[CHATBOT PERSONALIZATION] Could not load user context: ${error.message}`);
+      }
+    }
+
+    if (!preferences.length && !itineraries.length) return '';
+
+    return [
+      'KONTEKS PRIBADI PENGGUNA (gunakan hanya untuk membantu, jangan mengarang):',
+      preferences.length ? `Preferensi: ${preferences.join(', ')}` : '',
+      itineraries.length
+        ? `Itinerary tersimpan: ${itineraries.map((itinerary) => itinerary.title || 'Rencana perjalanan').join('; ')}`
+        : '',
+      'Sesuaikan saran dengan konteks ini bila relevan dan tetap gunakan fakta RAG untuk informasi destinasi.',
+    ].filter(Boolean).join('\n');
+  }
 
   private cleanFormattingAndEmojis(text: string): string {
     if (!text) return '';
@@ -60,7 +105,9 @@ export class ChatbotService {
 
   async askChatbot(dto: AskChatbotDto) {
     const { message, history, category, regency } = dto;
-    this.logger.log(`[CHATBOT QUERY] Processing message: "${message}"`);
+    const isAuthenticated = Boolean(dto.userId || dto.userContext);
+    const personalContext = isAuthenticated ? await this.resolvePersonalContext(dto) : '';
+    this.logger.log(`[CHATBOT QUERY] ${isAuthenticated ? 'Authenticated' : 'Public'} mode; Processing message: "${message}"`);
 
     const lowerMessage = message.toLowerCase().trim();
     const cleanMsg = lowerMessage.replace(/[^a-z0-9\s]/gi, '').trim();
@@ -161,6 +208,7 @@ ATURAN PERILAKU DAN FORMAT UTAMA:
 4. Jawab pertanyaan pengguna secara LANGSUNG dan SPESIFIK sesuai maksud kalimat TERBARU pengguna dan kabupaten yang diminta. Jika pengguna menyebut kata "wisata", berikan tempat wisata (bukan kuliner)!
 5. Gunakan fakta RAG terverifikasi dari Database berikut:
 ${ragContext}
+${personalContext ? `\n${personalContext}` : ''}
 6. Ceritakan secara menarik dan mengalir tanpa kaku.
 7. Di akhir jawaban, tanyakan dengan ramah bantuan apa lagi yang pengguna butuhkan.`;
 
