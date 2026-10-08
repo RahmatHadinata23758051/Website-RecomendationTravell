@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Heart, LogOut, Menu, X, User as UserIcon } from 'lucide-react';
+import { Heart, LogOut, Menu, X, User as UserIcon, MapPin } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 export const Navbar: React.FC = () => {
@@ -148,6 +148,14 @@ export const Navbar: React.FC = () => {
                   >
                     <UserIcon className="w-3.5 h-3.5 text-[#0D9488]" />
                     <span>Profil & Rute Saya</span>
+                  </Link>
+                  <Link
+                    to="/submit-place?view=submissions"
+                    onClick={() => setIsProfileDropdownOpen(false)}
+                    className="w-full text-left px-4 py-2 text-xs text-slate-700 hover:bg-slate-50 flex items-center gap-2 transition-colors"
+                  >
+                    <MapPin className="w-3.5 h-3.5 text-[#0D9488]" />
+                    <span>Pengajuan tempat</span>
                   </Link>
                   <button
                     onClick={() => {
