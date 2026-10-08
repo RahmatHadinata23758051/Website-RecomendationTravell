@@ -3,6 +3,7 @@ import { HttpService } from '@nestjs/axios';
 import { ConfigService } from '@nestjs/config';
 import { of } from 'rxjs';
 import { ChatbotService } from './chatbot.service';
+import { RagRetrieverService } from './rag-retriever.service';
 
 describe('ChatbotService', () => {
   let service: ChatbotService;
@@ -28,6 +29,13 @@ describe('ChatbotService', () => {
         ChatbotService,
         { provide: HttpService, useValue: mockHttpService },
         { provide: ConfigService, useValue: mockConfigService },
+        {
+          provide: RagRetrieverService,
+          useValue: {
+            retrieveRelevantFacts: jest.fn().mockReturnValue([]),
+            buildRagContextPrompt: jest.fn().mockReturnValue(''),
+          },
+        },
       ],
     }).compile();
 
