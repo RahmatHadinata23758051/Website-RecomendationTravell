@@ -35,6 +35,7 @@ describe('Place submission to ML recommendation catalog (e2e)', () => {
 
   const submissions = new Map<string, any>();
   const activities: any[] = [];
+  const auditLogs: any[] = [];
   const users = new Map([
     [submitter.id, submitter],
     [admin.id, admin],
@@ -47,6 +48,12 @@ describe('Place submission to ML recommendation catalog (e2e)', () => {
   const mockPrismaService = {
     $connect: jest.fn().mockResolvedValue(undefined),
     $disconnect: jest.fn().mockResolvedValue(undefined),
+    $transaction: jest.fn().mockImplementation(async (operation) => {
+      if (typeof operation === 'function') {
+        return operation(mockPrismaService);
+      }
+      return Promise.all(operation);
+    }),
     user: {
       findUnique: jest.fn().mockImplementation(({ where }) => {
         const user = where.id ? users.get(where.id) : undefined;
@@ -136,6 +143,14 @@ describe('Place submission to ML recommendation catalog (e2e)', () => {
         if (data.promotionError !== undefined) submission.promotionError = data.promotionError;
         submission.updatedAt = new Date();
         return Promise.resolve(submission);
+      }),
+    },
+    placeSubmissionAuditLog: {
+      create: jest.fn().mockImplementation(({ data }) => {
+        const id = `audit-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+        const audit = { id, ...data, createdAt: new Date() };
+        auditLogs.push(audit);
+        return Promise.resolve(audit);
       }),
     },
   };
