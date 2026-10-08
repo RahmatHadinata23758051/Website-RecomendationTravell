@@ -85,6 +85,25 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
     this.memoryFallback.delete(key);
   }
 
+  async invalidateByPrefix(prefix: string): Promise<void> {
+    if (this.client && this.client.status === 'ready') {
+      try {
+        const keys = await this.client.keys(`${prefix}*`);
+        if (keys.length > 0) {
+          await this.client.del(...keys);
+        }
+      } catch (e) {
+        // fallback
+      }
+    }
+    // Clear memory fallback for matching keys
+    for (const key of this.memoryFallback.keys()) {
+      if (key.startsWith(prefix)) {
+        this.memoryFallback.delete(key);
+      }
+    }
+  }
+
   async onModuleDestroy() {
     if (this.client) {
       await this.client.quit().catch(() => {});

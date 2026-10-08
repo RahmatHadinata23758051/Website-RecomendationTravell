@@ -12,6 +12,29 @@ enum UserRole {
   ADMIN
 }
 
+enum PlaceSubmissionStatus {
+  PENDING
+  UNDER_REVIEW
+  APPROVED
+  REJECTED
+  NEEDS_MORE_INFO
+  DUPLICATE
+}
+
+enum PlaceSubmissionSource {
+  USER
+  OWNER_CLAIMED
+  COMMUNITY
+}
+
+enum SubmissionVoteType {
+  UPVOTE
+  DOWNVOTE
+  VERIFY
+  FLAG_DUPLICATE
+  FLAG_INACCURATE
+}
+
 model User {
   id            String         @id @default(uuid())
   email         String         @unique
@@ -27,8 +50,12 @@ model User {
   updatedAt     DateTime       @updatedAt
   favorites     UserFavorite[]
   itineraries   Itinerary[]
-  reviews       Review[]
-  activities    UserActivity[]
+  reviews               Review[]
+  activities            UserActivity[]
+  submittedPlaces       PlaceSubmission[]       @relation("PlaceSubmissionSubmitter")
+  moderatedSubmissions  PlaceSubmission[]       @relation("PlaceSubmissionModerator")
+  submissionVotes       PlaceSubmissionVote[]
+  submissionComments    PlaceSubmissionComment[]
 
   @@map("users")
 }
@@ -83,4 +110,87 @@ model Review {
 
   @@index([canonicalId])
   @@map("reviews")
+}
+
+model PlaceSubmission {
+  id                   String                 @id @default(uuid())
+  submitterId          String?
+  submitter            User?                  @relation("PlaceSubmissionSubmitter", fields: [submitterId], references: [id], onDelete: SetNull)
+  name                 String
+  normalizedName       String
+  category             String
+  categoryTags         String[]               @default([])
+  address              String
+  cityRegency          String
+  district             String?
+  village              String?
+  latitude             Float
+  longitude            Float
+  phone                String?
+  website              String?
+  description          String?                @db.Text
+  openingHours         Json?
+  priceMin             Int?
+  priceMax             Int?
+  currency             String                 @default("IDR")
+  facilities           String[]               @default([])
+  photos               Json?
+  primaryPhotoUrl      String?
+  ownershipProof       Json?
+  isVerifiedOwner      Boolean                @default(false)
+  status               PlaceSubmissionStatus  @default(PENDING)
+  source               PlaceSubmissionSource  @default(USER)
+  moderatorId          String?
+  moderator            User?                  @relation("PlaceSubmissionModerator", fields: [moderatorId], references: [id], onDelete: SetNull)
+  moderationNotes      String?                @db.Text
+  rejectionReason      String?
+  reviewedAt           DateTime?
+  duplicateOfId        String?
+  duplicateConfidence  Float?
+  duplicateNotes       String?
+  canonicalId          String?                @unique
+  promotedAt           DateTime?
+  promotionError       String?
+  ipAddress            String?
+  userAgent            String?
+  submittedAt          DateTime               @default(now())
+  updatedAt            DateTime               @updatedAt
+  votes                PlaceSubmissionVote[]
+  comments             PlaceSubmissionComment[]
+
+  @@index([status])
+  @@index([cityRegency, status])
+  @@index([status, submittedAt])
+  @@index([submitterId, status])
+  @@index([normalizedName, cityRegency])
+  @@map("place_submissions")
+}
+
+model PlaceSubmissionVote {
+  id            String             @id @default(uuid())
+  submissionId String
+  submission   PlaceSubmission    @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+  userId       String
+  user          User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  voteType     SubmissionVoteType
+  createdAt    DateTime           @default(now())
+
+  @@unique([submissionId, userId, voteType])
+  @@index([submissionId, voteType])
+  @@map("place_submission_votes")
+}
+
+model PlaceSubmissionComment {
+  id           String          @id @default(uuid())
+  submissionId String
+  submission   PlaceSubmission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+  userId       String
+  user         User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  content      String          @db.Text
+  isInternal   Boolean         @default(false)
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+
+  @@index([submissionId, createdAt])
+  @@map("place_submission_comments")
 }

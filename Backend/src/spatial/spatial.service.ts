@@ -76,6 +76,10 @@ export class SpatialService {
 
   constructor(private readonly prisma: PrismaService) {}
 
+  getAllDestinations(): SpatialLocation[] {
+    return this.lampungDestinations;
+  }
+
   async findNearbyDestinations(dto: GetNearbyDestinationsDto) {
     const { latitude, longitude, radius_km = 10, top_k = 10, category } = dto;
 
