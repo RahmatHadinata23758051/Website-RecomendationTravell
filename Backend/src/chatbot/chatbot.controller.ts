@@ -26,8 +26,10 @@ export class ChatbotController {
     const user = (req as Request & { user?: { id?: string } }).user;
     return this.chatbotService.askChatbot({
       ...dto,
-      userId: dto.userId || user?.id,
-      mode: user?.id ? 'authenticated' : dto.mode || 'public',
+      // A verified JWT always wins over a client-supplied id. The latter is
+      // retained for trusted internal callers that provide user context.
+      userId: user?.id || dto.userId,
+      mode: user?.id || dto.userId ? 'authenticated' : dto.mode || 'public',
     });
   }
 }
