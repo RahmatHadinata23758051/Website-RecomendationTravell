@@ -4,6 +4,8 @@ import { ConfigService } from '@nestjs/config';
 import { of } from 'rxjs';
 import { ReviewsService } from './reviews.service';
 import { PrismaService } from '../prisma/prisma.service';
+import { ActivityService } from '../activity/activity.service';
+import { AuthService } from '../auth/auth.service';
 
 describe('ReviewsService', () => {
   let service: ReviewsService;
@@ -44,6 +46,14 @@ describe('ReviewsService', () => {
     get: jest.fn().mockReturnValue('http://localhost:8000'),
   };
 
+  const mockActivityService = {
+    logActivity: jest.fn().mockResolvedValue(undefined),
+  };
+
+  const mockAuthService = {
+    addXp: jest.fn().mockResolvedValue(undefined),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -51,6 +61,8 @@ describe('ReviewsService', () => {
         { provide: PrismaService, useValue: mockPrismaService },
         { provide: HttpService, useValue: mockHttpService },
         { provide: ConfigService, useValue: mockConfigService },
+        { provide: ActivityService, useValue: mockActivityService },
+        { provide: AuthService, useValue: mockAuthService },
       ],
     }).compile();
 
