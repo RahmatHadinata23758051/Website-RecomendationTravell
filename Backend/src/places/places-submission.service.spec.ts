@@ -30,6 +30,9 @@ describe('PlacesSubmissionService', () => {
       count: jest.fn(),
       update: jest.fn(),
     },
+    placeSubmissionAuditLog: {
+      create: jest.fn(),
+    },
     user: {
       update: jest.fn(),
     },
@@ -93,6 +96,7 @@ describe('PlacesSubmissionService', () => {
     mockPrisma.user.update.mockResolvedValue({});
     mockPrisma.userActivity.create.mockResolvedValue({});
     mockPrisma.userActivity.findFirst.mockResolvedValue(null);
+    mockPrisma.placeSubmissionAuditLog.create.mockResolvedValue({});
     mockHttpService.post.mockReturnValue(of({ data: { status: 'success' } }));
     mockRedis.invalidateByPrefix.mockResolvedValue(undefined);
   });
@@ -480,6 +484,75 @@ describe('PlacesSubmissionService', () => {
       await expect(
         service.moderateSubmission('sub-1', 'admin-1', 'MARK_DUPLICATE'),
       ).rejects.toThrow(BadRequestException);
+    });
+
+    it('should record an audit log in transaction when status changes during moderation', async () => {
+      const existingSubmission = { id: 'sub-audit-1', status: 'PENDING' };
+      const updatedSubmission = { ...existingSubmission, status: 'REJECTED', rejectionReason: 'Foto buram' };
+
+      mockPrisma.placeSubmission.findUnique.mockResolvedValue(existingSubmission);
+      mockPrisma.placeSubmission.update.mockResolvedValue(updatedSubmission);
+
+      await service.moderateSubmission(
+        'sub-audit-1',
+        'admin-99',
+        'REJECT',
+        'Mohon upload foto lebih jelas',
+        'Foto buram',
+      );
+
+      expect(mockPrisma.placeSubmissionAuditLog.create).toHaveBeenCalledWith({
+        data: {
+          submissionId: 'sub-audit-1',
+          moderatorId: 'admin-99',
+          fromStatus: 'PENDING',
+          toStatus: 'REJECTED',
+          reason: 'Foto buram',
+          metadata: undefined,
+        },
+      });
+    });
+
+    it('should record an audit log with PROMOTION_FAILED when ML promotion sync fails', async () => {
+      const existingSubmission = {
+        id: 'sub-fail-promo',
+        name: 'Spot Indah',
+        status: 'PENDING',
+        submitterId: null,
+      };
+      const updatedSubmission = { ...existingSubmission, status: 'APPROVED' };
+
+      mockPrisma.placeSubmission.findUnique
+        .mockResolvedValueOnce(existingSubmission)
+        .mockResolvedValueOnce({ ...existingSubmission, status: 'APPROVED' });
+      mockPrisma.placeSubmission.update.mockResolvedValue(updatedSubmission);
+      mockHttpService.post.mockReturnValueOnce(
+        throwError(() => new Error('Connection refused')),
+      );
+
+      await service.moderateSubmission('sub-fail-promo', 'admin-1', 'APPROVE');
+
+      expect(mockPrisma.placeSubmissionAuditLog.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            submissionId: 'sub-fail-promo',
+            moderatorId: 'admin-1',
+            fromStatus: 'APPROVED',
+            toStatus: 'PROMOTION_FAILED',
+            reason: 'ML catalog synchronization failed',
+            metadata: { error: 'Connection refused' },
+          }),
+        }),
+      );
+    });
+  });
+
+  describe('PlaceSubmissionAuditLog immutability', () => {
+    it('should adhere to append-only contract without update or delete operations', () => {
+      expect((service as any).updateAuditLog).toBeUndefined();
+      expect((service as any).deleteAuditLog).toBeUndefined();
+      expect((service as any).updatePlaceSubmissionAuditLog).toBeUndefined();
+      expect((service as any).deletePlaceSubmissionAuditLog).toBeUndefined();
     });
   });
 });

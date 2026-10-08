@@ -234,9 +234,24 @@ export class PlacesSubmissionService {
       updateData.status = PlaceSubmissionStatus.DUPLICATE;
     }
 
-    const updated = await this.prisma.placeSubmission.update({
-      where: { id: submissionId },
-      data: updateData,
+    const updated = await this.prisma.$transaction(async (tx) => {
+      const transactionUpdated = await tx.placeSubmission.update({
+        where: { id: submissionId },
+        data: updateData,
+      });
+
+      await tx.placeSubmissionAuditLog.create({
+        data: {
+          submissionId,
+          moderatorId,
+          fromStatus: submission.status,
+          toStatus: transactionUpdated.status,
+          reason: rejectionReason ?? notes,
+          metadata: duplicateOfId ? { duplicateOfId } : undefined,
+        },
+      });
+
+      return transactionUpdated;
     });
 
     this.logger.log(`Submission ${submissionId} moderated by ${moderatorId}: ${action}`);
@@ -252,8 +267,8 @@ export class PlacesSubmissionService {
   async retryPromotion(submissionId: string, adminId: string) {
     const submission = await this.prisma.placeSubmission.findUnique({ where: { id: submissionId } });
     if (!submission) throw new NotFoundException('Submission not found');
-    if (submission.status !== 'APPROVED') {
-      throw new BadRequestException('Only APPROVED submissions can be retried for promotion');
+    if (submission.status !== 'APPROVED' && submission.status !== PlaceSubmissionStatus.PROMOTION_FAILED) {
+      throw new BadRequestException('Only APPROVED or PROMOTION_FAILED submissions can be retried for promotion');
     }
 
     this.logger.log(`Admin ${adminId} triggered promotion retry for ${submissionId}`);
@@ -362,9 +377,22 @@ export class PlacesSubmissionService {
           }),
         );
       } catch (error) {
-        await this.prisma.placeSubmission.update({
-          where: { id: submissionId },
-          data: { canonicalId, promotionError: error.message },
+        await this.prisma.$transaction(async (tx) => {
+          await tx.placeSubmission.update({
+            where: { id: submissionId },
+            data: { canonicalId, promotionError: error.message, status: PlaceSubmissionStatus.PROMOTION_FAILED },
+          });
+
+          await tx.placeSubmissionAuditLog.create({
+            data: {
+              submissionId,
+              moderatorId,
+              fromStatus: PlaceSubmissionStatus.APPROVED,
+              toStatus: PlaceSubmissionStatus.PROMOTION_FAILED,
+              reason: 'ML catalog synchronization failed',
+              metadata: { error: error.message },
+            },
+          });
         });
         throw new ServiceUnavailableException('ML catalog synchronization failed');
       }
