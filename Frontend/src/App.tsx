@@ -12,6 +12,7 @@ import { FavoritesPage } from './pages/FavoritesPage';
 import { PublicSharePage } from './pages/PublicSharePage';
 import { ProfilePage } from './pages/ProfilePage';
 import { PlaceSubmitPage } from './pages/PlaceSubmitPage';
+import { AdminSubmissionsPage } from './pages/AdminSubmissionsPage';
 
 export function App() {
   return (
@@ -54,6 +55,14 @@ export function App() {
                 }
               />
               <Route path="/share/:shareToken" element={<PublicSharePage />} />
+              <Route
+                path="/admin/submissions"
+                element={
+                  <ProtectedRoute requiredRole="ADMIN">
+                    <AdminSubmissionsPage />
+                  </ProtectedRoute>
+                }
+              />
               <Route
                 path="/submit-place"
                 element={
