@@ -1,4 +1,4 @@
-﻿-- PlaceSubmit submission workflow
+-- PlaceSubmit submission workflow
 -- Existing application tables (users, reviews, etc.) are intentionally not recreated here.
 
 CREATE TYPE "PlaceSubmissionStatus" AS ENUM (
