@@ -4,14 +4,16 @@ import { useAuth } from '../context/AuthContext';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
+  requiredRole?: string;
 }
 
 /**
  * Keeps user-private pages from mounting before authentication is available.
  * The current URL is preserved so the user can continue after signing in.
  */
-export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
-  const { isAuthenticated, isLoading, openAuthModal } = useAuth();
+export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, requiredRole }) => {
+  const { user, isAuthenticated, isLoading, openAuthModal } = useAuth();
+  const hasRequiredRole = !requiredRole || user?.role === requiredRole;
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
@@ -45,6 +47,20 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
           >
             Masuk atau daftar
           </button>
+        </section>
+      </div>
+    );
+  }
+
+  if (!hasRequiredRole) {
+    return (
+      <div className="flex min-h-[65vh] items-center justify-center px-4 pb-16 pt-28">
+        <section className="w-full max-w-md rounded-3xl border border-slate-200 bg-white p-8 text-center shadow-xl shadow-slate-900/5">
+          <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-rose-50 text-rose-600">
+            <LockKeyhole className="h-7 w-7" aria-hidden="true" />
+          </div>
+          <h1 className="font-display text-2xl font-extrabold text-slate-900">Akses terbatas</h1>
+          <p className="mt-3 text-sm leading-6 text-slate-500">Halaman ini hanya tersedia untuk administrator.</p>
         </section>
       </div>
     );
