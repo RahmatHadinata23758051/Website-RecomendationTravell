@@ -5,8 +5,13 @@ import {
   ForbiddenException,
   ConflictException,
   BadRequestException,
+  ServiceUnavailableException,
 } from '@nestjs/common';
+import { HttpService } from '@nestjs/axios';
+import { ConfigService } from '@nestjs/config';
+import { firstValueFrom } from 'rxjs';
 import { PrismaService } from '../prisma/prisma.service';
+import { RedisService } from '../redis/redis.service';
 import { SubmissionDedupService } from './submission-dedup.service';
 import { SubmitPlaceDto } from './dto/submit-place.dto';
 import { MySubmissionsDto, QuerySubmissionsDto } from './dto/query-submissions.dto';
@@ -19,6 +24,9 @@ export class PlacesSubmissionService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly dedupService: SubmissionDedupService,
+    private readonly redisService: RedisService,
+    private readonly httpService: HttpService,
+    private readonly configService: ConfigService,
   ) {}
 
   async submitPlace(
@@ -232,7 +240,106 @@ export class PlacesSubmissionService {
     });
 
     this.logger.log(`Submission ${submissionId} moderated by ${moderatorId}: ${action}`);
+
+    // Trigger promotion sync when approved
+    if (action === 'APPROVE') {
+      await this.promoteSubmissionInternal(submissionId, moderatorId);
+    }
+
     return updated;
+  }
+
+  private async promoteSubmissionInternal(submissionId: string, moderatorId: string) {
+    try {
+      // Get the approved submission details
+      const submission = await this.prisma.placeSubmission.findUnique({
+        where: { id: submissionId },
+      });
+
+      if (!submission) {
+        this.logger.warn(`Promotion skipped: submission ${submissionId} not found`);
+        return;
+      }
+
+      // 1. Invalidate Redis caches
+      this.logger.log(`Invalidating caches after promotion of ${submissionId}`);
+      await Promise.allSettled([
+        this.redisService.invalidateByPrefix('cache:destinations:'),
+        this.redisService.invalidateByPrefix('cache:rec:'),
+        this.redisService.invalidateByPrefix('cache:spatial:'),
+      ]);
+      this.logger.log(`Caches invalidated for promotion ${submissionId}`);
+
+      // 2. Award XP to submitter
+      if (submission.submitterId) {
+        await this.prisma.user.update({
+          where: { id: submission.submitterId },
+          data: { xp: { increment: 50 } },
+        });
+
+        await this.prisma.userActivity.create({
+          data: {
+            userId: submission.submitterId,
+            action: 'DESTINATION_APPROVED',
+            title: 'Tempat Wisata Disetujui',
+            subtitle: `${submission.name} telah resmi masuk ke katalog Kelana Lampung`,
+            iconType: 'star',
+          },
+        });
+
+        this.logger.log(`Awarded 50 XP to user ${submission.submitterId} for approved submission ${submissionId}`);
+      }
+
+      // 3. Publish the approved place to the ML engine's in-memory feature catalog.
+      const canonicalId = submission.canonicalId ?? `dest-sub-${submission.id}`;
+      const mlEngineUrl =
+        this.configService.get<string>('ML_ENGINE_URL') || 'http://localhost:8000';
+      const payload = {
+        canonical_id: canonicalId,
+        name: submission.name,
+        primary_category: submission.category,
+        category_tags: submission.categoryTags,
+        city_or_regency: submission.cityRegency,
+        address: submission.address,
+        district: submission.district,
+        village: submission.village,
+        latitude: submission.latitude,
+        longitude: submission.longitude,
+        description: submission.description,
+        image_url: submission.primaryPhotoUrl,
+        facilities: submission.facilities,
+        opening_hours: submission.openingHours,
+        price_min_idr: submission.priceMin,
+        price_max_idr: submission.priceMax,
+        price_status: submission.priceMin == null ? 'unknown' : 'paid',
+        operational_status: 'open',
+        review_count: 0,
+        review_rating_mean: null,
+      };
+
+      try {
+        await firstValueFrom(
+          this.httpService.post(`${mlEngineUrl}/api/v1/catalog/submissions`, payload, {
+            timeout: 5000,
+          }),
+        );
+      } catch (error) {
+        await this.prisma.placeSubmission.update({
+          where: { id: submissionId },
+          data: { canonicalId, promotionError: error.message },
+        });
+        throw new ServiceUnavailableException('ML catalog synchronization failed');
+      }
+
+      await this.prisma.placeSubmission.update({
+        where: { id: submissionId },
+        data: { canonicalId, promotedAt: new Date(), promotionError: null },
+      });
+      this.logger.log(`Promotion complete: ${submissionId} -> ${canonicalId}`);
+    } catch (error) {
+      this.logger.error(`Promotion failed for ${submissionId}: ${error.message}`, error.stack);
+      // Don't throw - promotion failure shouldn't rollback moderation
+    }
   }
 
   private getNewStatus(action: string): PlaceSubmissionStatus {

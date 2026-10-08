@@ -148,6 +148,9 @@ model PlaceSubmission {
   duplicateOfId        String?
   duplicateConfidence  Float?
   duplicateNotes       String?
+  canonicalId          String?                @unique
+  promotedAt           DateTime?
+  promotionError       String?
   ipAddress            String?
   userAgent            String?
   submittedAt          DateTime               @default(now())

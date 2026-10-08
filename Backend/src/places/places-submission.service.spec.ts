@@ -1,7 +1,11 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { HttpService } from '@nestjs/axios';
+import { ConfigService } from '@nestjs/config';
+import { of, throwError } from 'rxjs';
 import { PlacesSubmissionService } from './places-submission.service';
 import { SubmissionDedupService } from './submission-dedup.service';
 import { PrismaService } from '../prisma/prisma.service';
+import { RedisService } from '../redis/redis.service';
 import { SubmitPlaceDto } from './dto/submit-place.dto';
 import {
   NotFoundException,
@@ -21,10 +25,28 @@ describe('PlacesSubmissionService', () => {
       count: jest.fn(),
       update: jest.fn(),
     },
+    user: {
+      update: jest.fn(),
+    },
+    userActivity: {
+      create: jest.fn(),
+    },
   };
 
   const mockDedupService = {
     checkDuplicate: jest.fn().mockResolvedValue({ isDuplicate: false }),
+  };
+
+  const mockRedis = {
+    invalidateByPrefix: jest.fn().mockResolvedValue(undefined),
+  };
+
+  const mockHttpService = {
+    post: jest.fn().mockReturnValue(of({ data: { status: 'success' } })),
+  };
+
+  const mockConfigService = {
+    get: jest.fn().mockReturnValue('http://localhost:8000'),
   };
 
   beforeEach(async () => {
@@ -38,6 +60,18 @@ describe('PlacesSubmissionService', () => {
         {
           provide: SubmissionDedupService,
           useValue: mockDedupService,
+        },
+        {
+          provide: RedisService,
+          useValue: mockRedis,
+        },
+        {
+          provide: HttpService,
+          useValue: mockHttpService,
+        },
+        {
+          provide: ConfigService,
+          useValue: mockConfigService,
         },
       ],
     }).compile();
@@ -267,6 +301,101 @@ describe('PlacesSubmissionService', () => {
       await expect(
         service.moderateSubmission('sub-1', 'admin-1', 'REJECT'),
       ).rejects.toThrow(BadRequestException);
+    });
+
+    it('should promote an approved submission, invalidate caches, and award XP', async () => {
+      const existingSubmission = {
+        id: 'sub-1',
+        name: 'Pantai Baru',
+        status: 'PENDING',
+        submitterId: 'user-1',
+      };
+      const updatedSubmission = { ...existingSubmission, status: 'APPROVED' };
+
+      mockPrisma.placeSubmission.findUnique
+        .mockResolvedValueOnce(existingSubmission)
+        .mockResolvedValueOnce({ ...existingSubmission, status: 'APPROVED' });
+      mockPrisma.placeSubmission.update.mockResolvedValue(updatedSubmission);
+
+      const result = await service.moderateSubmission(
+        'sub-1',
+        'admin-1',
+        'APPROVE',
+        'Data terverifikasi',
+      );
+
+      expect(result.status).toBe('APPROVED');
+      expect(mockRedis.invalidateByPrefix).toHaveBeenCalledTimes(3);
+      expect(mockHttpService.post).toHaveBeenCalledWith(
+        'http://localhost:8000/api/v1/catalog/submissions',
+        expect.objectContaining({
+          canonical_id: 'dest-sub-sub-1',
+          name: 'Pantai Baru',
+        }),
+        expect.any(Object),
+      );
+      expect(mockPrisma.user.update).toHaveBeenCalledWith({
+        where: { id: 'user-1' },
+        data: { xp: { increment: 50 } },
+      });
+      expect(mockPrisma.userActivity.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            userId: 'user-1',
+            action: 'DESTINATION_APPROVED',
+          }),
+        }),
+      );
+    });
+
+    it('should not fail moderation when promotion side effects fail', async () => {
+      const existingSubmission = {
+        id: 'sub-1',
+        name: 'Pantai Baru',
+        status: 'PENDING',
+        submitterId: 'user-1',
+      };
+      const updatedSubmission = { ...existingSubmission, status: 'APPROVED' };
+
+      mockPrisma.placeSubmission.findUnique
+        .mockResolvedValueOnce(existingSubmission)
+        .mockResolvedValueOnce({ ...existingSubmission, status: 'APPROVED' });
+      mockPrisma.placeSubmission.update.mockResolvedValue(updatedSubmission);
+      mockPrisma.user.update.mockRejectedValue(new Error('temporary database error'));
+
+      await expect(
+        service.moderateSubmission('sub-1', 'admin-1', 'APPROVE'),
+      ).resolves.toEqual(updatedSubmission);
+    });
+
+    it('should retain the approved status when ML synchronization fails', async () => {
+      const existingSubmission = {
+        id: 'sub-ml-failure',
+        name: 'Pantai Gagal Sync',
+        status: 'PENDING',
+        submitterId: null,
+      };
+      const updatedSubmission = { ...existingSubmission, status: 'APPROVED' };
+
+      mockPrisma.placeSubmission.findUnique
+        .mockResolvedValueOnce(existingSubmission)
+        .mockResolvedValueOnce({ ...existingSubmission, status: 'APPROVED' });
+      mockPrisma.placeSubmission.update.mockResolvedValue(updatedSubmission);
+      mockHttpService.post.mockReturnValueOnce(
+        throwError(() => new Error('ML unavailable')),
+      );
+
+      await expect(
+        service.moderateSubmission('sub-ml-failure', 'admin-1', 'APPROVE'),
+      ).resolves.toEqual(updatedSubmission);
+      expect(mockPrisma.placeSubmission.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            canonicalId: 'dest-sub-sub-ml-failure',
+            promotionError: 'ML unavailable',
+          }),
+        }),
+      );
     });
 
     it('should mark as duplicate with required duplicateOfId', async () => {
