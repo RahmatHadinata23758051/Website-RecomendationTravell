@@ -290,36 +290,42 @@ export class PlacesSubmissionService {
       ]);
       this.logger.log(`Caches invalidated for promotion ${submissionId}`);
 
-      // 2. Award XP to submitter (idempotent: only if no prior approval activity)
+      // 2. Award XP to the submitter in one transaction. The activity subtitle is
+      // the submission id, so an approval/retry can only award this submission once
+      // (and cannot accidentally match another approved submission by the same user).
       if (submission.submitterId) {
-        const existingActivity = await this.prisma.userActivity.findFirst({
-          where: {
-            userId: submission.submitterId,
-            action: 'DESTINATION_APPROVED',
-            title: 'Tempat Wisata Disetujui',
-          },
-        });
+        await this.prisma.$transaction(async (tx) => {
+          const activitySubtitle = `Submission: ${submission.id}`;
+          const existingActivity = await tx.userActivity.findFirst({
+            where: {
+              userId: submission.submitterId,
+              action: 'DESTINATION_APPROVED',
+              subtitle: activitySubtitle,
+            },
+          });
 
-        if (!existingActivity) {
-          await this.prisma.user.update({
+          if (existingActivity) {
+            this.logger.log(`XP already awarded for ${submissionId} to user ${submission.submitterId}, skipping`);
+            return;
+          }
+
+          await tx.user.update({
             where: { id: submission.submitterId },
             data: { xp: { increment: 50 } },
           });
 
-          await this.prisma.userActivity.create({
+          await tx.userActivity.create({
             data: {
               userId: submission.submitterId,
               action: 'DESTINATION_APPROVED',
               title: 'Tempat Wisata Disetujui',
-              subtitle: `${submission.name} telah resmi masuk ke katalog Kelana Lampung`,
+              subtitle: activitySubtitle,
               iconType: 'star',
             },
           });
 
           this.logger.log(`Awarded 50 XP to user ${submission.submitterId} for approved submission ${submissionId}`);
-        } else {
-          this.logger.log(`XP already awarded for ${submissionId} to user ${submission.submitterId}, skipping`);
-        }
+        });
       }
 
       // 3. Publish the approved place to the ML engine's in-memory feature catalog.
