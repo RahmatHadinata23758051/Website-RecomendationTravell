@@ -15,6 +15,7 @@ import { AuthService } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
+import { Throttle } from '@nestjs/throttler';
 
 @Controller('api/v1/auth')
 export class AuthController {
@@ -39,6 +40,7 @@ export class AuthController {
   }
 
   @Post('login')
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
   @HttpCode(HttpStatus.OK)
   async login(
     @Body() loginDto: LoginDto,
@@ -58,6 +60,7 @@ export class AuthController {
   }
 
   @Post('refresh')
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
   @HttpCode(HttpStatus.OK)
   async refresh(
     @Req() req: Request,

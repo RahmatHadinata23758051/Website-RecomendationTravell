@@ -21,6 +21,7 @@ import { PlacesSubmissionService } from './places-submission.service';
 import { SubmitPlaceDto } from './dto/submit-place.dto';
 import { QuerySubmissionsDto, MySubmissionsDto } from './dto/query-submissions.dto';
 import { JwtAuthGuard, OptionalJwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { Throttle } from '@nestjs/throttler';
 
 @ApiTags('Place Submissions')
 @Controller('api/v1/places/submissions')
@@ -28,6 +29,7 @@ export class PlacesSubmissionController {
   constructor(private readonly submissionService: PlacesSubmissionService) {}
 
   @Post()
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth('bearer')
   @ApiOperation({ summary: 'Submit a new place for catalog consideration' })
