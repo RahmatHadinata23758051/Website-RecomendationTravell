@@ -267,6 +267,10 @@ ${personalContext ? `\n${personalContext}` : ''}
                 regency: f.regency,
                 price: f.price,
                 rating: f.rating,
+                 numericPrice: f.numericPrice || 0,
+                 category: f.category || 'Alam',
+                 hours: f.hours || '08:00 - 17:00 WIB',
+                 highlight: f.highlight || f.description || 'Destinasi wisata Lampung.',
               })),
             },
           };
@@ -326,6 +330,10 @@ ${personalContext ? `\n${personalContext}` : ''}
                   regency: f.regency,
                   price: f.price,
                   rating: f.rating,
+                 numericPrice: f.numericPrice || 0,
+                 category: f.category || 'Alam',
+                 hours: f.hours || '08:00 - 17:00 WIB',
+                 highlight: f.highlight || f.description || 'Destinasi wisata Lampung.',
                 })),
               },
             };
@@ -589,6 +597,10 @@ ${personalContext ? `\n${personalContext}` : ''}
             regency: f.regency,
             price: f.price,
             rating: f.rating,
+                 numericPrice: f.numericPrice || 0,
+                 category: f.category || 'Alam',
+                 hours: f.hours || '08:00 - 17:00 WIB',
+                 highlight: f.highlight || f.description || 'Destinasi wisata Lampung.',
           })),
         },
       };
