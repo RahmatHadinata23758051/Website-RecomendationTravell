@@ -30,6 +30,7 @@ describe('PlacesSubmissionService', () => {
     },
     userActivity: {
       create: jest.fn(),
+      findFirst: jest.fn().mockResolvedValue(null),
     },
   };
 

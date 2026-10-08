@@ -249,6 +249,20 @@ export class PlacesSubmissionService {
     return updated;
   }
 
+  async retryPromotion(submissionId: string, adminId: string) {
+    const submission = await this.prisma.placeSubmission.findUnique({ where: { id: submissionId } });
+    if (!submission) throw new NotFoundException('Submission not found');
+    if (submission.status !== 'APPROVED') {
+      throw new BadRequestException('Only APPROVED submissions can be retried for promotion');
+    }
+
+    this.logger.log(`Admin ${adminId} triggered promotion retry for ${submissionId}`);
+    await this.promoteSubmissionInternal(submissionId, adminId);
+
+    const updated = await this.prisma.placeSubmission.findUnique({ where: { id: submissionId } });
+    return updated;
+  }
+
   private async promoteSubmissionInternal(submissionId: string, moderatorId: string) {
     try {
       // Get the approved submission details
@@ -261,6 +275,12 @@ export class PlacesSubmissionService {
         return;
       }
 
+      // Idempotency check: already promoted successfully
+      if (submission.promotedAt && !submission.promotionError) {
+        this.logger.log(`Promotion skipped: ${submissionId} already promoted to ${submission.canonicalId}`);
+        return;
+      }
+
       // 1. Invalidate Redis caches
       this.logger.log(`Invalidating caches after promotion of ${submissionId}`);
       await Promise.allSettled([
@@ -270,24 +290,36 @@ export class PlacesSubmissionService {
       ]);
       this.logger.log(`Caches invalidated for promotion ${submissionId}`);
 
-      // 2. Award XP to submitter
+      // 2. Award XP to submitter (idempotent: only if no prior approval activity)
       if (submission.submitterId) {
-        await this.prisma.user.update({
-          where: { id: submission.submitterId },
-          data: { xp: { increment: 50 } },
-        });
-
-        await this.prisma.userActivity.create({
-          data: {
+        const existingActivity = await this.prisma.userActivity.findFirst({
+          where: {
             userId: submission.submitterId,
             action: 'DESTINATION_APPROVED',
             title: 'Tempat Wisata Disetujui',
-            subtitle: `${submission.name} telah resmi masuk ke katalog Kelana Lampung`,
-            iconType: 'star',
           },
         });
 
-        this.logger.log(`Awarded 50 XP to user ${submission.submitterId} for approved submission ${submissionId}`);
+        if (!existingActivity) {
+          await this.prisma.user.update({
+            where: { id: submission.submitterId },
+            data: { xp: { increment: 50 } },
+          });
+
+          await this.prisma.userActivity.create({
+            data: {
+              userId: submission.submitterId,
+              action: 'DESTINATION_APPROVED',
+              title: 'Tempat Wisata Disetujui',
+              subtitle: `${submission.name} telah resmi masuk ke katalog Kelana Lampung`,
+              iconType: 'star',
+            },
+          });
+
+          this.logger.log(`Awarded 50 XP to user ${submission.submitterId} for approved submission ${submissionId}`);
+        } else {
+          this.logger.log(`XP already awarded for ${submissionId} to user ${submission.submitterId}, skipping`);
+        }
       }
 
       // 3. Publish the approved place to the ML engine's in-memory feature catalog.

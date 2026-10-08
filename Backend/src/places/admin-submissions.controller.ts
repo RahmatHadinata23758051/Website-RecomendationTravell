@@ -67,4 +67,17 @@ export class AdminSubmissionsController {
       dto.duplicateOfId,
     );
   }
+
+  @Patch(':id/promote')
+  @ApiOperation({ summary: 'Retry promotion synchronization for an approved place submission' })
+  @ApiParam({ name: 'id', description: 'Submission UUID' })
+  @ApiResponse({ status: 200, description: 'Promotion retry attempted' })
+  @ApiResponse({ status: 400, description: 'Submission is not approved' })
+  @ApiResponse({ status: 404, description: 'Submission not found' })
+  async retryPromotion(
+    @Param('id') id: string,
+    @Req() req: any,
+  ) {
+    return this.submissionService.retryPromotion(id, req.user.id);
+  }
 }
