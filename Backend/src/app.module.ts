@@ -16,6 +16,7 @@ import { ChatbotModule } from './chatbot/chatbot.module';
 import { ItinerariesModule } from './itineraries/itineraries.module';
 
 import { ActivityModule } from './activity/activity.module';
+import { PlacesSubmissionModule } from './places/places-submission.module';
 
 @Module({
   imports: [
@@ -39,6 +40,7 @@ import { ActivityModule } from './activity/activity.module';
     ChatbotModule,
     ItinerariesModule,
     ActivityModule,
+    PlacesSubmissionModule,
   ],
   controllers: [AppController],
   providers: [
