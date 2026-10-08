@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
+import * as crypto from 'crypto';
 import * as bcrypt from 'bcrypt';
 import { PrismaService } from '../prisma/prisma.service';
 import { RegisterDto } from './dto/register.dto';
@@ -26,6 +27,38 @@ export class AuthService {
     private readonly activityService: ActivityService,
     private readonly redisService: RedisService,
   ) {}
+
+  /**
+   * Hash a token using SHA-256 for secure Redis key storage.
+   * This ensures raw JWT tokens are never visible in Redis MONITOR, key dumps, or logs.
+   */
+  private hashToken(token: string): string {
+    return crypto.createHash('sha256').update(token).digest('hex');
+  }
+
+  /**
+   * Blacklists a token by storing its SHA-256 hash in Redis.
+   */
+  async blacklistToken(token: string, ttlSeconds: number = this.refreshTokenTtlSeconds): Promise<void> {
+    const tokenHash = this.hashToken(token);
+    await this.redisService.set(
+      `blacklist:token:${tokenHash}`,
+      'revoked',
+      ttlSeconds,
+    );
+  }
+
+  /**
+   * Checks whether a token is blacklisted by checking its SHA-256 hash in Redis.
+   */
+  async isTokenBlacklisted(token: string): Promise<boolean> {
+    const tokenHash = this.hashToken(token);
+    const result = await this.redisService.get(
+      `blacklist:token:${tokenHash}`,
+    );
+    return Boolean(result);
+  }
+
 
   async register(registerDto: RegisterDto) {
     const existingUser = await this.prisma.user.findUnique({
@@ -193,11 +226,7 @@ export class AuthService {
 
   async logout(refreshTokenString?: string): Promise<void> {
     if (refreshTokenString) {
-      await this.redisService.set(
-        `blacklist:refresh:${refreshTokenString}`,
-        'revoked',
-        this.refreshTokenTtlSeconds,
-      );
+      await this.blacklistToken(refreshTokenString);
     }
   }
 
@@ -206,9 +235,7 @@ export class AuthService {
       throw new UnauthorizedException('Refresh token is missing');
     }
 
-    const isBlacklisted = await this.redisService.get(
-      `blacklist:refresh:${refreshTokenString}`,
-    );
+    const isBlacklisted = await this.isTokenBlacklisted(refreshTokenString);
     if (isBlacklisted) {
       throw new UnauthorizedException('Refresh token has been revoked');
     }
@@ -227,11 +254,7 @@ export class AuthService {
       }
 
       // Invalidate old token to prevent token reuse
-      await this.redisService.set(
-        `blacklist:refresh:${refreshTokenString}`,
-        'revoked',
-        this.refreshTokenTtlSeconds,
-      );
+      await this.blacklistToken(refreshTokenString);
 
       const tokens = await this.generateTokens(user.id, user.email, user.role);
 
