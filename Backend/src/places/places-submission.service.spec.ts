@@ -18,6 +18,11 @@ describe('PlacesSubmissionService', () => {
   let prisma: PrismaService;
 
   const mockPrisma = {
+    $transaction: jest.fn((callbackOrOperations) =>
+      typeof callbackOrOperations === 'function'
+        ? callbackOrOperations(mockPrisma)
+        : Promise.all(callbackOrOperations),
+    ),
     placeSubmission: {
       create: jest.fn(),
       findMany: jest.fn(),
@@ -80,6 +85,16 @@ describe('PlacesSubmissionService', () => {
     service = module.get<PlacesSubmissionService>(PlacesSubmissionService);
     prisma = module.get<PrismaService>(PrismaService);
     jest.clearAllMocks();
+    mockPrisma.$transaction.mockImplementation((callbackOrOperations) =>
+      typeof callbackOrOperations === 'function'
+        ? callbackOrOperations(mockPrisma)
+        : Promise.all(callbackOrOperations),
+    );
+    mockPrisma.user.update.mockResolvedValue({});
+    mockPrisma.userActivity.create.mockResolvedValue({});
+    mockPrisma.userActivity.findFirst.mockResolvedValue(null);
+    mockHttpService.post.mockReturnValue(of({ data: { status: 'success' } }));
+    mockRedis.invalidateByPrefix.mockResolvedValue(undefined);
   });
 
   it('should be defined', () => {
@@ -317,6 +332,7 @@ describe('PlacesSubmissionService', () => {
         .mockResolvedValueOnce(existingSubmission)
         .mockResolvedValueOnce({ ...existingSubmission, status: 'APPROVED' });
       mockPrisma.placeSubmission.update.mockResolvedValue(updatedSubmission);
+      mockPrisma.userActivity.findFirst.mockResolvedValue(null);
 
       const result = await service.moderateSubmission(
         'sub-1',
@@ -344,6 +360,7 @@ describe('PlacesSubmissionService', () => {
           data: expect.objectContaining({
             userId: 'user-1',
             action: 'DESTINATION_APPROVED',
+            subtitle: 'Submission: sub-1',
           }),
         }),
       );
@@ -367,6 +384,40 @@ describe('PlacesSubmissionService', () => {
       await expect(
         service.moderateSubmission('sub-1', 'admin-1', 'APPROVE'),
       ).resolves.toEqual(updatedSubmission);
+    });
+
+    it('should isolate XP rewards by submission and skip duplicate approvals', async () => {
+      const submission = {
+        id: 'sub-isolated',
+        name: 'Pantai Isolated',
+        status: 'APPROVED',
+        submitterId: 'user-1',
+      };
+
+      const promotedSubmission = { ...submission, promotedAt: new Date(), promotionError: null };
+      mockPrisma.placeSubmission.findUnique
+        .mockResolvedValueOnce(submission)
+        .mockResolvedValueOnce(submission)
+        .mockResolvedValueOnce(promotedSubmission)
+        .mockResolvedValueOnce(promotedSubmission)
+        .mockResolvedValueOnce(promotedSubmission);
+      mockPrisma.placeSubmission.update.mockResolvedValue(submission);
+      mockPrisma.userActivity.findFirst
+        .mockResolvedValueOnce(null)
+        .mockResolvedValueOnce({ id: 'activity-1', subtitle: 'Submission: sub-isolated' });
+
+      await service.retryPromotion('sub-isolated', 'admin-1');
+      await service.retryPromotion('sub-isolated', 'admin-1');
+
+      expect(mockPrisma.user.update).toHaveBeenCalledTimes(1);
+      expect(mockPrisma.userActivity.create).toHaveBeenCalledTimes(1);
+      expect(mockPrisma.userActivity.findFirst).toHaveBeenCalledWith({
+        where: {
+          userId: 'user-1',
+          action: 'DESTINATION_APPROVED',
+          subtitle: 'Submission: sub-isolated',
+        },
+      });
     });
 
     it('should retain the approved status when ML synchronization fails', async () => {
