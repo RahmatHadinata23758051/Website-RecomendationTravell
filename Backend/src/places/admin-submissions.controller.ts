@@ -22,6 +22,7 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { UserRole } from '@prisma/client';
+import { Throttle } from '@nestjs/throttler';
 
 @ApiTags('Admin - Place Submissions')
 @Controller('api/v1/admin/places/submissions')
@@ -48,6 +49,7 @@ export class AdminSubmissionsController {
   }
 
   @Patch(':id/review')
+  @Throttle({ default: { limit: 30, ttl: 60000 } })
   @ApiOperation({ summary: 'Review and update place submission status (approve, reject, etc.)' })
   @ApiParam({ name: 'id', description: 'Submission UUID' })
   @ApiResponse({ status: 200, description: 'Submission updated successfully' })
@@ -69,6 +71,7 @@ export class AdminSubmissionsController {
   }
 
   @Patch(':id/promote')
+  @Throttle({ default: { limit: 30, ttl: 60000 } })
   @ApiOperation({ summary: 'Retry promotion synchronization for an approved place submission' })
   @ApiParam({ name: 'id', description: 'Submission UUID' })
   @ApiResponse({ status: 200, description: 'Promotion retry attempted' })
