@@ -60,6 +60,9 @@ export class SubmitPlaceDto {
   @IsString()
   @IsNotEmpty()
   @Length(2, 200)
+  @Matches(/^(?!.*(?:<|>|script|javascript:|onerror|drop\s+table|\$\{|<%|\{\{))/is, {
+    message: 'name contains unsafe markup or injection content',
+  })
   name: string;
 
   @ApiProperty({ description: 'Normalized category', enum: TOURISM_CATEGORIES, example: 'beach' })
@@ -80,6 +83,9 @@ export class SubmitPlaceDto {
   @IsString()
   @IsNotEmpty()
   @Length(5, 500)
+  @Matches(/^(?!.*(?:<|>|script|javascript:|drop\s+table))/is, {
+    message: 'address contains unsafe markup or injection content',
+  })
   address: string;
 
   @ApiProperty({ description: 'City or regency name', enum: LAMPUNG_REGIONS, example: 'Kabupaten Tanggamus' })
@@ -125,11 +131,17 @@ export class SubmitPlaceDto {
   @ApiPropertyOptional({ description: 'Official website URL' })
   @IsOptional()
   @IsString()
+  @Matches(/^https?:\/\//i, {
+    message: 'website must use http or https protocol',
+  })
   website?: string;
 
   @ApiPropertyOptional({ description: 'Detailed destination description' })
   @IsOptional()
   @IsString()
+  @Matches(/^(?!.*(?:<|>|script|javascript:|onerror|drop\s+table|\$\{|<%|\{\{))/is, {
+    message: 'description contains unsafe markup or injection content',
+  })
   description?: string;
 
   @ApiPropertyOptional({ description: 'Operating hours JSON mapping', example: { monday: '08:00-17:00' } })
