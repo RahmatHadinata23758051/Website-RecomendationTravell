@@ -4,6 +4,7 @@ import { Navbar } from './components/Navbar';
 import { Footer } from './components/Footer';
 import { AuthModal } from './components/AuthModal';
 import { RadenGajahChatWidget } from './components/RadenGajahChatWidget';
+import { ProtectedRoute } from './components/ProtectedRoute';
 import { HomePage } from './pages/HomePage';
 import { ExplorePage } from './pages/ExplorePage';
 import { PlannerPage } from './pages/PlannerPage';
@@ -28,11 +29,39 @@ export function App() {
             <Routes>
               <Route path="/" element={<HomePage />} />
               <Route path="/explore" element={<ExplorePage />} />
-              <Route path="/planner" element={<PlannerPage />} />
-              <Route path="/favorites" element={<FavoritesPage />} />
-              <Route path="/profile" element={<ProfilePage />} />
+              <Route
+                path="/planner"
+                element={
+                  <ProtectedRoute>
+                    <PlannerPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/favorites"
+                element={
+                  <ProtectedRoute>
+                    <FavoritesPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/profile"
+                element={
+                  <ProtectedRoute>
+                    <ProfilePage />
+                  </ProtectedRoute>
+                }
+              />
               <Route path="/share/:shareToken" element={<PublicSharePage />} />
-              <Route path="/submit-place" element={<PlaceSubmitPage />} />
+              <Route
+                path="/submit-place"
+                element={
+                  <ProtectedRoute>
+                    <PlaceSubmitPage />
+                  </ProtectedRoute>
+                }
+              />
             </Routes>
           </main>
           <Footer />
