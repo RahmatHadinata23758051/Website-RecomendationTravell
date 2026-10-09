@@ -9,13 +9,13 @@ import {
   Clock3,
   FilePlus2,
   Info,
+  Lightbulb,
   Loader2,
   MapPin,
   RefreshCw,
   RotateCcw,
   Send,
   ShieldAlert,
-  Sparkles,
   XCircle,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
@@ -26,6 +26,7 @@ import {
   SubmissionStatus,
   submitPlace,
 } from '../services/placeSubmissionsApi';
+import { SafeImage } from '../components/SafeImage';
 
 const REGIONS = [
   'Kota Bandar Lampung',
@@ -221,7 +222,7 @@ export const PlaceSubmitPage: React.FC = () => {
               {step === 3 && <StepThree form={form} update={update} />}
               <div className="mt-8 flex justify-between gap-3 border-t border-slate-100 pt-6"><button type="button" onClick={() => setStep((current) => Math.max(1, current - 1))} disabled={step === 1} className="rounded-full px-5 py-3 text-sm font-bold text-slate-500 transition hover:bg-slate-50 disabled:invisible">Sebelumnya</button>{step < 3 ? <button type="button" onClick={nextStep} className="inline-flex items-center gap-2 rounded-full bg-teal-600 px-6 py-3 text-sm font-bold text-white shadow-lg shadow-teal-600/20 transition hover:bg-teal-700">Lanjut <ArrowRight className="h-4 w-4" /></button> : <button type="submit" disabled={isSubmitting} className="inline-flex items-center gap-2 rounded-full bg-teal-600 px-6 py-3 text-sm font-bold text-white shadow-lg shadow-teal-600/20 transition hover:bg-teal-700 disabled:cursor-wait disabled:opacity-70">{isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />} {isSubmitting ? 'Mengirim…' : 'Kirim pengajuan'}</button>}</div>
             </form>
-            <aside className="hidden rounded-[2rem] border border-teal-100 bg-[#e9f8f5] p-6 lg:block"><Sparkles className="h-6 w-6 text-teal-600" /><h2 className="mt-5 font-display text-xl font-extrabold text-slate-900">Berbagi dengan bertanggung jawab</h2><ul className="mt-5 space-y-4 text-sm leading-5 text-slate-600"><li className="flex gap-3"><CheckCircle2 className="h-5 w-5 shrink-0 text-teal-600" />Pastikan nama dan lokasi tempat sudah benar.</li><li className="flex gap-3"><CheckCircle2 className="h-5 w-5 shrink-0 text-teal-600" />Gunakan foto atau tautan resmi jika tersedia.</li><li className="flex gap-3"><CheckCircle2 className="h-5 w-5 shrink-0 text-teal-600" />Tim kami akan meninjau sebelum ditampilkan publik.</li></ul></aside>
+            <aside className="hidden rounded-[2rem] border border-teal-100 bg-[#e9f8f5] p-6 lg:block"><Lightbulb aria-hidden="true" className="h-6 w-6 text-teal-600" /><h2 className="mt-5 font-display text-xl font-extrabold text-slate-900">Berbagi dengan bertanggung jawab</h2><ul className="mt-5 space-y-4 text-sm leading-5 text-slate-600"><li className="flex gap-3"><CheckCircle2 className="h-5 w-5 shrink-0 text-teal-600" />Pastikan nama dan lokasi tempat sudah benar.</li><li className="flex gap-3"><CheckCircle2 className="h-5 w-5 shrink-0 text-teal-600" />Gunakan foto atau tautan resmi jika tersedia.</li><li className="flex gap-3"><CheckCircle2 className="h-5 w-5 shrink-0 text-teal-600" />Tim kami akan meninjau sebelum ditampilkan publik.</li></ul></aside>
           </div>
         )}
       </div>
@@ -251,5 +252,40 @@ function SubmissionDashboard({ submissions, isLoading, onRefresh, onStart }: { s
 
 function SubmissionCard({ submission }: { submission: PlaceSubmission }) {
   const status = STATUS_COPY[submission.status];
-  return <article className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"><div className="flex gap-4 p-5"><div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-teal-50 text-teal-600">{submission.primaryPhotoUrl ? <img src={submission.primaryPhotoUrl} alt="" className="h-full w-full object-cover" /> : <MapPin className="h-5 w-5" />}</div><div className="min-w-0"><h3 className="truncate font-display text-lg font-extrabold text-slate-900">{submission.name}</h3><p className="mt-1 truncate text-xs text-slate-500">{submission.cityRegency} · {submission.category}</p></div></div><div className="border-t border-slate-100 px-5 py-4"><span className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-bold ${status.tone}`}>{status.icon}{status.label}</span>{(submission.rejectionReason || submission.moderationNotes || submission.duplicateNotes) && <p className="mt-3 rounded-xl bg-slate-50 p-3 text-xs leading-5 text-slate-600">{submission.rejectionReason || submission.moderationNotes || submission.duplicateNotes}</p>}<p className="mt-3 text-[11px] text-slate-400">Dikirim {new Date(submission.submittedAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}</p></div></article>;
+  return (
+    <article className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
+      <div className="flex gap-4 p-5">
+        <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-teal-50 text-teal-600">
+          {submission.primaryPhotoUrl ? (
+            <SafeImage
+              src={submission.primaryPhotoUrl}
+              alt={`Foto tempat ${submission.name}`}
+              className="h-full w-full object-cover"
+              fallbackSrc="/assets/images/heroes/hero-pahawang-bg.png"
+            />
+          ) : (
+            <MapPin className="h-5 w-5" />
+          )}
+        </div>
+        <div className="min-w-0">
+          <h3 className="truncate font-display text-lg font-extrabold text-slate-900">{submission.name}</h3>
+          <p className="mt-1 truncate text-xs text-slate-500">{submission.cityRegency} · {submission.category}</p>
+        </div>
+      </div>
+      <div className="border-t border-slate-100 px-5 py-4">
+        <span className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-bold ${status.tone}`}>
+          {status.icon}
+          {status.label}
+        </span>
+        {(submission.rejectionReason || submission.moderationNotes || submission.duplicateNotes) && (
+          <p className="mt-3 rounded-xl bg-slate-50 p-3 text-xs leading-5 text-slate-600">
+            {submission.rejectionReason || submission.moderationNotes || submission.duplicateNotes}
+          </p>
+        )}
+        <p className="mt-3 text-[11px] text-slate-400">
+          Dikirim {new Date(submission.submittedAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}
+        </p>
+      </div>
+    </article>
+  );
 }

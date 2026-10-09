@@ -17,6 +17,7 @@ import {
   XCircle,
 } from 'lucide-react';
 import { apiClient } from '../lib/api';
+import { SafeImage } from '../components/SafeImage';
 
 type ModerationStatus =
   | 'PENDING'
@@ -278,7 +279,34 @@ function IconAction({ label, icon, onClick, tone = 'neutral' }: { label: string;
 }
 
 function DetailModal({ submission, onClose }: { submission: Submission; onClose: () => void }) {
-  return <Modal title="Submission detail" onClose={onClose}><div className="space-y-5">{submission.primaryPhotoUrl && <img src={submission.primaryPhotoUrl} alt="" className="h-40 w-full rounded-2xl object-cover" />}{submission.description && <p className="rounded-xl bg-slate-50 p-3 text-sm leading-6 text-slate-600">{submission.description}</p>}<div className="grid grid-cols-2 gap-4 text-xs"><DetailItem label="Status"><StatusBadge status={submission.status} /></DetailItem><DetailItem label="Submitted at">{formatDate(submission.submittedAt)}</DetailItem><DetailItem label="Category">{submission.category}</DetailItem><DetailItem label="Submitter">{submission.submitter?.fullName || 'Anonymous'}</DetailItem><DetailItem label="Address">{submission.address}, {submission.cityRegency}</DetailItem><DetailItem label="Coordinates">{submission.latitude ?? '—'}, {submission.longitude ?? '—'}</DetailItem></div>{(submission.rejectionReason || submission.moderationNotes || submission.promotionError) && <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs leading-5 text-amber-800">{submission.rejectionReason || submission.moderationNotes || submission.promotionError}</div>}</div></Modal>;
+  return (
+    <Modal title="Submission detail" onClose={onClose}>
+      <div className="space-y-5">
+        {submission.primaryPhotoUrl && (
+          <SafeImage
+            src={submission.primaryPhotoUrl}
+            alt={`Foto pengajuan ${submission.name}`}
+            className="h-40 w-full rounded-2xl object-cover"
+            fallbackSrc="/assets/images/heroes/hero-pahawang-bg.png"
+          />
+        )}
+        {submission.description && <p className="rounded-xl bg-slate-50 p-3 text-sm leading-6 text-slate-600">{submission.description}</p>}
+        <div className="grid grid-cols-2 gap-4 text-xs">
+          <DetailItem label="Status"><StatusBadge status={submission.status} /></DetailItem>
+          <DetailItem label="Submitted at">{formatDate(submission.submittedAt)}</DetailItem>
+          <DetailItem label="Category">{submission.category}</DetailItem>
+          <DetailItem label="Submitter">{submission.submitter?.fullName || 'Anonymous'}</DetailItem>
+          <DetailItem label="Address">{submission.address}, {submission.cityRegency}</DetailItem>
+          <DetailItem label="Coordinates">{submission.latitude ?? '—'}, {submission.longitude ?? '—'}</DetailItem>
+        </div>
+        {(submission.rejectionReason || submission.moderationNotes || submission.promotionError) && (
+          <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs leading-5 text-amber-800">
+            {submission.rejectionReason || submission.moderationNotes || submission.promotionError}
+          </div>
+        )}
+      </div>
+    </Modal>
+  );
 }
 
 function DetailItem({ label, children }: { label: string; children: React.ReactNode }) { return <div><dt className="mb-1 text-[10px] font-extrabold uppercase tracking-[0.1em] text-slate-400">{label}</dt><dd className="font-semibold leading-5 text-slate-700">{children}</dd></div>; }

@@ -272,7 +272,7 @@ export const ExplorePage: React.FC = () => {
     const progressInterval = setInterval(() => {
       setLoadingProgress((prev) => {
         if (prev >= 92) return Math.max(prev, 92);
-        return Math.min(92, prev + Math.floor(Math.random() * 12) + 6);
+        return Math.min(92, prev + 8);
       });
     }, 100);
 
@@ -1086,14 +1086,16 @@ export const ExplorePage: React.FC = () => {
                 </p>
               </div>
 
-              {/* AI Recommendation Reason */}
-              <div className="bg-teal-50/70 border border-teal-200/80 rounded-2xl p-4 space-y-1">
-                <div className="flex items-center gap-2">
-                  <Sparkles className="w-4 h-4 text-siger-500" />
-                  <h4 className="text-xs font-bold text-slate-900">Rekomendasi AI Raden Gajah</h4>
+              {/* AI Recommendation Reason (Only shown when genuine reason exists) */}
+              {selectedDestination.aiReason?.trim() ? (
+                <div className="bg-teal-50/70 border border-teal-200/80 rounded-2xl p-4 space-y-1">
+                  <div className="flex items-center gap-2">
+                    <Sparkles className="w-4 h-4 text-siger-500" />
+                    <h4 className="text-xs font-bold text-slate-900">Rekomendasi AI Raden Gajah</h4>
+                  </div>
+                  <p className="text-xs text-slate-700 font-sans leading-relaxed">{selectedDestination.aiReason}</p>
                 </div>
-                <p className="text-xs text-slate-700 font-sans leading-relaxed">{selectedDestination.aiReason}</p>
-              </div>
+              ) : null}
 
               {/* Facilities List */}
               <div className="space-y-2">

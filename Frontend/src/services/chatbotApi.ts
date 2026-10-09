@@ -325,8 +325,8 @@ export const askRadenGajahChatbot = async (payload: AskChatbotPayload): Promise<
           'Tempat makan Seruit khas Lampung',
           'Estimasi biaya liburan terjangkau',
         ],
-        destinations: topSpots.map((f: any) => ({
-          id: f.canonical_id || f.id || `dest-${Math.random()}`,
+        destinations: topSpots.map((f: any, idx: number) => ({
+          id: f.canonical_id || f.id || `dest-${areaName.replace(/\s+/g, '-').toLowerCase()}-${idx}`,
           name: f.name,
           location: f.address || f.city_or_regency || f.location || 'Lampung',
           regency: f.city_or_regency || f.regency || 'Lampung',

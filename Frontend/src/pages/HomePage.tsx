@@ -15,6 +15,8 @@ import {
   Footprints,
   Bot,
   Compass,
+  RefreshCw,
+  AlertCircle,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { fetchRealDestinations } from '../services/destinationsApi';
@@ -40,81 +42,41 @@ interface DestinationCard {
   image: string;
 }
 
-const mockRecommendations: DestinationCard[] = [
-  {
-    id: 'dest-001',
-    name: 'Pulau Pahawang',
-    location: 'Pesawaran',
-    category: 'Pantai',
-    rating: 4.8,
-    reviews: 320,
-    duration: '2-3 jam',
-    image: '/assets/images/heroes/hero-pahawang-bg.png',
-  },
-  {
-    id: 'dest-002',
-    name: 'Air Terjun Putri Malu',
-    location: 'Pesawaran',
-    category: 'Alam',
-    rating: 4.7,
-    reviews: 210,
-    duration: '1-2 jam',
-    image: 'https://images.unsplash.com/photo-1432405972618-c60b0225b8f9?auto=format&fit=crop&w=800&q=80',
-  },
-  {
-    id: 'dest-003',
-    name: 'Museum Lampung',
-    location: 'Bandar Lampung',
-    category: 'Budaya',
-    rating: 4.6,
-    reviews: 180,
-    duration: '1-2 jam',
-    image: 'https://images.unsplash.com/photo-1566127444979-b3d2b654e3d7?auto=format&fit=crop&w=800&q=80',
-  },
-  {
-    id: 'dest-004',
-    name: 'Seruit Lampung',
-    location: 'Kuliner Khas',
-    category: 'Kuliner',
-    rating: 4.9,
-    reviews: 290,
-    duration: '1 jam',
-    image: 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=800&q=80',
-  },
-  {
-    id: 'dest-005',
-    name: 'Gunung Anak Krakatau',
-    location: 'Lampung Selatan',
-    category: 'Adventure',
-    rating: 4.8,
-    reviews: 150,
-    duration: '3-4 jam',
-    image: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=800&q=80',
-  },
-];
-
 export const HomePage: React.FC = () => {
   const navigate = useNavigate();
   const [searchKeyword, setSearchKeyword] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('Pantai');
-  const [recommendations, setRecommendations] = useState<DestinationCard[]>(mockRecommendations);
+  const [recommendations, setRecommendations] = useState<DestinationCard[]>([]);
+  const [recommendationsLoading, setRecommendationsLoading] = useState(true);
+  const [recommendationsError, setRecommendationsError] = useState(false);
+
+  const loadRecommendations = async () => {
+    setRecommendationsLoading(true);
+    setRecommendationsError(false);
+    try {
+      const data = await fetchRealDestinations({ limit: 4, sort_by: 'popular' });
+      const mapped: DestinationCard[] = data.map((d) => ({
+        id: d.id,
+        name: d.name,
+        location: d.regency || d.location,
+        category: d.category,
+        rating: d.rating,
+        reviews: d.reviews,
+        duration: d.duration,
+        image: d.image,
+      }));
+      setRecommendations(mapped);
+      if (mapped.length === 0) setRecommendationsError(true);
+    } catch {
+      setRecommendations([]);
+      setRecommendationsError(true);
+    } finally {
+      setRecommendationsLoading(false);
+    }
+  };
 
   useEffect(() => {
-    fetchRealDestinations({ limit: 12 }).then((data) => {
-      if (data && data.length > 0) {
-        const mapped: DestinationCard[] = data.map((d) => ({
-          id: d.id,
-          name: d.name,
-          location: d.regency || d.location,
-          category: d.category,
-          rating: d.rating,
-          reviews: d.reviews,
-          duration: d.duration,
-          image: d.image,
-        }));
-        setRecommendations(mapped);
-      }
-    });
+    loadRecommendations();
   }, []);
 
   // OpenWeather API Integration for Provinsi Lampung with key 84071adb3c0d5f4d42ec9ab6b245e2df
@@ -410,52 +372,52 @@ export const HomePage: React.FC = () => {
             </div>
 
             <div className="relative">
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-                {recommendations.map((item) => (
-                  <div
-                    key={item.id}
-                    onClick={() => navigate('/explore')}
-                    className="group relative rounded-2xl overflow-hidden bg-slate-900 shadow-md hover:shadow-xl transition-all duration-300 cursor-pointer aspect-[3/4] flex flex-col justify-between p-3.5"
-                  >
-                    <img
-                      src={item.image}
-                      alt={item.name}
-                      className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/20 to-slate-950/5" />
-                    <div className="relative z-10 flex items-center justify-between">
-                      <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-[#0D9488]/90 text-white backdrop-blur-md">
-                        {item.category}
-                      </span>
-                      <button
-                        className="w-11 h-11 min-w-[44px] min-h-[44px] rounded-full bg-slate-900/50 text-white hover:bg-red-500 flex items-center justify-center backdrop-blur-md transition-colors focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
-                        aria-label="Simpan Favorit"
-                      >
-                        <Heart className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-                    <div className="relative z-10 text-white space-y-1">
-                      <h3 className="text-xs font-bold font-display leading-tight group-hover:text-siger-400 transition-colors">
-                        {item.name}
-                      </h3>
-                      <p className="text-[10px] text-slate-300 font-sans">{item.location}</p>
-                      <div className="flex items-center justify-between pt-1 border-t border-white/20 text-[9px]">
-                        <div className="flex items-center gap-1 text-siger-400 font-bold">
-                          <span>&#9733; {item.rating}</span>
-                          <span className="text-slate-400 font-normal">({item.reviews})</span>
+              {recommendationsLoading ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4" aria-label="Memuat rekomendasi">
+                  {[...Array(4)].map((_, index) => (
+                    <div key={index} className="aspect-[3/4] rounded-2xl bg-slate-200 animate-pulse" />
+                  ))}
+                </div>
+              ) : recommendationsError ? (
+                <div className="text-center py-10">
+                  <AlertCircle className="w-8 h-8 text-slate-400 mx-auto mb-3" />
+                  <p className="text-sm font-semibold text-slate-700">Rekomendasi belum tersedia</p>
+                  <p className="text-xs text-slate-500 mt-1 mb-4">Data destinasi tidak dapat dimuat saat ini.</p>
+                  <button onClick={loadRecommendations} className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#0D9488] text-white text-xs font-bold">
+                    <RefreshCw className="w-3.5 h-3.5" /> Coba Lagi
+                  </button>
+                </div>
+              ) : recommendations.length === 0 ? (
+                <div className="text-center py-10">
+                  <p className="text-sm font-semibold text-slate-700">Belum ada destinasi populer</p>
+                  <button onClick={() => navigate('/explore')} className="mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#0D9488] text-white text-xs font-bold">
+                    Jelajahi Destinasi
+                  </button>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+                  {recommendations.map((item) => (
+                    <div key={item.id} onClick={() => navigate('/explore')} className="group relative rounded-2xl overflow-hidden bg-slate-900 shadow-md hover:shadow-xl transition-all duration-300 cursor-pointer aspect-[3/4] flex flex-col justify-between p-3.5">
+                      <img src={item.image} alt={item.name} className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
+                      <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/20 to-slate-950/5" />
+                      <div className="relative z-10 flex items-center justify-between">
+                        <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-[#0D9488]/90 text-white backdrop-blur-md">{item.category}</span>
+                        <button className="w-11 h-11 min-w-[44px] min-h-[44px] rounded-full bg-slate-900/50 text-white hover:bg-red-500 flex items-center justify-center backdrop-blur-md transition-colors" aria-label="Simpan Favorit">
+                          <Heart className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                      <div className="relative z-10 text-white space-y-1">
+                        <h3 className="text-xs font-bold font-display leading-tight group-hover:text-siger-400 transition-colors">{item.name}</h3>
+                        <p className="text-[10px] text-slate-300 font-sans">{item.location}</p>
+                        <div className="flex items-center justify-between pt-1 border-t border-white/20 text-[9px]">
+                          <div className="flex items-center gap-1 text-siger-400 font-bold"><span>&#9733; {item.rating}</span><span className="text-slate-400 font-normal">({item.reviews})</span></div>
+                          <span className="text-slate-300">{item.duration}</span>
                         </div>
-                        <span className="text-slate-300">{item.duration}</span>
                       </div>
                     </div>
-                  </div>
-                ))}
-              </div>
-              <button
-                className="hidden lg:flex absolute -right-4 top-1/2 -translate-y-1/2 w-10 h-10 min-w-[44px] min-h-[44px] rounded-full bg-white text-slate-600 shadow-xl border border-slate-200 items-center justify-center hover:bg-slate-50 transition-all z-20 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
-                aria-label="Selanjutnya"
-              >
-                <ChevronRight className="w-5 h-5" />
-              </button>
+                  ))}
+                </div>
+              )}
             </div>
           </section>
 

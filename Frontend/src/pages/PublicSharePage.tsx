@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import {
-  Sparkles,
   Calendar,
   Clock,
   MapPin,
@@ -19,6 +18,7 @@ import {
 
 import { apiClient } from '../lib/api';
 import { useAuth } from '../context/AuthContext';
+import { SafeImage } from '../components/SafeImage';
 
 interface ItinerarySlot {
   time: string;
@@ -52,135 +52,45 @@ export const PublicSharePage: React.FC = () => {
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [copiedLink, setCopiedLink] = useState<boolean>(false);
   const [itineraryData, setItineraryData] = useState<any | null>(null);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [loadError, setLoadError] = useState<boolean>(false);
 
   useEffect(() => {
-    if (shareToken) {
-      apiClient
-        .get(`/itineraries/share/${shareToken}`)
-        .then((res) => {
-          if (res.data?.data) {
-            setItineraryData(res.data.data);
-          }
-        })
-        .catch(() => {
-          // Fallback mock
-        });
-    }
-  }, [shareToken]);
+    let isMounted = true;
+    setIsLoading(true);
+    setLoadError(false);
+    setItineraryData(null);
 
-  const mockPublicItinerary: DaySchedule[] = [
-    {
-      dayNumber: 1,
-      title: 'Eksplorasi Kebudayaan & Sunset Kota Bandar Lampung',
-      slots: [
-        {
-          time: '08:00 - 10:30 WIB',
-          activityTitle: 'Museum Lampung (Ruwa Jurai)',
-          category: 'Budaya',
-          location: 'Rajabasa, Bandar Lampung',
-          estimatedCost: 'Rp 5.000 / orang',
-          numericCost: 5000,
-          image: 'https://images.unsplash.com/photo-1566127444979-b3d2b654e3d7?auto=format&fit=crop&w=800&q=80',
-          coords: [-5.3789, 105.2536],
-          aiTip: 'Pelajari sejarah kain Tapis kuno dan arsitektur panggung khas Lampung.',
-          travelTime: '20 menit perjalanan ke lokasi kuliner',
-        },
-        {
-          time: '11:30 - 13:00 WIB',
-          activityTitle: 'Makan Siang Kuliner Seruit Khas Lampung',
-          category: 'Kuliner',
-          location: 'Pusat Kota Bandar Lampung',
-          estimatedCost: 'Rp 45.000 / orang',
-          numericCost: 45000,
-          image: 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=800&q=80',
-          coords: [-5.4292, 105.2611],
-          aiTip: 'Cobalah kombinasi ikan bakar dengan sambal terasi dan tempoyak durian khas Lampung.',
-          travelTime: '35 menit ke lokasi puncak',
-        },
-        {
-          time: '15:00 - 18:00 WIB',
-          activityTitle: 'Menikmati Sunset Puncak Mas Lampung',
-          category: 'Alam',
-          location: 'Sukadanaham, Bandar Lampung',
-          estimatedCost: 'Rp 20.000 / orang',
-          numericCost: 20000,
-          image: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=800&q=80',
-          coords: [-5.4292, 105.2611],
-          aiTip: 'Spot foto terbaik menikmati pemandangan Teluk Lampung dari ketinggian.',
-        },
-      ],
-    },
-    {
-      dayNumber: 2,
-      title: 'Island Hopping & Snorkeling Pulau Pahawang',
-      slots: [
-        {
-          time: '07:30 - 08:30 WIB',
-          activityTitle: 'Perjalanan ke Dermaga Ketapang Pesawaran',
-          category: 'Adventure',
-          location: 'Pesawaran, Lampung',
-          estimatedCost: 'Rp 15.000 (Transportasi)',
-          numericCost: 15000,
-          image: '/assets/images/heroes/hero-pahawang-bg.png',
-          coords: [-5.6708, 105.2192],
-          aiTip: 'Pastikan menggunakan pakaian santai pantai dan sarung pelindung HP waterproof.',
-          travelTime: '45 menit menyeberang laut',
-        },
-        {
-          time: '09:00 - 14:00 WIB',
-          activityTitle: 'Snorkeling & Wisata Bahari Pulau Pahawang',
-          category: 'Pantai',
-          location: 'Pesawaran',
-          estimatedCost: 'Rp 150.000 / orang (Tur Perahu)',
-          numericCost: 150000,
-          image: '/assets/images/heroes/hero-pahawang-bg.png',
-          coords: [-5.6708, 105.2192],
-          aiTip: 'Nikmati foto bawah laut bersama kawanan Ikan Nemo dan terumbu karang alami.',
-          travelTime: '30 menit kembali ke pantai',
-        },
-        {
-          time: '16:00 - 18:30 WIB',
-          activityTitle: 'Santai Sore di Pantai Mutun',
-          category: 'Pantai',
-          location: 'Pesawaran',
-          estimatedCost: 'Rp 10.000 / orang',
-          numericCost: 10000,
-          image: 'https://images.unsplash.com/photo-1502680390469-be75c86b636f?auto=format&fit=crop&w=800&q=80',
-          coords: [-5.5123, 105.2412],
-          aiTip: 'Nikmati kelapa muda segar dan suasana matahari terbenam tepi pantai.',
-        },
-      ],
-    },
-    {
-      dayNumber: 3,
-      title: 'Eksplorasi Satwa Way Kambas & Belanja Souvenir',
-      slots: [
-        {
-          time: '08:30 - 12:00 WIB',
-          activityTitle: 'Pusat Konservasi Gajah Taman Nasional Way Kambas',
-          category: 'Alam',
-          location: 'Lampung Timur',
-          estimatedCost: 'Rp 25.000 / orang',
-          numericCost: 25000,
-          image: 'https://images.unsplash.com/photo-1534567153574-2b12153a87f0?auto=format&fit=crop&w=800&q=80',
-          coords: [-5.0833, 105.7500],
-          aiTip: 'Edukasi dan interaksi langsung bersama Gajah Sumatera yang dilindungi.',
-          travelTime: '1 jam kembali ke kota',
-        },
-        {
-          time: '13:30 - 16:00 WIB',
-          activityTitle: 'Pusat Oleh-Oleh Kerajinan Tapis & Kripik Pisang',
-          category: 'Budaya',
-          location: 'Pusat Kota Bandar Lampung',
-          estimatedCost: 'Rp 100.000 (Oleh-oleh)',
-          numericCost: 100000,
-          image: 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=800&q=80',
-          coords: [-5.4292, 105.2611],
-          aiTip: 'Beli kripik pisang cokelat murni dan produk kerajinan kain Tapis khas Lampung.',
-        },
-      ],
-    },
-  ];
+    if (!shareToken) {
+      setIsLoading(false);
+      setLoadError(true);
+      return () => {
+        isMounted = false;
+      };
+    }
+
+    apiClient
+      .get(`/itineraries/share/${shareToken}`)
+      .then((res) => {
+        if (!isMounted) return;
+        const data = res.data?.data;
+        if (data) {
+          setItineraryData(data);
+        } else {
+          setLoadError(true);
+        }
+      })
+      .catch(() => {
+        if (isMounted) setLoadError(true);
+      })
+      .finally(() => {
+        if (isMounted) setIsLoading(false);
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [shareToken]);
 
   const triggerToast = (msg: string) => {
     setToastMessage(msg);
@@ -194,6 +104,29 @@ export const PublicSharePage: React.FC = () => {
     setTimeout(() => setCopiedLink(false), 2500);
   };
 
+  const parseSharedDays = (raw: any): DaySchedule[] => {
+    if (!raw) return [];
+    if (Array.isArray(raw.daysJson)) return raw.daysJson;
+    if (typeof raw.daysJson === 'string') {
+      try {
+        const parsed = JSON.parse(raw.daysJson);
+        if (Array.isArray(parsed)) return parsed;
+      } catch {
+        // ignore parse error
+      }
+    }
+    if (Array.isArray(raw.itinerary)) return raw.itinerary;
+    return [];
+  };
+
+  const sharedDays = parseSharedDays(itineraryData);
+
+  const calculateTotalCost = (days: DaySchedule[]): number => {
+    return days.reduce((totalDay, day) => {
+      return totalDay + (day.slots || []).reduce((totalSlot, slot) => totalSlot + (slot.numericCost || 0), 0);
+    }, 0);
+  };
+
   const handleCloneItinerary = async () => {
     if (!isAuthenticated) {
       triggerToast('Silakan masuk terlebih dahulu untuk menyimpan rute!');
@@ -201,30 +134,61 @@ export const PublicSharePage: React.FC = () => {
       return;
     }
 
-    try {
-      const targetItinerary = itineraryData || {
-        title: 'Liburan Lampung (3 Hari)',
-        daysJson: mockPublicItinerary,
-      };
+    if (!itineraryData) {
+      triggerToast('Data rencana perjalanan tidak ditemukan');
+      return;
+    }
 
+    try {
       await apiClient.post('/itineraries', {
-        title: `Salinan: ${targetItinerary.title}`,
-        daysJson: targetItinerary.daysJson || mockPublicItinerary,
+        title: `Salinan: ${itineraryData.title || 'Rencana Perjalanan'}`,
+        daysJson: sharedDays,
       });
 
       await addXp(50, 'clone_route');
       triggerToast('Rute berhasil disimpan ke profil kamu! (+50 XP 🎉)');
       setTimeout(() => navigate('/profile'), 1200);
-    } catch (err: any) {
+    } catch {
       triggerToast('Gagal menyalin itinerary');
     }
   };
 
-  const calculateTotalCost = () => {
-    return mockPublicItinerary.reduce((totalDay, day) => {
-      return totalDay + day.slots.reduce((totalSlot, slot) => totalSlot + (slot.numericCost || 0), 0);
-    }, 0);
-  };
+  if (isLoading) {
+    return (
+      <div className="flex min-h-[100dvh] items-center justify-center px-4 pt-24 pb-16">
+        <div className="text-center">
+          <div className="mx-auto mb-4 h-10 w-10 animate-spin rounded-full border-4 border-slate-200 border-t-[#0D9488]" />
+          <p className="text-sm text-slate-500">Memuat rencana perjalanan...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (loadError || !itineraryData) {
+    return (
+      <div className="flex min-h-[100dvh] items-center justify-center px-4 pt-24 pb-16">
+        <div className="max-w-md text-center">
+          <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-slate-100">
+            <Compass className="h-8 w-8 text-slate-400" />
+          </div>
+          <h1 className="mb-3 text-xl font-bold text-slate-900">
+            Rencana perjalanan tidak ditemukan atau tautan telah kedaluwarsa
+          </h1>
+          <p className="mb-6 text-sm text-slate-500">
+            Silakan kembali ke beranda untuk menjelajahi destinasi lainnya.
+          </p>
+          <button
+            onClick={() => navigate('/')}
+            className="rounded-full bg-[#0D9488] px-5 py-2.5 text-xs font-bold text-white transition-colors hover:bg-[#0F766E] focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
+          >
+            Kembali ke Beranda
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  const totalCost = calculateTotalCost(sharedDays);
 
   return (
     <div className="flex flex-col min-h-[100dvh] pt-24 pb-16">
@@ -245,9 +209,9 @@ export const PublicSharePage: React.FC = () => {
           
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-teal-50 border border-teal-200">
-              <Sparkles className="w-3.5 h-3.5 text-[#0D9488]" />
+              <Share2 className="w-3.5 h-3.5 text-[#0D9488]" />
               <span className="text-[11px] font-semibold text-[#0D9488]">
-                Public Travel Plan &bull; ID: {shareToken || 'lampung-itinerary-9842'}
+                Public Travel Plan &bull; ID: {shareToken}
               </span>
             </div>
 
@@ -256,30 +220,29 @@ export const PublicSharePage: React.FC = () => {
                 {itineraryData?.user?.fullName?.charAt(0) || 'P'}
               </div>
               <span>
-                Dibagikan oleh <strong>{itineraryData?.user?.fullName || 'Penjelajah Kelana'}</strong>
+                Dibagikan oleh <strong>{itineraryData?.user?.fullName || 'Pengguna'}</strong>
               </span>
             </div>
           </div>
 
           <h1 className="text-2xl sm:text-3xl font-display font-extrabold text-slate-900 tracking-tight leading-tight">
-            {itineraryData?.title || 'Rencana Perjalanan Wisata Eksotis Lampung'}
+            {itineraryData?.title || 'Rencana Perjalanan'}
           </h1>
 
           {/* Quick Badges Row */}
           <div className="flex flex-wrap items-center gap-2.5 pt-2">
             <span className="px-3 py-1 rounded-xl bg-slate-100 text-slate-700 text-xs font-bold flex items-center gap-1.5">
               <Calendar className="w-3.5 h-3.5 text-[#0D9488]" />
-              <span>3 Hari 2 Malam</span>
+              <span>{sharedDays.length} Hari</span>
             </span>
             <span className="px-3 py-1 rounded-xl bg-slate-100 text-slate-700 text-xs font-bold">
-              Budget: <strong className="text-[#0D9488]">Standar</strong>
+              Budget: <strong className="text-[#0D9488]">{itineraryData?.budgetLevel || 'Standar'}</strong>
             </span>
-            <span className="px-3 py-1 rounded-xl bg-slate-100 text-slate-700 text-xs font-bold">
-              Rombongan: <strong className="text-[#0D9488]">Pasangan</strong>
-            </span>
-            <span className="px-3 py-1 rounded-xl bg-teal-50 text-[#0D9488] text-xs font-extrabold border border-teal-200">
-              Estimasi: Rp {(calculateTotalCost() + 120000).toLocaleString('id-ID')} / orang
-            </span>
+            {totalCost > 0 && (
+              <span className="px-3 py-1 rounded-xl bg-teal-50 text-[#0D9488] text-xs font-extrabold border border-teal-200">
+                Estimasi: Rp {totalCost.toLocaleString('id-ID')} / orang
+              </span>
+            )}
           </div>
 
           {/* Public Action Buttons */}
@@ -289,14 +252,14 @@ export const PublicSharePage: React.FC = () => {
               className="px-5 py-2.5 rounded-2xl bg-[#0D9488] hover:bg-[#0F766E] text-white text-xs font-extrabold shadow-lg shadow-[#0D9488]/30 flex items-center gap-2 transition-all hover:scale-105"
             >
               <Copy className="w-4 h-4" />
-              <span>Salin ke AI Planner Saya</span>
+              <span>Simpan ke Planner Saya</span>
             </button>
             <button
               onClick={() => window.print()}
               className="px-4 py-2.5 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold flex items-center gap-2 transition-colors"
             >
               <Printer className="w-4 h-4 text-slate-600" />
-              <span>Print Itinerary</span>
+              <span>Cetak Rencana</span>
             </button>
             <button
               onClick={handleCopyLink}
@@ -318,27 +281,29 @@ export const PublicSharePage: React.FC = () => {
         </div>
 
         {/* DAY NAVIGATION TABS */}
-        <div className="flex items-center gap-2 border-b border-slate-200 pb-2 overflow-x-auto">
-          {mockPublicItinerary.map((day, dayIdx) => {
-            const dNum = day.dayNumber || (dayIdx + 1);
-            return (
-              <button
-                key={dNum}
-                onClick={() => setActiveDayTab(dNum)}
-                className={`px-5 py-2.5 rounded-2xl text-xs font-bold transition-all whitespace-nowrap ${
-                  activeDayTab === dNum
-                    ? 'bg-[#0D9488] text-white shadow-md'
-                    : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
-                }`}
-              >
-                Hari {dNum}
-              </button>
-            );
-          })}
-        </div>
+        {sharedDays.length > 0 && (
+          <div className="flex items-center gap-2 border-b border-slate-200 pb-2 overflow-x-auto">
+            {sharedDays.map((day, dayIdx) => {
+              const dNum = day.dayNumber || (dayIdx + 1);
+              return (
+                <button
+                  key={dNum}
+                  onClick={() => setActiveDayTab(dNum)}
+                  className={`px-5 py-2.5 rounded-2xl text-xs font-bold transition-all whitespace-nowrap ${
+                    activeDayTab === dNum
+                      ? 'bg-[#0D9488] text-white shadow-md'
+                      : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
+                  }`}
+                >
+                  Hari {dNum}
+                </button>
+              );
+            })}
+          </div>
+        )}
 
         {/* ACTIVE DAY TIMELINE */}
-        {mockPublicItinerary.map((day, dayIdx) => {
+        {sharedDays.map((day, dayIdx) => {
           const dNum = day.dayNumber || (dayIdx + 1);
           if (activeDayTab !== dNum) return null;
 
@@ -347,16 +312,16 @@ export const PublicSharePage: React.FC = () => {
               <div className="bg-white rounded-2xl p-4 border border-slate-200 flex items-center justify-between">
                 <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2 font-display">
                   <Calendar className="w-4 h-4 text-siger-500" />
-                  <span>{day.title}</span>
+                  <span>{day.title || `Hari ${dNum}`}</span>
                 </h3>
                 <span className="text-xs text-slate-500 font-medium">
-                  {day.slots.length} Destinasi Terjadwal
+                  {(day.slots || []).length} Destinasi Terjadwal
                 </span>
               </div>
 
               {/* Slots */}
               <div className="relative pl-6 sm:pl-8 space-y-6 before:absolute before:left-2.5 sm:before:left-3.5 before:top-3 before:bottom-3 before:w-0.5 before:bg-slate-200">
-                {day.slots.map((slot, slotIdx) => (
+                {(day.slots || []).map((slot, slotIdx) => (
                   <div key={slotIdx} className="relative group">
                     {/* Timeline Dot */}
                     <div className="absolute -left-6 sm:-left-8 top-4 w-5 h-5 rounded-full bg-white border-2 border-[#0D9488] flex items-center justify-center z-10 shadow-sm">
@@ -384,8 +349,8 @@ export const PublicSharePage: React.FC = () => {
 
                       {/* Main Item Info */}
                       <div className="flex flex-col sm:flex-row items-start gap-4">
-                        <img
-                          src={slot.image || '/assets/images/heroes/hero-pahawang-bg.png'}
+                        <SafeImage
+                          src={slot.image}
                           alt={slot.activityTitle || slot.title || 'Destinasi'}
                           className="w-full sm:w-28 h-24 rounded-xl object-cover shrink-0 shadow-sm"
                         />
@@ -450,7 +415,7 @@ export const PublicSharePage: React.FC = () => {
               Ingin Buat Rencana Perjalanan Impianmu di Lampung?
             </h3>
             <p className="text-xs text-slate-300 font-sans leading-relaxed">
-              Gunakan engine kecerdasan buatan AI Raden Gajah untuk menyusun rute perjalanan otomatis sesuai budget, minat, dan durasimu.
+              Gunakan travel planner kami untuk menyusun rute perjalanan otomatis sesuai budget, minat, dan durasimu.
             </p>
           </div>
 

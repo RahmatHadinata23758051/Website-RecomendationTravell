@@ -35,6 +35,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { apiClient } from '../lib/api';
+import { SafeImage } from '../components/SafeImage';
 import { fetchRealDestinations } from '../services/destinationsApi';
 import { Destination } from './ExplorePage';
 
@@ -319,13 +320,11 @@ export const ProfilePage: React.FC = () => {
                 <div className="relative shrink-0 cursor-pointer" onClick={handleOpenEditModal}>
                   <div className="w-20 h-20 rounded-full overflow-hidden border-2 border-white shadow-md bg-[#0D9488] text-white flex items-center justify-center font-display font-extrabold text-2xl">
                     {user.avatarUrl ? (
-                      <img
+                      <SafeImage
                         src={user.avatarUrl}
-                        alt={user.fullName}
+                        alt={`Avatar ${user.fullName}`}
                         className="w-full h-full object-cover"
-                        onError={(e) => {
-                          (e.target as HTMLElement).style.display = 'none';
-                        }}
+                        fallbackSrc="/assets/images/mascot/muli-avatar-face.png"
                       />
                     ) : null}
                     <span className="uppercase">{user.fullName ? user.fullName.charAt(0) : 'U'}</span>
@@ -570,13 +569,11 @@ export const ProfilePage: React.FC = () => {
                       onClick={() => navigate(`/explore?search=${encodeURIComponent(dest.name)}`)}
                       className="group relative rounded-2xl overflow-hidden bg-slate-900 shadow-sm hover:shadow-xl transition-all duration-300 cursor-pointer aspect-[4/5] flex flex-col justify-between p-3.5"
                     >
-                      <img
+                      <SafeImage
                         src={dest.image}
                         alt={dest.name}
                         className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                        onError={(e) => {
-                          (e.target as HTMLImageElement).src = '/assets/images/heroes/hero-pahawang-bg.png';
-                        }}
+                        fallbackSrc="/assets/images/heroes/hero-pahawang-bg.png"
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/30 to-slate-950/20" />
 
@@ -663,7 +660,7 @@ export const ProfilePage: React.FC = () => {
                     >
                       <div className="flex items-center gap-4">
                         <div className="w-14 h-14 rounded-xl bg-slate-900 overflow-hidden shrink-0 relative">
-                          <img
+                          <SafeImage
                             src="/assets/images/heroes/hero-pahawang-bg.png"
                             alt="Trip Thumbnail"
                             className="w-full h-full object-cover group-hover:scale-105 transition-transform"
@@ -900,13 +897,12 @@ export const ProfilePage: React.FC = () => {
                 <div className="relative group cursor-pointer" onClick={() => fileInputRef.current?.click()}>
                   <div className="w-24 h-24 rounded-full overflow-hidden border-4 border-slate-100 shadow-md bg-[#0D9488] text-white flex items-center justify-center font-display font-extrabold text-3xl">
                     {editAvatarUrl ? (
-                      <img
+                      <SafeImage
+                        key={editAvatarUrl}
                         src={editAvatarUrl}
-                        alt="Avatar Preview"
+                        alt={`Avatar preview ${editFullName}`}
                         className="w-full h-full object-cover"
-                        onError={(e) => {
-                          (e.target as HTMLElement).style.display = 'none';
-                        }}
+                        fallbackSrc="/assets/images/mascot/muli-avatar-face.png"
                       />
                     ) : null}
                     <span className="uppercase">{editFullName ? editFullName.charAt(0) : 'U'}</span>
@@ -952,7 +948,12 @@ export const ProfilePage: React.FC = () => {
                           editAvatarUrl === presetUrl ? 'border-[#0D9488] ring-2 ring-[#0D9488]/30 scale-110' : 'border-white opacity-70 hover:opacity-100'
                         }`}
                       >
-                        <img src={presetUrl} alt={`Preset ${idx}`} className="w-full h-full object-cover" />
+                        <SafeImage
+                          src={presetUrl}
+                          alt={`Preset avatar ${idx + 1}`}
+                          className="w-full h-full object-cover"
+                          fallbackSrc="/assets/images/mascot/muli-avatar-face.png"
+                        />
                       </button>
                     ))}
                   </div>
