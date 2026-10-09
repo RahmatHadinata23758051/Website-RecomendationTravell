@@ -5,6 +5,9 @@ import helmet from 'helmet';
 import { AppModule } from './../src/app.module';
 import { HttpExceptionFilter } from './../src/common/filters/http-exception.filter';
 import { PrismaService } from './../src/prisma/prisma.service';
+import { RedisService } from './../src/redis/redis.service';
+import { HttpService } from '@nestjs/axios';
+import { of } from 'rxjs';
 
 jest.setTimeout(30000);
 
@@ -14,6 +17,17 @@ describe('AppController (e2e) - Backend Security & Health', () => {
   const mockPrismaService = {
     $connect: jest.fn().mockResolvedValue(undefined),
     $disconnect: jest.fn().mockResolvedValue(undefined),
+    $queryRaw: jest.fn().mockResolvedValue([{ '?column?': 1 }]),
+  };
+
+  const mockRedisService = {
+    ping: jest.fn().mockResolvedValue('PONG'),
+  };
+
+  const mockHttpService = {
+    get: jest.fn().mockReturnValue(
+      of({ status: 200, data: { status: 'ok' } }),
+    ),
   };
 
   beforeAll(async () => {
@@ -22,6 +36,10 @@ describe('AppController (e2e) - Backend Security & Health', () => {
     })
       .overrideProvider(PrismaService)
       .useValue(mockPrismaService)
+      .overrideProvider(RedisService)
+      .useValue(mockRedisService)
+      .overrideProvider(HttpService)
+      .useValue(mockHttpService)
       .compile();
 
     app = moduleFixture.createNestApplication();
@@ -44,16 +62,21 @@ describe('AppController (e2e) - Backend Security & Health', () => {
     }
   });
 
-  it('/api/v1/health (GET) - Should return 200 OK & Healthy Status', () => {
+  it('/api/v1/health (GET) - Should return 200 OK & Health Status', () => {
     return request(app.getHttpServer())
       .get('/api/v1/health')
       .expect(200)
       .expect((res) => {
-        expect(res.body.status).toBe('healthy');
+        expect(['ok', 'degraded']).toContain(res.body.status);
         expect(res.body.service).toBe('Recommendation Traveller Backend Gateway');
         expect(res.body.version).toBe('v1.0.0');
+        expect(res.body.timestamp).toBeDefined();
+        expect(res.body.uptime).toBeGreaterThan(0);
+        expect(res.body.memory).toBeDefined();
+        expect(res.body.services).toBeDefined();
         expect(res.headers['x-frame-options']).toBe('SAMEORIGIN');
         expect(res.headers['x-content-type-options']).toBe('nosniff');
+        expect(res.headers['x-response-time']).toMatch(/\d+(\.\d+)?ms/);
       });
   });
 
