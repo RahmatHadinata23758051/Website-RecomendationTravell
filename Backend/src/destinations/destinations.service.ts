@@ -5,14 +5,140 @@ import { firstValueFrom } from 'rxjs';
 import * as crypto from 'crypto';
 import { RedisService } from '../redis/redis.service';
 import { GetRecommendationsDto } from './dto/get-recommendations.dto';
+import { GetDestinationsDto } from './dto/get-destinations.dto';
 
-export interface GetDestinationsQueryDto {
-  category?: string;
-  city_or_regency?: string;
-  search?: string;
-  page?: number;
-  limit?: number;
-}
+export type GetDestinationsQueryDto = GetDestinationsDto;
+
+const DEFAULT_FALLBACK_DESTINATIONS = [
+  {
+    canonical_id: 'dest-001',
+    name: 'Pulau Pahawang',
+    primary_category: 'Pantai',
+    city_or_regency: 'Kabupaten Pesawaran',
+    address: 'Kecamatan Punduh Pidada, Kabupaten Pesawaran, Lampung',
+    description: 'Surga snorkeling dengan air jernih dan terumbu karang alami yang mempesona.',
+    image_url: '/assets/images/heroes/hero-pahawang-bg.png',
+    rating: 4.8,
+    reviews_count: 320,
+    latitude: -5.6708,
+    longitude: 105.2192,
+    operational_status: 'open',
+    price_status: 'paid',
+    price_min_idr: 150000,
+  },
+  {
+    canonical_id: 'dest-002',
+    name: 'Taman Nasional Way Kambas',
+    primary_category: 'Alam',
+    city_or_regency: 'Kabupaten Lampung Timur',
+    address: 'Labuhan Ratu, Lampung Timur, Lampung',
+    description: 'Pusat konservasi gajah Sumatera tertua dan ekowisata alam liar terlindungi.',
+    image_url: '/assets/images/regencies/lampung-timur.jpg',
+    rating: 4.7,
+    reviews_count: 512,
+    latitude: -5.0211,
+    longitude: 105.7892,
+    operational_status: 'open',
+    price_status: 'paid',
+    price_min_idr: 30000,
+  },
+  {
+    canonical_id: 'dest-003',
+    name: 'Teluk Kiluan',
+    primary_category: 'Adventure',
+    city_or_regency: 'Kabupaten Tanggamus',
+    address: 'Kiluan Negeri, Kelumbayan, Tanggamus, Lampung',
+    description: 'Habitat lumba-lumba hidung botol dan laguna alami Laguna Gayau yang eksotis.',
+    image_url: '/assets/images/regencies/tanggamus.jpg',
+    rating: 4.7,
+    reviews_count: 240,
+    latitude: -5.7891,
+    longitude: 105.1023,
+    operational_status: 'open',
+    price_status: 'paid',
+    price_min_idr: 250000,
+  },
+  {
+    canonical_id: 'dest-004',
+    name: 'Menara Siger',
+    primary_category: 'Budaya',
+    city_or_regency: 'Kabupaten Lampung Selatan',
+    address: 'Bakauheni, Lampung Selatan, Lampung',
+    description: 'Ikon mahkota kebanggaan masyarakat Lampung di titik nol jalan lintas Sumatera.',
+    image_url: '/assets/images/regencies/lampung-selatan.jpg',
+    rating: 4.6,
+    reviews_count: 850,
+    latitude: -5.8672,
+    longitude: 105.7538,
+    operational_status: 'open',
+    price_status: 'paid',
+    price_min_idr: 20000,
+  },
+  {
+    canonical_id: 'dest-005',
+    name: 'Puncak Mas',
+    primary_category: 'Alam',
+    city_or_regency: 'Kota Bandar Lampung',
+    address: 'Jl. H. Hamim RJP, Sukadana Ham, Tj. Karang Barat, Bandar Lampung',
+    description: 'Wisata perbukitan modern dengan panorama kota Bandar Lampung dan rumah pohon estetik.',
+    image_url: '/assets/images/regencies/bandar-lampung.jpg',
+    rating: 4.5,
+    reviews_count: 620,
+    latitude: -5.4321,
+    longitude: 105.2412,
+    operational_status: 'open',
+    price_status: 'paid',
+    price_min_idr: 20000,
+  },
+  {
+    canonical_id: 'dest-006',
+    name: 'Taman Gajah (Elephant Park)',
+    primary_category: 'Budaya',
+    city_or_regency: 'Kota Bandar Lampung',
+    address: 'Enggal, Kota Bandar Lampung, Lampung',
+    description: 'Ruang terbuka hijau publik dan ikon pusat aktivitas masyarakat kota.',
+    image_url: '/assets/images/regencies/bandar-lampung.jpg',
+    rating: 4.4,
+    reviews_count: 410,
+    latitude: -5.4241,
+    longitude: 105.2581,
+    operational_status: 'open',
+    price_status: 'free',
+    price_min_idr: 0,
+  },
+  {
+    canonical_id: 'dest-007',
+    name: 'Pantai Gigi Hiu',
+    primary_category: 'Adventure',
+    city_or_regency: 'Kabupaten Tanggamus',
+    address: 'Kelumbayan, Tanggamus, Lampung',
+    description: 'Formasi tebing karang runcing menjulang unik dengan deburan ombak samudra lepas.',
+    image_url: '/assets/images/regencies/tanggamus.jpg',
+    rating: 4.8,
+    reviews_count: 185,
+    latitude: -5.7621,
+    longitude: 105.1534,
+    operational_status: 'open',
+    price_status: 'paid',
+    price_min_idr: 15000,
+  },
+  {
+    canonical_id: 'dest-008',
+    name: 'Sentra Pempek & Kemplang Teluk Betung',
+    primary_category: 'Kuliner',
+    city_or_regency: 'Kota Bandar Lampung',
+    address: 'Jl. Ikan Hiu, Teluk Betung, Bandar Lampung',
+    description: 'Pusat wisata kuliner khas Lampung, olahan ikan segar dan kemplang panggang legendaris.',
+    image_url: '/assets/images/regencies/bandar-lampung.jpg',
+    rating: 4.7,
+    reviews_count: 730,
+    latitude: -5.4491,
+    longitude: 105.2678,
+    operational_status: 'open',
+    price_status: 'paid',
+    price_min_idr: 25000,
+  },
+];
 
 @Injectable()
 export class DestinationsService {
@@ -24,7 +150,10 @@ export class DestinationsService {
     private readonly configService: ConfigService,
   ) {}
 
-  async getDestinations(query: GetDestinationsQueryDto) {
+  async getDestinations(query: GetDestinationsDto = {}) {
+    const page = Number(query.page) || 1;
+    const limit = Number(query.limit) || 20;
+
     const hash = crypto
       .createHash('md5')
       .update(JSON.stringify(query))
@@ -50,48 +179,129 @@ export class DestinationsService {
       'http://localhost:8000';
 
     try {
-      this.logger.log(`[CACHE MISS] Fetching real destinations from ML Engine: ${mlEngineUrl}/api/v1/destinations`);
+      this.logger.log(`[CACHE MISS] Fetching destinations from ML Engine: ${mlEngineUrl}/api/v1/destinations`);
       const response = await firstValueFrom(
         this.httpService.get(`${mlEngineUrl}/api/v1/destinations`, {
-          params: query,
+          params: {
+            ...query,
+            page,
+            limit,
+          },
           timeout: 5000,
         }),
       );
 
+      const data = response.data;
+      let destinations = data.destinations || [];
+
+      // Filter in memory if ML engine doesn't support price filters natively
+      if (query.price_status && query.price_status !== 'all') {
+        destinations = destinations.filter((d: any) =>
+          query.price_status === 'free' ? d.price_status === 'free' || d.price_min_idr === 0 : d.price_status === 'paid' && d.price_min_idr > 0,
+        );
+      }
+      if (query.min_price !== undefined) {
+        destinations = destinations.filter((d: any) => (d.price_min_idr || 0) >= query.min_price!);
+      }
+      if (query.max_price !== undefined) {
+        destinations = destinations.filter((d: any) => (d.price_min_idr || 0) <= query.max_price!);
+      }
+
+      // Add fallback suggestions if 0 results
+      const fallbackSuggestions = destinations.length === 0
+        ? DEFAULT_FALLBACK_DESTINATIONS.slice(0, 4)
+        : [];
+
       const result = {
-        ...response.data,
+        ...data,
+        destinations,
+        total_items: destinations.length,
+        fallback_suggestions: fallbackSuggestions,
         cacheHit: false,
       };
 
       // 3. Cache in Redis (3600s)
-      await this.redisService.set(cacheKey, JSON.stringify(response.data), 3600);
+      await this.redisService.set(cacheKey, JSON.stringify(result), 3600);
       return result;
     } catch (error) {
-      this.logger.warn(`[ML ENGINE FALLBACK] Could not fetch destinations: ${error.message}`);
+      this.logger.warn(`[ML ENGINE FALLBACK] Could not fetch destinations from ML Engine: ${error.message}`);
+      
+      // Perform rich in-memory filtering and sorting on fallback catalog
+      let pool = [...DEFAULT_FALLBACK_DESTINATIONS];
+
+      if (query.category && query.category.toLowerCase() !== 'semua') {
+        const catTarget = query.category.toLowerCase().trim();
+        pool = pool.filter((d) => d.primary_category.toLowerCase().includes(catTarget));
+      }
+
+      if (query.city_or_regency && query.city_or_regency.toLowerCase() !== 'semua') {
+        const regTarget = query.city_or_regency
+          .toLowerCase()
+          .replace('kabupaten ', '')
+          .replace('kota ', '')
+          .trim();
+        pool = pool.filter((d) =>
+          d.city_or_regency.toLowerCase().includes(regTarget) ||
+          d.address.toLowerCase().includes(regTarget),
+        );
+      }
+
+      if (query.search) {
+        const term = query.search.toLowerCase().trim();
+        pool = pool.filter(
+          (d) =>
+            d.name.toLowerCase().includes(term) ||
+            d.description.toLowerCase().includes(term) ||
+            d.address.toLowerCase().includes(term) ||
+            d.primary_category.toLowerCase().includes(term),
+        );
+      }
+
+      if (query.price_status && query.price_status !== 'all') {
+        pool = pool.filter((d) =>
+          query.price_status === 'free' ? d.price_status === 'free' || d.price_min_idr === 0 : d.price_min_idr > 0,
+        );
+      }
+
+      if (query.min_price !== undefined) {
+        pool = pool.filter((d) => (d.price_min_idr || 0) >= query.min_price!);
+      }
+
+      if (query.max_price !== undefined) {
+        pool = pool.filter((d) => (d.price_min_idr || 0) <= query.max_price!);
+      }
+
+      // Sort
+      if (query.sort_by === 'rating') {
+        pool.sort((a, b) => (query.sort_order === 'asc' ? a.rating - b.rating : b.rating - a.rating));
+      } else if (query.sort_by === 'reviews_count') {
+        pool.sort((a, b) => (query.sort_order === 'asc' ? a.reviews_count - b.reviews_count : b.reviews_count - a.reviews_count));
+      } else if (query.sort_by === 'price_min_idr') {
+        pool.sort((a, b) => (query.sort_order === 'asc' ? (a.price_min_idr || 0) - (b.price_min_idr || 0) : (b.price_min_idr || 0) - (a.price_min_idr || 0)));
+      } else if (query.sort_by === 'name') {
+        pool.sort((a, b) => (query.sort_order === 'asc' ? a.name.localeCompare(b.name) : b.name.localeCompare(a.name)));
+      } else {
+        // 'popular'
+        pool.sort((a, b) => b.rating * b.reviews_count - a.rating * a.reviews_count);
+      }
+
+      const totalItems = pool.length;
+      const totalPages = Math.max(1, Math.ceil(totalItems / limit));
+      const startIdx = (page - 1) * limit;
+      const paginatedDestinations = pool.slice(startIdx, startIdx + limit);
+
+      const fallbackSuggestions = paginatedDestinations.length === 0
+        ? DEFAULT_FALLBACK_DESTINATIONS.slice(0, 4)
+        : [];
+
       return {
         status: 'fallback',
-        page: query.page || 1,
-        limit: query.limit || 20,
-        total_items: 2,
-        total_pages: 1,
-        destinations: [
-          {
-            canonical_id: 'dest-001',
-            name: 'Pulau Pahawang',
-            primary_category: 'Pantai',
-            city_or_regency: 'Pesawaran',
-            address: 'Kec. Mawa, Pesawaran, Lampung',
-            description: 'Surga snorkeling dengan air jernih dan terumbu karang alami.',
-            image_url: '/assets/images/heroes/hero-pahawang-bg.png',
-            rating: 4.8,
-            reviews_count: 320,
-            latitude: -5.6708,
-            longitude: 105.2192,
-            operational_status: 'open',
-            price_status: 'paid',
-            price_min_idr: 150000,
-          },
-        ],
+        page,
+        limit,
+        total_items: totalItems,
+        total_pages: totalPages,
+        destinations: paginatedDestinations,
+        fallback_suggestions: fallbackSuggestions,
         cacheHit: false,
       };
     }

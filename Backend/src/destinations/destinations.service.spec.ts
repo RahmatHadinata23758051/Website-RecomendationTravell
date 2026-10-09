@@ -9,6 +9,21 @@ describe('DestinationsService', () => {
   let service: DestinationsService;
 
   const mockHttpService = {
+    get: jest.fn().mockReturnValue(
+      of({
+        data: {
+          status: 'success',
+          page: 1,
+          limit: 20,
+          total_items: 2,
+          total_pages: 1,
+          destinations: [
+            { canonical_id: 'dest-001', name: 'Pulau Pahawang', primary_category: 'Pantai', city_or_regency: 'Pesawaran', rating: 4.8, reviews_count: 320, price_min_idr: 150000, price_status: 'paid' },
+            { canonical_id: 'dest-002', name: 'Taman Nasional Way Kambas', primary_category: 'Alam', city_or_regency: 'Lampung Timur', rating: 4.7, reviews_count: 512, price_min_idr: 30000, price_status: 'paid' },
+          ],
+        },
+      }),
+    ),
     post: jest.fn().mockReturnValue(
       of({
         data: {
@@ -54,6 +69,28 @@ describe('DestinationsService', () => {
     expect(res.cacheHit).toBe(false);
     expect(mockHttpService.post).toHaveBeenCalled();
     expect(mockRedisService.set).toHaveBeenCalled();
+  });
+
+  it('should filter destinations by price and expose cache metadata', async () => {
+    const res = await service.getDestinations({ max_price: 50000, page: 1, limit: 20 });
+
+    expect(res.cacheHit).toBe(false);
+    expect(res.destinations).toHaveLength(1);
+    expect(res.destinations[0].name).toBe('Taman Nasional Way Kambas');
+    expect(res.fallback_suggestions).toEqual([]);
+  });
+
+  it('should return suggestions when a search has no matches', async () => {
+    mockHttpService.get.mockReturnValueOnce(of({
+      data: {
+        status: 'success', page: 1, limit: 20, total_items: 0, total_pages: 1, destinations: [],
+      },
+    }));
+
+    const res = await service.getDestinations({ search: 'tidak-ada-destinasi' });
+
+    expect(res.destinations).toEqual([]);
+    expect(res.fallback_suggestions.length).toBeGreaterThan(0);
   });
 
   it('should return cached data on cache hit without calling ML Engine', async () => {

@@ -7,9 +7,12 @@ import {
   Query,
   HttpCode,
   HttpStatus,
+  Res,
 } from '@nestjs/common';
+import { Response } from 'express';
 import { DestinationsService } from './destinations.service';
 import { GetRecommendationsDto } from './dto/get-recommendations.dto';
+import { GetDestinationsDto } from './dto/get-destinations.dto';
 
 @Controller('api/v1/destinations')
 export class DestinationsController {
@@ -17,19 +20,17 @@ export class DestinationsController {
 
   @Get()
   async getDestinations(
-    @Query('category') category?: string,
-    @Query('city_or_regency') city_or_regency?: string,
-    @Query('search') search?: string,
-    @Query('page') page?: string,
-    @Query('limit') limit?: string,
+    @Query() query: GetDestinationsDto,
+    @Res({ passthrough: true }) res: Response,
   ) {
-    return this.destinationsService.getDestinations({
-      category,
-      city_or_regency,
-      search,
-      page: page ? parseInt(page, 10) : 1,
-      limit: limit ? parseInt(limit, 10) : 20,
-    });
+    const result = await this.destinationsService.getDestinations(query);
+    
+    // Add cache header for observability
+    if (result.cacheHit !== undefined) {
+      res.setHeader('X-Cache', result.cacheHit ? 'HIT' : 'MISS');
+    }
+    
+    return result;
   }
 
   @Post('recommendations')

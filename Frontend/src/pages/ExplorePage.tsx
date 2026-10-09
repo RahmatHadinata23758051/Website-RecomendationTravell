@@ -23,7 +23,7 @@ import {
   ArrowUpRight,
 } from 'lucide-react';
 import L from 'leaflet';
-import { fetchRealDestinations } from '../services/destinationsApi';
+import { fetchRealDestinationsWithDetails } from '../services/destinationsApi';
 import { useAuth } from '../context/AuthContext';
 import { apiClient } from '../lib/api';
 import { logUserActivity } from '../services/activitiesApi';
@@ -141,13 +141,18 @@ export const ExplorePage: React.FC = () => {
   const [searchKeyword, setSearchKeyword] = useState<string>(searchParams.get('search') || '');
   const [selectedCategory, setSelectedCategory] = useState<string>('Semua');
   const [selectedRegency, setSelectedRegency] = useState<string>('PILIH');
-  const [sortBy, setSortBy] = useState<'popular' | 'rating' | 'price'>('popular');
+  const [sortBy, setSortBy] = useState<'popular' | 'rating' | 'price' | 'price_desc' | 'reviews_count'>('popular');
   const [selectedDestination, setSelectedDestination] = useState<Destination | null>(null);
   const [hoveredDestinationId, setHoveredDestinationId] = useState<string | null>(null);
   const [favorites, setFavorites] = useState<string[]>([]);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [realDestinations, setRealDestinations] = useState<Destination[]>([]);
+  const [searchSuggestions, setSearchSuggestions] = useState<Destination[]>([]);
+  const [totalItems, setTotalItems] = useState<number>(0);
   const [isLoadingRealData, setIsLoadingRealData] = useState<boolean>(false);
+  const [minPrice, setMinPrice] = useState<string>('');
+  const [maxPrice, setMaxPrice] = useState<string>('');
+  const [priceStatus, setPriceStatus] = useState<'all' | 'free' | 'paid'>('all');
   const [loadingProgress, setLoadingProgress] = useState<number>(0);
 
   // Reviews State
@@ -271,29 +276,39 @@ export const ExplorePage: React.FC = () => {
       });
     }, 100);
 
-    fetchRealDestinations({
-      category: selectedCategory,
-      city_or_regency: selectedRegency === 'PILIH' ? 'Semua' : selectedRegency,
-      search: searchKeyword,
-      limit: 100,
-    }).then((data) => {
-      if (isMounted) {
-        clearInterval(progressInterval);
-        setLoadingProgress(100);
-        setTimeout(() => {
-          if (isMounted) {
-            setRealDestinations(data || []);
-            setIsLoadingRealData(false);
-          }
-        }, 200);
-      }
-    });
+    const timer = setTimeout(() => {
+      fetchRealDestinationsWithDetails({
+        category: selectedCategory,
+        city_or_regency: selectedRegency === 'PILIH' ? 'Semua' : selectedRegency,
+        search: searchKeyword,
+        min_price: minPrice ? Number(minPrice) : undefined,
+        max_price: maxPrice ? Number(maxPrice) : undefined,
+        price_status: priceStatus,
+        sort_by: sortBy === 'price' ? 'price_min_idr' : sortBy === 'price_desc' ? 'price_min_idr' : sortBy === 'reviews_count' ? 'reviews_count' : sortBy,
+        sort_order: sortBy === 'price' ? 'asc' : sortBy === 'price_desc' ? 'desc' : 'desc',
+        limit: 100,
+      }).then((result) => {
+        if (isMounted) {
+          clearInterval(progressInterval);
+          setLoadingProgress(100);
+          setTimeout(() => {
+            if (isMounted) {
+              setRealDestinations(result.destinations || []);
+              setSearchSuggestions(result.fallbackSuggestions || []);
+              setTotalItems(result.totalItems || 0);
+              setIsLoadingRealData(false);
+            }
+          }, 200);
+        }
+      });
+    }, 250);
 
     return () => {
       isMounted = false;
+      clearTimeout(timer);
       clearInterval(progressInterval);
     };
-  }, [selectedCategory, selectedRegency, searchKeyword]);
+  }, [selectedCategory, selectedRegency, searchKeyword, minPrice, maxPrice, priceStatus, sortBy]);
 
   // Sort Filtered Destinations logic (+25% ML Score Boost for user preferences)
   const filteredDestinations = [...realDestinations].sort((a, b) => {
@@ -665,7 +680,7 @@ export const ExplorePage: React.FC = () => {
             </div>
 
             {/* Region Select & Sort Dropdowns */}
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3 flex-wrap">
               <div className="flex items-center gap-1.5 text-xs text-slate-500 font-medium">
                 <MapPin className="w-3.5 h-3.5 text-[#0D9488]" />
                 <span>Kabupaten/Kota:</span>
@@ -693,8 +708,60 @@ export const ExplorePage: React.FC = () => {
                   <option value="popular">Populer</option>
                   <option value="rating">Rating Tertinggi</option>
                   <option value="price">Harga Termurah</option>
+                  <option value="price_desc">Harga Termahal</option>
+                  <option value="reviews_count">Banyak Ulasan</option>
                 </select>
               </div>
+            </div>
+
+            {/* Price Range & Price Status Filters */}
+            <div className="flex flex-wrap items-center gap-3 pt-2 border-t border-slate-200/60">
+              <div className="flex items-center gap-2 text-xs text-slate-500 font-medium">
+                <Tag className="w-3.5 h-3.5 text-amber-500" />
+                <span>Harga:</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <input
+                  type="number"
+                  value={minPrice}
+                  onChange={(e) => setMinPrice(e.target.value)}
+                  placeholder="Min"
+                  className="w-24 bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1 text-xs text-slate-900 font-medium focus:outline-none focus:border-[#0D9488]"
+                  min="0"
+                />
+                <span className="text-slate-400">-</span>
+                <input
+                  type="number"
+                  value={maxPrice}
+                  onChange={(e) => setMaxPrice(e.target.value)}
+                  placeholder="Max"
+                  className="w-24 bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1 text-xs text-slate-900 font-medium focus:outline-none focus:border-[#0D9488]"
+                  min="0"
+                />
+              </div>
+              <div className="flex items-center gap-1.5 text-xs text-slate-500 font-medium">
+                <span>Jenis:</span>
+                <select
+                  value={priceStatus}
+                  onChange={(e) => setPriceStatus(e.target.value as any)}
+                  className="bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1 text-xs text-slate-900 font-semibold focus:outline-none focus:border-[#0D9488]"
+                >
+                  <option value="all">Semua</option>
+                  <option value="free">Gratis</option>
+                  <option value="paid">Berbayar</option>
+                </select>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setMinPrice('');
+                  setMaxPrice('');
+                  setPriceStatus('all');
+                }}
+                className="text-xs text-slate-500 hover:text-slate-700 font-medium"
+              >
+                Reset
+              </button>
             </div>
           </div>
         )}
@@ -761,7 +828,7 @@ export const ExplorePage: React.FC = () => {
               <div className="lg:col-span-7 space-y-4">
                 <div className="flex items-center justify-between px-1">
                   <p className="text-xs text-slate-500 font-medium">
-                    Menampilkan <span className="font-bold text-slate-900">{filteredDestinations.length}</span> destinasi di Lampung
+                    Menampilkan <span className="font-bold text-slate-900">{totalItems || filteredDestinations.length}</span> destinasi di Lampung
                   </p>
                 </div>
 
@@ -769,7 +836,27 @@ export const ExplorePage: React.FC = () => {
                   <div className="glass-card-container rounded-3xl p-12 text-center space-y-3">
                     <Filter className="w-10 h-10 text-slate-300 mx-auto" />
                     <h3 className="text-base font-bold text-slate-800">Tidak ada destinasi ditemukan</h3>
-                    <p className="text-xs text-slate-500">Coba atur ulang kata kunci pencarian atau filter kategori kamu.</p>
+                    <p className="text-xs text-slate-500">Coba kata kunci atau filter yang lebih umum.</p>
+                     {searchSuggestions.length > 0 && (
+                       <div className="pt-3 space-y-2">
+                         <p className="text-xs font-semibold text-slate-600">Mungkin kamu tertarik:</p>
+                         <div className="flex flex-wrap justify-center gap-2">
+                           {searchSuggestions.slice(0, 4).map((suggestion) => (
+                             <button
+                               key={suggestion.id}
+                               type="button"
+                               onClick={() => {
+                                 setSearchKeyword(suggestion.name);
+                                 setSelectedRegency('Semua');
+                               }}
+                               className="rounded-full border border-teal-200 bg-teal-50 px-3 py-1.5 text-xs font-semibold text-teal-700 transition hover:bg-teal-100"
+                             >
+                               {suggestion.name}
+                             </button>
+                           ))}
+                         </div>
+                       </div>
+                     )}
                     <button
                       onClick={() => {
                         setSearchKeyword('');

@@ -5,8 +5,20 @@ export interface DestinationsQuery {
   category?: string;
   city_or_regency?: string;
   search?: string;
+  min_price?: number;
+  max_price?: number;
+  price_status?: 'all' | 'free' | 'paid';
+  sort_by?: 'rating' | 'reviews_count' | 'name' | 'price_min_idr' | 'popular';
+  sort_order?: 'asc' | 'desc';
   page?: number;
   limit?: number;
+}
+
+export interface DestinationsQueryResult {
+  destinations: Destination[];
+  fallbackSuggestions: Destination[];
+  totalItems: number;
+  totalPages: number;
 }
 
 // In-memory cache for static public destinations dataset
@@ -22,7 +34,9 @@ const cleanRegency = (str?: string): string => {
     .trim();
 };
 
-export const fetchRealDestinations = async (query: DestinationsQuery = {}): Promise<Destination[]> => {
+export const fetchRealDestinationsWithDetails = async (
+  query: DestinationsQuery = {},
+): Promise<DestinationsQueryResult> => {
   const page = query.page || 1;
   const limit = query.limit || 60;
 
@@ -33,21 +47,35 @@ export const fetchRealDestinations = async (query: DestinationsQuery = {}): Prom
         category: query.category && query.category !== 'Semua' ? query.category : undefined,
         city_or_regency: query.city_or_regency && query.city_or_regency !== 'Semua' ? query.city_or_regency : undefined,
         search: query.search || undefined,
+        min_price: query.min_price,
+        max_price: query.max_price,
+        price_status: query.price_status,
+        sort_by: query.sort_by,
+        sort_order: query.sort_order,
         page,
         limit,
       },
-      timeout: 2500,
+      timeout: 3000,
     });
 
     const data = response.data;
-    if (data && data.destinations && Array.isArray(data.destinations) && data.destinations.length > 0) {
-      return data.destinations.map((item: any) => mapApiToDestination(item));
+    if (data && data.destinations && Array.isArray(data.destinations)) {
+      const destinations = data.destinations.map((item: any) => mapApiToDestination(item));
+      const fallbackSuggestions = Array.isArray(data.fallback_suggestions)
+        ? data.fallback_suggestions.map((item: any) => mapApiToDestination(item))
+        : [];
+      return {
+        destinations,
+        fallbackSuggestions,
+        totalItems: data.total_items || destinations.length,
+        totalPages: data.total_pages || 1,
+      };
     }
   } catch (error) {
-    // Silent fallback
+    // Fallback to static data
   }
 
-  // 2. Fallback to local static JSON dataset with Robust Regency Matching
+  // 2. Fallback to local static JSON dataset with Robust Regency Matching & Price Filters
   try {
     if (!staticDestinationsCache) {
       const staticRes = await fetch('/assets/data/public_destinations.json');
@@ -76,24 +104,76 @@ export const fetchRealDestinations = async (query: DestinationsQuery = {}): Prom
       }
 
       if (query.search) {
-        const kw = query.search.toLowerCase();
+        const kw = query.search.toLowerCase().trim();
         filtered = filtered.filter(
           (d) =>
             String(d.name || '').toLowerCase().includes(kw) ||
             String(d.city_or_regency || '').toLowerCase().includes(kw) ||
-            String(d.address || '').toLowerCase().includes(kw)
+            String(d.address || '').toLowerCase().includes(kw) ||
+            String(d.description || '').toLowerCase().includes(kw),
         );
       }
 
+      if (query.price_status && query.price_status !== 'all') {
+        filtered = filtered.filter((d) =>
+          query.price_status === 'free'
+            ? d.price_status === 'free' || Number(d.price_min_idr || 0) === 0
+            : Number(d.price_min_idr || 0) > 0,
+        );
+      }
+
+      if (query.min_price !== undefined) {
+        filtered = filtered.filter((d) => Number(d.price_min_idr || 0) >= query.min_price!);
+      }
+
+      if (query.max_price !== undefined) {
+        filtered = filtered.filter((d) => Number(d.price_min_idr || 0) <= query.max_price!);
+      }
+
+      // Sort
+      if (query.sort_by === 'rating') {
+        filtered.sort((a, b) => (query.sort_order === 'asc' ? (a.rating || 0) - (b.rating || 0) : (b.rating || 0) - (a.rating || 0)));
+      } else if (query.sort_by === 'price_min_idr') {
+        filtered.sort((a, b) =>
+          query.sort_order === 'asc'
+            ? Number(a.price_min_idr || 0) - Number(b.price_min_idr || 0)
+            : Number(b.price_min_idr || 0) - Number(a.price_min_idr || 0),
+        );
+      }
+
+      const totalItems = filtered.length;
+      const totalPages = Math.max(1, Math.ceil(totalItems / limit));
       const startIdx = (page - 1) * limit;
       const paginated = filtered.slice(startIdx, startIdx + limit);
-      return paginated.map((item: any) => mapApiToDestination(item));
+      const destinations = paginated.map((item: any) => mapApiToDestination(item));
+
+      const fallbackSuggestions =
+        destinations.length === 0 && staticDestinationsCache.length > 0
+          ? staticDestinationsCache.slice(0, 4).map((item: any) => mapApiToDestination(item))
+          : [];
+
+      return {
+        destinations,
+        fallbackSuggestions,
+        totalItems,
+        totalPages,
+      };
     }
   } catch (err) {
     // Silent fallback
   }
 
-  return [];
+  return {
+    destinations: [],
+    fallbackSuggestions: [],
+    totalItems: 0,
+    totalPages: 0,
+  };
+};
+
+export const fetchRealDestinations = async (query: DestinationsQuery = {}): Promise<Destination[]> => {
+  const result = await fetchRealDestinationsWithDetails(query);
+  return result.destinations;
 };
 
 const mapCategoryName = (raw: string): string => {
