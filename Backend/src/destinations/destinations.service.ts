@@ -194,17 +194,21 @@ export class DestinationsService {
       const data = response.data;
       let destinations = data.destinations || [];
 
-      // Filter in memory if ML engine doesn't support price filters natively
+      // Keep this guard for older ML deployments that do not yet implement
+      // the discovery contract. Current ML responses are already filtered and
+      // sorted before pagination.
       if (query.price_status && query.price_status !== 'all') {
         destinations = destinations.filter((d: any) =>
-          query.price_status === 'free' ? d.price_status === 'free' || d.price_min_idr === 0 : d.price_status === 'paid' && d.price_min_idr > 0,
+          query.price_status === 'free'
+            ? d.price_status === 'free' || Number(d.price_min_idr || 0) === 0
+            : Number(d.price_min_idr || 0) > 0,
         );
       }
       if (query.min_price !== undefined) {
-        destinations = destinations.filter((d: any) => (d.price_min_idr || 0) >= query.min_price!);
+        destinations = destinations.filter((d: any) => Number(d.price_min_idr || 0) >= query.min_price!);
       }
       if (query.max_price !== undefined) {
-        destinations = destinations.filter((d: any) => (d.price_min_idr || 0) <= query.max_price!);
+        destinations = destinations.filter((d: any) => Number(d.price_min_idr || 0) <= query.max_price!);
       }
 
       // Add fallback suggestions if 0 results
@@ -215,7 +219,8 @@ export class DestinationsService {
       const result = {
         ...data,
         destinations,
-        total_items: destinations.length,
+        total_items: data.total_items !== undefined ? data.total_items : destinations.length,
+        total_pages: data.total_pages !== undefined ? data.total_pages : Math.max(1, Math.ceil(destinations.length / limit)),
         fallback_suggestions: fallbackSuggestions,
         cacheHit: false,
       };
@@ -230,7 +235,14 @@ export class DestinationsService {
       let pool = [...DEFAULT_FALLBACK_DESTINATIONS];
 
       if (query.category && query.category.toLowerCase() !== 'semua') {
-        const catTarget = query.category.toLowerCase().trim();
+        const categoryMap: Record<string, string> = {
+          pantai: 'pantai', beach: 'pantai',
+          alam: 'alam', nature: 'alam',
+          budaya: 'budaya', culture: 'budaya',
+          kuliner: 'kuliner', culinary: 'kuliner',
+          adventure: 'adventure',
+        };
+        const catTarget = categoryMap[query.category.toLowerCase().trim()] || query.category.toLowerCase().trim();
         pool = pool.filter((d) => d.primary_category.toLowerCase().includes(catTarget));
       }
 
@@ -271,6 +283,10 @@ export class DestinationsService {
         pool = pool.filter((d) => (d.price_min_idr || 0) <= query.max_price!);
       }
 
+      if (query.operational_status) {
+        pool = pool.filter((d) => d.operational_status.toLowerCase() === query.operational_status!.toLowerCase());
+      }
+
       // Sort
       if (query.sort_by === 'rating') {
         pool.sort((a, b) => (query.sort_order === 'asc' ? a.rating - b.rating : b.rating - a.rating));
@@ -280,9 +296,11 @@ export class DestinationsService {
         pool.sort((a, b) => (query.sort_order === 'asc' ? (a.price_min_idr || 0) - (b.price_min_idr || 0) : (b.price_min_idr || 0) - (a.price_min_idr || 0)));
       } else if (query.sort_by === 'name') {
         pool.sort((a, b) => (query.sort_order === 'asc' ? a.name.localeCompare(b.name) : b.name.localeCompare(a.name)));
+      } else if (query.sort_by === 'popular') {
+        pool.sort((a, b) => (query.sort_order === 'asc' ? a.rating * a.reviews_count - b.rating * b.reviews_count : b.rating * b.reviews_count - a.rating * a.reviews_count));
       } else {
-        // 'popular'
-        pool.sort((a, b) => b.rating * b.reviews_count - a.rating * a.reviews_count);
+        // default popular
+        pool.sort((a, b) => (query.sort_order === 'asc' ? a.rating * a.reviews_count - b.rating * b.reviews_count : b.rating * b.reviews_count - a.rating * a.reviews_count));
       }
 
       const totalItems = pool.length;

@@ -38,7 +38,7 @@ export const fetchRealDestinationsWithDetails = async (
   query: DestinationsQuery = {},
 ): Promise<DestinationsQueryResult> => {
   const page = query.page || 1;
-  const limit = query.limit || 60;
+  const limit = query.limit || 20;
 
   // 1. Try NestJS Backend API
   try {
