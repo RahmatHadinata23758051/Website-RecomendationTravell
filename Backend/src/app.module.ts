@@ -17,6 +17,9 @@ import { ItinerariesModule } from './itineraries/itineraries.module';
 
 import { ActivityModule } from './activity/activity.module';
 import { PlacesSubmissionModule } from './places/places-submission.module';
+import { HealthModule } from './health/health.module';
+import { PerformanceInterceptor } from './common/interceptors/performance.interceptor';
+import { APP_INTERCEPTOR } from '@nestjs/core';
 
 @Module({
   imports: [
@@ -41,6 +44,7 @@ import { PlacesSubmissionModule } from './places/places-submission.module';
     ItinerariesModule,
     ActivityModule,
     PlacesSubmissionModule,
+    HealthModule,
   ],
   controllers: [AppController],
   providers: [
@@ -48,6 +52,10 @@ import { PlacesSubmissionModule } from './places/places-submission.module';
     {
       provide: APP_GUARD,
       useClass: ThrottlerGuard,
+    },
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: PerformanceInterceptor,
     },
   ],
 })

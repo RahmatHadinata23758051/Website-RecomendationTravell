@@ -5,9 +5,9 @@ import {
   Body,
   Param,
   Query,
+  Res,
   HttpCode,
   HttpStatus,
-  Res,
 } from '@nestjs/common';
 import { Response } from 'express';
 import { DestinationsService } from './destinations.service';
@@ -24,19 +24,24 @@ export class DestinationsController {
     @Res({ passthrough: true }) res: Response,
   ) {
     const result = await this.destinationsService.getDestinations(query);
-    
+
     // Add cache header for observability
     if (result.cacheHit !== undefined) {
       res.setHeader('X-Cache', result.cacheHit ? 'HIT' : 'MISS');
     }
-    
+
     return result;
   }
 
   @Post('recommendations')
   @HttpCode(HttpStatus.OK)
-  async getRecommendations(@Body() dto: GetRecommendationsDto) {
-    return this.destinationsService.getRecommendations(dto);
+  async getRecommendations(
+    @Res({ passthrough: true }) response: any,
+    @Body() dto: GetRecommendationsDto,
+  ) {
+    const result = await this.destinationsService.getRecommendations(dto);
+    response.setHeader('X-Cache', result.cacheHit ? 'HIT' : 'MISS');
+    return result;
   }
 
   @Get('popular')
