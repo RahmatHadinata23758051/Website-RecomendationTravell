@@ -42,6 +42,14 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
     }
   }
 
+  async ping(): Promise<string> {
+    if (this.client && this.client.status === 'ready') {
+      return this.client.ping();
+    }
+
+    throw new Error('Redis client not ready');
+  }
+
   async get(key: string): Promise<string | null> {
     if (this.client && this.client.status === 'ready') {
       try {
