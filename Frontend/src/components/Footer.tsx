@@ -3,7 +3,7 @@ import { MapPin, Mail } from 'lucide-react';
 
 export const Footer: React.FC = () => {
   return (
-    <footer className="relative bg-[#0F2937] text-white overflow-hidden">
+    <footer role="contentinfo" className="relative bg-[#0F2937] text-white overflow-hidden">
       {/* Tapis pattern watermark overlay */}
       <img
         src="/assets/images/patterns/lampung-tapis-pattern-transparent.png"
@@ -28,14 +28,14 @@ export const Footer: React.FC = () => {
               <span className="text-sm font-display font-extrabold tracking-tight">
                 Kelana<span className="text-[#2DD4BF]">Lampung</span>
               </span>
-              <p className="text-[10px] text-slate-400 font-sans mt-0.5">
+              <p className="text-[10px] text-slate-300 font-sans mt-0.5">
                 Platform Pariwisata Cerdas Berbasis AI
               </p>
             </div>
           </div>
 
           {/* Quick Info */}
-          <div className="flex flex-wrap items-center gap-4 text-[10px] text-slate-400">
+          <div className="flex flex-wrap items-center gap-4 text-[10px] text-slate-300">
             <div className="flex items-center gap-1.5">
               <MapPin className="w-3 h-3 text-[#2DD4BF]" />
               <span>Bandar Lampung, Indonesia</span>

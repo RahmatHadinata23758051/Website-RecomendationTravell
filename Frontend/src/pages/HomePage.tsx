@@ -291,7 +291,8 @@ export const HomePage: React.FC = () => {
                     value={searchKeyword}
                     onChange={(e) => setSearchKeyword(e.target.value)}
                     placeholder="Cari destinasi, aktivitas, kuliner, atau pengalaman..."
-                    className="w-full bg-transparent text-xs text-slate-900 focus:outline-none placeholder:text-slate-400 font-sans"
+                    aria-label="Cari destinasi wisata"
+                     className="w-full min-h-[44px] bg-transparent text-xs text-slate-900 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none placeholder:text-slate-500 font-sans"
                   />
                 </div>
                 <div className="hidden sm:flex items-center gap-1.5 border-l border-slate-200 pl-3 pr-1 shrink-0">
@@ -302,7 +303,7 @@ export const HomePage: React.FC = () => {
                 </div>
                 <button
                   type="submit"
-                  className="w-9 h-9 rounded-full bg-[#0D9488] hover:bg-[#0F766E] text-white flex items-center justify-center shrink-0 shadow-md transition-all active:scale-95"
+                  className="w-11 h-11 min-w-[44px] min-h-[44px] rounded-full bg-[#0D9488] hover:bg-[#0F766E] text-white flex items-center justify-center shrink-0 shadow-md transition-all active:scale-95 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
                   aria-label="Cari Destinasi"
                 >
                   <Search className="w-4 h-4" />
@@ -313,14 +314,14 @@ export const HomePage: React.FC = () => {
               <div className="flex flex-wrap items-center gap-3">
                 <button
                   onClick={() => navigate('/explore')}
-                  className="px-5 py-2.5 rounded-full bg-[#0D9488] hover:bg-[#0F766E] text-white text-xs font-bold shadow-md shadow-[#0D9488]/20 flex items-center gap-2 transition-all active:scale-[0.98]"
+                  className="px-5 py-2.5 min-h-[44px] rounded-full bg-[#0D9488] hover:bg-[#0F766E] text-white text-xs font-bold shadow-md shadow-[#0D9488]/20 flex items-center gap-2 transition-all active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
                 >
                   <Sparkles className="w-3.5 h-3.5" />
                   <span>Destinasi Populer</span>
                 </button>
                 <button
                   onClick={() => navigate('/explore')}
-                  className="px-5 py-2.5 rounded-full bg-white/90 hover:bg-white text-slate-800 border border-siger-400/70 text-xs font-bold shadow-sm flex items-center gap-2 transition-all active:scale-[0.98] backdrop-blur-sm"
+                  className="px-5 py-2.5 min-h-[44px] rounded-full bg-white/90 hover:bg-white text-slate-800 border border-siger-400/70 text-xs font-bold shadow-sm flex items-center gap-2 transition-all active:scale-[0.98] backdrop-blur-sm focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
                 >
                   <Sparkles className="w-3.5 h-3.5 text-siger-500" />
                   <span>Mulai Menjelajah</span>
@@ -361,7 +362,8 @@ export const HomePage: React.FC = () => {
                     <button
                       key={key}
                       onClick={() => setSelectedCategory(key)}
-                      className={`flex flex-col items-center gap-1 p-2 rounded-2xl transition-all ${selectedCategory === key
+                      aria-label={`Pilih kategori ${label}`}
+                      className={`flex flex-col items-center justify-center gap-1 p-2 min-h-[44px] rounded-2xl transition-all focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none ${selectedCategory === key
                           ? 'bg-[#0D9488] text-white shadow-md'
                           : 'hover:bg-slate-100/80 text-slate-600'
                         }`}
@@ -400,7 +402,7 @@ export const HomePage: React.FC = () => {
               </div>
               <button
                 onClick={() => navigate('/explore')}
-                className="text-xs font-bold text-[#0D9488] hover:text-[#0F766E] flex items-center gap-1 transition-colors shrink-0"
+                className="text-xs font-bold text-[#0D9488] hover:text-[#0F766E] flex items-center gap-1 transition-colors shrink-0 min-h-[44px] px-2 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
               >
                 <span>Lihat Semua</span>
                 <ChevronRight className="w-4 h-4" />
@@ -426,7 +428,7 @@ export const HomePage: React.FC = () => {
                         {item.category}
                       </span>
                       <button
-                        className="w-7 h-7 rounded-full bg-slate-900/50 text-white hover:bg-red-500 flex items-center justify-center backdrop-blur-md transition-colors"
+                        className="w-11 h-11 min-w-[44px] min-h-[44px] rounded-full bg-slate-900/50 text-white hover:bg-red-500 flex items-center justify-center backdrop-blur-md transition-colors focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
                         aria-label="Simpan Favorit"
                       >
                         <Heart className="w-3.5 h-3.5" />
@@ -449,7 +451,7 @@ export const HomePage: React.FC = () => {
                 ))}
               </div>
               <button
-                className="hidden lg:flex absolute -right-4 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-white text-slate-600 shadow-xl border border-slate-200 items-center justify-center hover:bg-slate-50 transition-all z-20"
+                className="hidden lg:flex absolute -right-4 top-1/2 -translate-y-1/2 w-10 h-10 min-w-[44px] min-h-[44px] rounded-full bg-white text-slate-600 shadow-xl border border-slate-200 items-center justify-center hover:bg-slate-50 transition-all z-20 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
                 aria-label="Selanjutnya"
               >
                 <ChevronRight className="w-5 h-5" />

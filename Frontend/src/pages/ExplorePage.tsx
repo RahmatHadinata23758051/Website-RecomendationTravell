@@ -613,7 +613,7 @@ export const ExplorePage: React.FC = () => {
                   }}
                   placeholder="Cari pantai, museum..."
                   aria-label="Cari destinasi wisata"
-                  className="w-full rounded-2xl border border-slate-200 bg-white/90 py-2.5 pl-10 pr-9 font-sans text-xs text-slate-900 shadow-sm outline-none transition placeholder:text-slate-400 focus:border-[#0D9488]"
+                  className="w-full min-h-[44px] rounded-2xl border border-slate-200 bg-white/90 py-2.5 pl-10 pr-9 font-sans text-xs text-slate-900 shadow-sm outline-none transition placeholder:text-slate-500 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none focus:border-[#0D9488]"
                 />
 
                 {searchKeyword && (
@@ -623,10 +623,10 @@ export const ExplorePage: React.FC = () => {
                       setSearchKeyword('');
                       setSearchParams({});
                     }}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 transition hover:text-slate-700"
+                    className="absolute right-1 top-1/2 -translate-y-1/2 p-2.5 min-w-[44px] min-h-[44px] flex items-center justify-center text-slate-500 transition hover:text-slate-800 rounded-full focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
                     aria-label="Hapus pencarian"
                   >
-                    <X className="h-3.5 w-3.5" />
+                    <X className="h-4 w-4" />
                   </button>
                 )}
               </div>
@@ -638,7 +638,7 @@ export const ExplorePage: React.FC = () => {
                   setSearchKeyword('');
                   setSearchParams({});
                 }}
-                className="inline-flex items-center justify-center gap-2 rounded-2xl bg-[#0D9488] hover:bg-[#0F766E] px-5 py-3 font-sans text-xs font-extrabold text-white shadow-md shadow-[#0D9488]/20 transition-all shrink-0 active:scale-95"
+                className="inline-flex items-center justify-center gap-2 rounded-2xl bg-[#0D9488] hover:bg-[#0F766E] px-5 py-3 min-h-[44px] font-sans text-xs font-extrabold text-white shadow-md shadow-[#0D9488]/20 transition-all shrink-0 active:scale-95 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
               >
                 <span>Lihat Semua Kabupaten (1.590+ Data)</span>
                 <ArrowUpRight className="h-4 w-4" />
@@ -668,7 +668,7 @@ export const ExplorePage: React.FC = () => {
                 <button
                   key={label}
                   onClick={() => setSelectedCategory(label)}
-                  className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold transition-all ${selectedCategory === label
+                  className={`flex items-center gap-1.5 px-3.5 py-1.5 min-h-[44px] rounded-full text-xs font-bold transition-all focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none ${selectedCategory === label
                     ? 'bg-[#0D9488] text-white shadow-md shadow-[#0D9488]/20'
                     : 'bg-slate-100 hover:bg-slate-200 text-slate-600'
                     }`}
@@ -681,13 +681,13 @@ export const ExplorePage: React.FC = () => {
 
             {/* Region Select & Sort Dropdowns */}
             <div className="flex items-center gap-3 flex-wrap">
-              <div className="flex items-center gap-1.5 text-xs text-slate-500 font-medium">
+              <div className="flex items-center gap-1.5 text-xs text-slate-600 font-medium">
                 <MapPin className="w-3.5 h-3.5 text-[#0D9488]" />
                 <span>Kabupaten/Kota:</span>
                 <select
                   value={selectedRegency}
                   onChange={(e) => setSelectedRegency(e.target.value)}
-                  className="bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1 text-xs text-slate-900 font-semibold focus:outline-none focus:border-[#0D9488]"
+                  className="bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-2 min-h-[44px] text-xs text-slate-900 font-semibold focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none focus:border-[#0D9488]"
                 >
                   {regencies.map((reg) => (
                     <option key={reg} value={reg}>
@@ -697,13 +697,13 @@ export const ExplorePage: React.FC = () => {
                 </select>
               </div>
 
-              <div className="flex items-center gap-1.5 text-xs text-slate-500 font-medium">
+              <div className="flex items-center gap-1.5 text-xs text-slate-600 font-medium">
                 <SlidersHorizontal className="w-3.5 h-3.5 text-siger-500" />
                 <span>Urutkan:</span>
                 <select
                   value={sortBy}
                   onChange={(e) => setSortBy(e.target.value as any)}
-                  className="bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1 text-xs text-slate-900 font-semibold focus:outline-none focus:border-[#0D9488]"
+                  className="bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-2 min-h-[44px] text-xs text-slate-900 font-semibold focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none focus:border-[#0D9488]"
                 >
                   <option value="popular">Populer</option>
                   <option value="rating">Rating Tertinggi</option>
@@ -813,7 +813,7 @@ export const ExplorePage: React.FC = () => {
             <div className="flex items-center justify-between bg-slate-100/80 p-3 rounded-2xl border border-slate-200/70">
               <button
                 onClick={() => setSelectedRegency('PILIH')}
-                className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white text-slate-700 hover:bg-[#0D9488] hover:text-white border border-slate-300 text-xs font-bold transition-all shadow-sm"
+                className="inline-flex items-center gap-2 px-4 py-2 min-h-[44px] rounded-full bg-white text-slate-700 hover:bg-[#0D9488] hover:text-white border border-slate-300 text-xs font-bold transition-all shadow-sm focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
               >
                 <span>← Pilih Kabupaten Lain</span>
               </button>
@@ -864,7 +864,7 @@ export const ExplorePage: React.FC = () => {
                         setSelectedRegency('Semua');
                         setSearchParams({});
                       }}
-                      className="px-4 py-2 bg-[#0D9488] text-white text-xs font-bold rounded-full hover:bg-[#0F766E] transition-colors"
+                      className="px-4 py-2.5 min-h-[44px] bg-[#0D9488] text-white text-xs font-bold rounded-full hover:bg-[#0F766E] transition-colors focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
                     >
                       Reset Semua Filter
                     </button>
@@ -914,7 +914,8 @@ export const ExplorePage: React.FC = () => {
                             </div>
                             <button
                               onClick={(e) => toggleFavorite(item.id, e)}
-                              className={`w-7 h-7 rounded-full flex items-center justify-center backdrop-blur-md transition-colors ${favorites.includes(item.id)
+                              aria-label={`${favorites.includes(item.id) ? 'Hapus' : 'Simpan'} ${item.name} ${favorites.includes(item.id) ? 'dari' : 'ke'} favorit`}
+                               className={`w-11 h-11 min-w-[44px] min-h-[44px] rounded-full flex items-center justify-center backdrop-blur-md transition-colors focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none ${favorites.includes(item.id)
                                 ? 'bg-red-500 text-white'
                                 : 'bg-slate-900/40 text-white hover:bg-slate-900/70'
                                 }`}
@@ -958,7 +959,7 @@ export const ExplorePage: React.FC = () => {
                                 e.stopPropagation();
                                 setSelectedDestination(item);
                               }}
-                              className="px-3 py-1.5 rounded-xl bg-teal-50 hover:bg-[#0D9488] text-[#0D9488] hover:text-white text-[11px] font-bold transition-all flex items-center gap-1"
+                              className="px-3 py-2 min-h-[44px] rounded-xl bg-teal-50 hover:bg-[#0D9488] text-[#0D9488] hover:text-white text-[11px] font-bold transition-all flex items-center gap-1 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
                             >
                               <span>Detail</span>
                               <ChevronRight className="w-3.5 h-3.5" />
@@ -1007,10 +1008,10 @@ export const ExplorePage: React.FC = () => {
             {/* Close Button */}
             <button
               onClick={() => setSelectedDestination(null)}
-              className="absolute top-4 right-4 z-20 w-9 h-9 rounded-full bg-slate-900/60 hover:bg-slate-900 text-white flex items-center justify-center backdrop-blur-md transition-colors"
+              className="absolute top-4 right-4 z-20 w-11 h-11 min-w-[44px] min-h-[44px] rounded-full bg-slate-900/60 hover:bg-slate-900 text-white flex items-center justify-center backdrop-blur-md transition-colors focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
               aria-label="Tutup Detail"
             >
-              <X className="w-4 h-4" />
+              <X className="w-5 h-5" />
             </button>
 
             {/* Modal Image Header */}
@@ -1116,7 +1117,7 @@ export const ExplorePage: React.FC = () => {
                   </div>
                   <button
                     onClick={() => setIsWriteReviewModalOpen(true)}
-                    className="px-3.5 py-1.5 rounded-full bg-[#0D9488] hover:bg-[#0F766E] text-white text-xs font-bold shadow-xs transition-all flex items-center gap-1.5"
+                    className="px-3.5 py-2 min-h-[44px] rounded-full bg-[#0D9488] hover:bg-[#0F766E] text-white text-xs font-bold shadow-xs transition-all flex items-center gap-1.5 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
                   >
                     <Star className="w-3.5 h-3.5 fill-current text-amber-300" />
                     <span>+ Tulis Ulasan (+30 XP)</span>
@@ -1180,7 +1181,7 @@ export const ExplorePage: React.FC = () => {
             <div className="p-4 bg-slate-50 border-t border-slate-200/80 flex flex-wrap items-center justify-between gap-3">
               <button
                 onClick={(e) => toggleFavorite(selectedDestination.id, e)}
-                className={`px-4 py-2.5 rounded-full text-xs font-bold flex items-center gap-2 transition-all ${favorites.includes(selectedDestination.id)
+                className={`px-4 py-2.5 min-h-[44px] rounded-full text-xs font-bold flex items-center gap-2 transition-all focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none ${favorites.includes(selectedDestination.id)
                   ? 'bg-red-500 text-white'
                   : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-100'
                   }`}
@@ -1193,7 +1194,7 @@ export const ExplorePage: React.FC = () => {
                 href={`https://www.google.com/maps/search/?api=1&query=${selectedDestination.coords[0]},${selectedDestination.coords[1]}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="px-5 py-2.5 rounded-full bg-[#0D9488] hover:bg-[#0F766E] text-white text-xs font-bold shadow-md shadow-[#0D9488]/20 flex items-center gap-2 transition-all"
+                className="px-5 py-2.5 min-h-[44px] rounded-full bg-[#0D9488] hover:bg-[#0F766E] text-white text-xs font-bold shadow-md shadow-[#0D9488]/20 flex items-center gap-2 transition-all focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
               >
                 <span>Buka di Google Maps</span>
                 <ExternalLink className="w-3.5 h-3.5" />
@@ -1220,7 +1221,8 @@ export const ExplorePage: React.FC = () => {
               </div>
               <button
                 onClick={() => setIsWriteReviewModalOpen(false)}
-                className="w-7 h-7 rounded-full bg-slate-100 text-slate-600 flex items-center justify-center"
+                className="w-11 h-11 min-w-[44px] min-h-[44px] rounded-full bg-slate-100 text-slate-600 flex items-center justify-center focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
+                aria-label="Tutup modal ulasan"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -1236,7 +1238,8 @@ export const ExplorePage: React.FC = () => {
                       key={star}
                       type="button"
                       onClick={() => setReviewRating(star)}
-                      className="p-1.5 transition-transform hover:scale-125 focus:outline-none"
+                      className="p-2 min-h-[44px] min-w-[44px] transition-transform hover:scale-125 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none rounded-full"
+                      aria-label={`${star} bintang`}
                     >
                       <Star
                         className={`w-7 h-7 ${star <= reviewRating ? 'fill-amber-400 text-amber-400' : 'text-slate-300'}`}
@@ -1269,14 +1272,14 @@ export const ExplorePage: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setIsWriteReviewModalOpen(false)}
-                  className="px-4 py-2 rounded-full border border-slate-300 text-slate-700 text-xs font-bold hover:bg-slate-50 transition-all"
+                  className="px-4 py-2.5 min-h-[44px] rounded-full border border-slate-300 text-slate-700 text-xs font-bold hover:bg-slate-50 transition-all focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
                 >
                   Batal
                 </button>
                 <button
                   type="submit"
                   disabled={isSubmittingReview || !reviewText.trim()}
-                  className="px-5 py-2 rounded-full bg-[#0D9488] hover:bg-[#0F766E] text-white text-xs font-bold shadow-md transition-all flex items-center gap-1.5 disabled:opacity-50"
+                  className="px-5 py-2.5 min-h-[44px] rounded-full bg-[#0D9488] hover:bg-[#0F766E] text-white text-xs font-bold shadow-md transition-all flex items-center gap-1.5 disabled:opacity-50 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
                 >
                   {isSubmittingReview ? (
                     <span>Mengirim...</span>
