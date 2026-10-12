@@ -2,6 +2,7 @@ import {
   Injectable,
   NotFoundException,
   ForbiddenException,
+  ServiceUnavailableException,
   Logger,
 } from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
@@ -59,19 +60,17 @@ export class PlannerService {
       }
     } catch (error) {
       this.logger.warn(
-        `[PLANNER ML FALLBACK] FastAPI Python ML API unavailable (${error.message}). Executing built-in NestJS Spatial Fallback Engine.`,
+        `[PLANNER ML UNAVAILABLE] FastAPI Python ML API unavailable (${error.message}). Surfacing honest 503.`,
       );
     }
 
-    // 2. Built-in NestJS Spatial Fallback Engine if ML engine unavailable
+    // 2. No synthetic fallback: if ML engine is unavailable, surface an honest 503
     if (!resultData) {
-      resultData = this.executeFallbackSpatialEngine(
-        city_or_regency,
-        primary_category,
-        budget_level,
-        pace_style,
-        duration_days,
-      );
+      throw new ServiceUnavailableException({
+        statusCode: 503,
+        error: 'ML_ENGINE_UNAVAILABLE',
+        message: 'Layanan AI Planner sedang tidak tersedia. Silakan coba lagi beberapa saat lagi.',
+      });
     }
 
     // 3. Save to database if user is authenticated
@@ -122,176 +121,15 @@ export class PlannerService {
       if (response?.data?.status === 'success') {
         return response.data;
       }
+      throw new Error('ML Engine returned non-success response');
     } catch (err) {
-      this.logger.warn(
-        `[SWAP SLOT FALLBACK] ML API swap failed: ${err.message}. Using Database fallback.`,
-      );
-    }
-
-    // In-memory Fallback Alternatives
-    const alternatives = [
-      {
-        canonical_id: 'alt-1',
-        time: 'Rekomendasi Alternatif',
-        activityTitle: `Pantai Sari Ringgung ${city_or_regency}`,
-        category: category || 'Pantai',
-        location: `Kawasan Wisata Bahari ${city_or_regency}`,
-        estimatedCost: 'Rp 25.000 / orang',
-        numericCost: 25000,
-        coords: [-5.5412, 105.2412],
-        image: '/assets/images/heroes/hero-pahawang-bg.png',
-        aiTip: `Alternatif spot unggulan di ${city_or_regency}. Rating ulasan 4.7/5.0.`,
-      },
-      {
-        canonical_id: 'alt-2',
-        time: 'Rekomendasi Alternatif',
-        activityTitle: `Air Terjun Sukma Ilang ${city_or_regency}`,
-        category: 'Alam',
-        location: `Kawasan Hujan Tropis ${city_or_regency}`,
-        estimatedCost: 'Rp 20.000 / orang',
-        numericCost: 20000,
-        coords: [-5.6123, 105.1843],
-        image: 'https://images.unsplash.com/photo-1432405972618-c60b0225b8f9?auto=format&fit=crop&w=800&q=80',
-        aiTip: `Spot suaka alam asri dengan hawa sejuk & kolam alami.`,
-      },
-      {
-        canonical_id: 'alt-3',
-        time: 'Rekomendasi Alternatif',
-        activityTitle: `Pusat Oleh-Oleh & Sate Ikan ${city_or_regency}`,
-        category: 'Kuliner',
-        location: `Pusat Kota ${city_or_regency}`,
-        estimatedCost: 'Rp 35.000 / orang',
-        numericCost: 35000,
-        coords: [-5.4292, 105.2611],
-        image: 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=800&q=80',
-        aiTip: `Sajian khas daerah setempat dengan bahan segar otentik.`,
-      },
-    ];
-
-    return {
-      status: 'success',
-      total_returned: alternatives.length,
-      alternatives,
-    };
-  }
-
-  private executeFallbackSpatialEngine(
-    regency: string,
-    category: string,
-    budget: string,
-    pace: string,
-    duration: number,
-  ) {
-    const isPadat = pace === 'Padat';
-    const slotsPerDay = isPadat ? 4 : 3;
-    const daysResult = [];
-    let totalCost = 0;
-
-    const regencyCoords: Record<string, { lat: number; lng: number }> = {
-      'Kota Bandar Lampung': { lat: -5.4129, lng: 105.2589 },
-      'Kabupaten Pesawaran': { lat: -5.5248, lng: 105.1500 },
-      'Kabupaten Pesisir Barat': { lat: -5.2130, lng: 103.9573 },
-      'Kabupaten Lampung Selatan': { lat: -5.6503, lng: 105.5189 },
-      'Kabupaten Lampung Barat': { lat: -5.0820, lng: 104.2164 },
-      'Kabupaten Tanggamus': { lat: -5.4680, lng: 104.6855 },
-      'Kabupaten Way Kanan': { lat: -4.5776, lng: 104.5609 },
-      'Kabupaten Lampung Timur': { lat: -5.2053, lng: 105.6165 },
-      'Kabupaten Lampung Tengah': { lat: -4.8840, lng: 105.2429 },
-      'Kabupaten Lampung Utara': { lat: -4.8609, lng: 104.7337 },
-      'Kota Metro': { lat: -5.1266, lng: 105.3099 },
-      'Kabupaten Pringsewu': { lat: -5.3761, lng: 104.9670 },
-      'Kabupaten Tulang Bawang': { lat: -4.3516, lng: 105.4805 },
-      'Kabupaten Tulang Bawang Barat': { lat: -4.4540, lng: 105.0930 },
-      'Kabupaten Mesuji': { lat: -4.0312, lng: 105.3776 },
-    };
-
-    const cleanKey = Object.keys(regencyCoords).find((k) =>
-      k.toLowerCase().includes(regency.toLowerCase().replace('kabupaten ', '').replace('kota ', '').trim())
-    );
-
-    const baseCoords = cleanKey ? regencyCoords[cleanKey] : { lat: -5.4292, lng: 105.2611 };
-
-    let spotCost = 15000;
-    let foodCost = 20000;
-    let tipPrefix = 'Tipe Backpacker (Hemat)';
-
-    if (budget === 'Standar') {
-      spotCost = 35000;
-      foodCost = 45000;
-      tipPrefix = 'Tipe Standar';
-    } else if (budget === 'Mewah' || budget === 'Sultan') {
-      spotCost = 85000;
-      foodCost = 120000;
-      tipPrefix = 'Tipe Mewah (Sultan)';
-    }
-
-    const pool = [
-      {
-        canonicalId: 'fb-1',
-        name: `Wisata Unggulan ${regency}`,
-        category: category !== 'Semua' ? category : 'Pantai',
-        cost: spotCost,
-        lat: baseCoords.lat,
-        lng: baseCoords.lng,
-        img: '/assets/images/heroes/hero-pahawang-bg.png',
-      },
-      {
-        canonicalId: 'fb-2',
-        name: `Resto Wisata Kuliner Khas ${regency}`,
-        category: 'Kuliner',
-        cost: foodCost,
-        lat: baseCoords.lat + 0.015,
-        lng: baseCoords.lng + 0.012,
-        img: 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=800&q=80',
-      },
-      {
-        canonicalId: 'fb-3',
-        name: `Bukit Panorama Sunset ${regency}`,
-        category: 'Alam',
-        cost: spotCost,
-        lat: baseCoords.lat - 0.018,
-        lng: baseCoords.lng - 0.014,
-        img: 'https://images.unsplash.com/photo-1432405972618-c60b0225b8f9?auto=format&fit=crop&w=800&q=80',
-      },
-    ];
-
-    for (let day = 1; day <= duration; day++) {
-      const daySlots = [];
-      for (let s = 0; s < slotsPerDay; s++) {
-        const item = pool[s % pool.length];
-        totalCost += item.cost;
-
-        const isFood = s === 1;
-        daySlots.push({
-          canonical_id: item.canonicalId,
-          time: s === 0 ? '08:30 - 11:30 WIB' : (s === 1 ? '12:00 - 14:00 WIB' : '15:30 - 18:30 WIB'),
-          activityTitle: isFood ? `Kuliner Khas & Makan Siang ${regency}` : item.name,
-          category: isFood ? 'Kuliner' : item.category,
-          location: `Kawasan Wisata ${regency}`,
-          estimatedCost: `Rp ${item.cost.toLocaleString('id-ID')} / orang`,
-          numericCost: item.cost,
-          coords: [item.lat, item.lng],
-          image: item.img,
-          aiTip: `[${tipPrefix}] Saran destinasi menarik di ${regency}. Disesuaikan dengan ritme liburan ${pace}.`,
-          travelTime: s === 0 ? 'Lokasi awal hari' : '25 menit perjalanan',
-        });
-      }
-
-      daysResult.push({
-        dayNumber: day,
-        title: `Hari ${day}: Jelajah ${regency}`,
-        slots: daySlots,
+      this.logger.warn(`[SWAP SLOT FAILURE] ML API swap failed: ${err.message}`);
+      throw new ServiceUnavailableException({
+        statusCode: 503,
+        error: 'ML_ENGINE_UNAVAILABLE',
+        message: 'Layanan swap slot AI Planner sedang tidak tersedia.',
       });
     }
-
-    return {
-      status: 'success',
-      regency,
-      duration_days: duration,
-      total_cost_estimate_idr: totalCost,
-      execution_latency_ms: 15.0,
-      itinerary: daysResult,
-    };
   }
 
   async getUserItineraries(userId: string) {

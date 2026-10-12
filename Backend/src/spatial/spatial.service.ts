@@ -52,7 +52,7 @@ export class SpatialService implements OnModuleInit {
           city_or_regency: String(d.city_or_regency || ''),
           latitude: Number(d.latitude),
           longitude: Number(d.longitude),
-          rating: typeof d.rating === 'number' ? d.rating : 4.5,
+          rating: typeof d.rating === 'number' && Number.isFinite(d.rating) ? d.rating : 0,
         }));
       this.logger.log(`[SPATIAL] Loaded ${this.destinations.length} real locations from ${target}`);
     } catch (err) {

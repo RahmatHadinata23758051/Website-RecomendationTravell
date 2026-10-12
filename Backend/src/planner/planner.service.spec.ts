@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { HttpService } from '@nestjs/axios';
-import { of } from 'rxjs';
+import { of, throwError } from 'rxjs';
 import { PlannerService } from './planner.service';
 import { PrismaService } from '../prisma/prisma.service';
 
@@ -67,5 +67,36 @@ describe('PlannerService', () => {
     expect(res.status).toBe('success');
     expect(res.regency).toBe('Kabupaten Pesawaran');
     expect(res.savedItinerary).toBeDefined();
+  });
+
+  it('should throw ML_ENGINE_UNAVAILABLE instead of fabricating an itinerary when the ML engine fails', async () => {
+    (mockHttpService.post as jest.Mock).mockReturnValueOnce(
+      throwError(() => new Error('connect ECONNREFUSED')),
+    );
+
+    await expect(
+      service.generateItinerary('user-123', {
+        city_or_regency: 'Kabupaten Pesawaran',
+        duration_days: 1,
+      }),
+    ).rejects.toMatchObject({
+      response: { error: 'ML_ENGINE_UNAVAILABLE' },
+    });
+  });
+
+  it('should throw ML_ENGINE_UNAVAILABLE when swap-slot ML call fails', async () => {
+    (mockHttpService.post as jest.Mock).mockReturnValueOnce(
+      throwError(() => new Error('connect ECONNREFUSED')),
+    );
+
+    await expect(
+      service.swapSlot({
+        city_or_regency: 'Kabupaten Pesawaran',
+        category: 'Pantai',
+        exclude_ids: [],
+      }),
+    ).rejects.toMatchObject({
+      response: { error: 'ML_ENGINE_UNAVAILABLE' },
+    });
   });
 });
