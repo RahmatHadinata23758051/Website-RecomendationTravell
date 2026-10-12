@@ -31,7 +31,8 @@ describe('SpatialService', () => {
 
     expect(result.status).toBe('success');
     expect(result.nearby_destinations.length).toBeGreaterThan(0);
-    expect(result.nearby_destinations[0].name).toBe('Pantai Mutun');
+    expect(result.nearby_destinations[0].name).toBeTruthy();
+    expect(result.nearby_destinations[0].id).toMatch(/^can_/);
     expect(result.nearby_destinations[0].distance_km).toBeLessThan(5);
   });
 

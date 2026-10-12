@@ -225,16 +225,8 @@ export const WeatherWidget: React.FC = () => {
         advisory: advisoryText,
       });
     } catch (err) {
-      // Fallback
-      setWeatherData({
-        temp: 29,
-        condition: 'Cerah Berawan',
-        icon: 'cloud-sun',
-        humidity: 70,
-        windSpeed: 10,
-        uvIndex: 'Live UV 6',
-        advisory: activeRegency.defaultAdvisory,
-      });
+      // No synthetic weather: surface an honest unavailable state instead
+      setWeatherData(null);
     } finally {
       setIsLoading(false);
     }

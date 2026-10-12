@@ -1,4 +1,6 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
+import * as path from 'path';
+import * as fs from 'fs';
 import { PrismaService } from '../prisma/prisma.service';
 import { GetNearbyDestinationsDto } from './dto/get-nearby-destinations.dto';
 
@@ -13,85 +15,72 @@ export interface SpatialLocation {
 }
 
 @Injectable()
-export class SpatialService {
+export class SpatialService implements OnModuleInit {
   private readonly logger = new Logger(SpatialService.name);
-
-  // Master Spatial Dataset for Lampung Attractions
-  private readonly lampungDestinations: SpatialLocation[] = [
-    {
-      id: 'dest-001',
-      name: 'Pantai Mutun',
-      category: 'beach',
-      city_or_regency: 'Kabupaten Pesawaran',
-      latitude: -5.5123,
-      longitude: 105.2512,
-      rating: 4.8,
-    },
-    {
-      id: 'dest-002',
-      name: 'Pantai Bensam',
-      category: 'beach',
-      city_or_regency: 'Kabupaten Pesawaran',
-      latitude: -5.5034,
-      longitude: 105.2530,
-      rating: 4.9,
-    },
-    {
-      id: 'dest-003',
-      name: 'Pulau Pahawang',
-      category: 'island',
-      city_or_regency: 'Kabupaten Pesawaran',
-      latitude: -5.6701,
-      longitude: 105.2210,
-      rating: 4.9,
-    },
-    {
-      id: 'dest-004',
-      name: 'Taman Nasional Way Kambas',
-      category: 'nature',
-      city_or_regency: 'Kabupaten Lampung Timur',
-      latitude: -4.9214,
-      longitude: 105.7821,
-      rating: 4.9,
-    },
-    {
-      id: 'dest-005',
-      name: 'Camp Ground Gunung Pesagi',
-      category: 'mountain',
-      city_or_regency: 'Kabupaten Lampung Barat',
-      latitude: -4.9120,
-      longitude: 104.1201,
-      rating: 4.7,
-    },
-    {
-      id: 'dest-006',
-      name: 'Menara Siger',
-      category: 'landmark',
-      city_or_regency: 'Kabupaten Lampung Selatan',
-      latitude: -5.8712,
-      longitude: 105.7510,
-      rating: 4.8,
-    },
-  ];
+  private destinations: SpatialLocation[] = [];
 
   constructor(private readonly prisma: PrismaService) {}
 
+  onModuleInit(): void {
+    this.loadCatalog();
+  }
+
+  private loadCatalog(): void {
+    const candidates = [
+      path.join(process.cwd(), '..', 'Frontend', 'public', 'assets', 'data', 'public_destinations.json'),
+      path.join(process.cwd(), '..', 'Frontend', 'public', 'data', 'destinations.json'),
+      path.join(process.cwd(), 'public', 'assets', 'data', 'public_destinations.json'),
+      path.join(__dirname, '..', '..', '..', 'Frontend', 'public', 'assets', 'data', 'public_destinations.json'),
+    ];
+
+    const target = candidates.find((c) => fs.existsSync(c));
+    if (!target) {
+      this.logger.warn('[SPATIAL] public_destinations.json not found; nearby searches will return empty');
+      this.destinations = [];
+      return;
+    }
+
+    try {
+      const raw = JSON.parse(fs.readFileSync(target, 'utf-8'));
+      const list = Array.isArray(raw) ? raw : raw.destinations || raw.data || [];
+      this.destinations = list
+        .filter((d: any) => typeof d.latitude === 'number' && typeof d.longitude === 'number' && d.name)
+        .map((d: any) => ({
+          id: String(d.canonical_id || d.id),
+          name: String(d.name),
+          category: String(d.primary_category || d.category || 'other'),
+          city_or_regency: String(d.city_or_regency || ''),
+          latitude: Number(d.latitude),
+          longitude: Number(d.longitude),
+          rating: typeof d.rating === 'number' ? d.rating : 4.5,
+        }));
+      this.logger.log(`[SPATIAL] Loaded ${this.destinations.length} real locations from ${target}`);
+    } catch (err) {
+      this.logger.error(`[SPATIAL] Failed loading locations: ${err instanceof Error ? err.message : String(err)}`);
+      this.destinations = [];
+    }
+  }
+
   getAllDestinations(): SpatialLocation[] {
-    return this.lampungDestinations;
+    if (this.destinations.length === 0) this.loadCatalog();
+    return this.destinations;
   }
 
   async findNearbyDestinations(dto: GetNearbyDestinationsDto) {
     const { latitude, longitude, radius_km = 10, top_k = 10, category } = dto;
 
+    if (this.destinations.length === 0) this.loadCatalog();
+
     this.logger.log(
       `[SPATIAL QUERY] Radius search at (${latitude}, ${longitude}) with radius ${radius_km} km`,
     );
 
-    let candidates = this.lampungDestinations;
+    let candidates = this.destinations;
 
     if (category) {
+      const catLower = category.toLowerCase();
       candidates = candidates.filter(
-        (item) => item.category.toLowerCase() === category.toLowerCase(),
+        (item) => item.category.toLowerCase() === catLower,
       );
     }
 
@@ -103,10 +92,7 @@ export class SpatialService {
           dest.latitude,
           dest.longitude,
         );
-
-        // Estimate travel time: average 40 km/h drive speed in coastal/mountainous Lampung roads
         const estimatedDriveMins = Math.round((distanceKm / 40) * 60);
-
         return {
           ...dest,
           distance_km: Number(distanceKm.toFixed(2)),
@@ -150,7 +136,7 @@ export class SpatialService {
     lat2: number,
     lon2: number,
   ): number {
-    const R = 6371; // Earth's mean radius in kilometers
+    const R = 6371;
     const dLat = this.toRadians(lat2 - lat1);
     const dLon = this.toRadians(lon2 - lon1);
 

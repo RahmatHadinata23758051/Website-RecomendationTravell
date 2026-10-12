@@ -260,13 +260,24 @@ describe('Full Enterprise Integration Audit Suite (17 Endpoints)', () => {
       });
   });
 
-  it('9. GET /api/v1/destinations/:id - Destination Details & Sentiment Summary', () => {
-    return request(app.getHttpServer())
-      .get('/api/v1/destinations/dest-001')
-      .expect(200)
-      .expect((res) => {
-        expect(res.body.destination.name).toBe('Pantai Bensam');
-      });
+  it('9. GET /api/v1/destinations/:id - Destination Details from real catalog', async () => {
+    const list = await request(app.getHttpServer()).get('/api/v1/destinations?limit=1');
+
+    if (list.status === 200 && list.body?.destinations?.length) {
+      const realId = list.body.destinations[0].canonical_id;
+      const res = await request(app.getHttpServer()).get(`/api/v1/destinations/${realId}`);
+      expect(res.status).toBe(200);
+      expect(res.body.destination.canonical_id).toBe(realId);
+      expect(res.body.destination.name).toBeTruthy();
+
+      // Unknown ids must 404, never return fabricated content
+      const miss = await request(app.getHttpServer()).get('/api/v1/destinations/does-not-exist');
+      expect(miss.status).toBe(404);
+    } else {
+      // ML engine unavailable: endpoint must surface an honest error
+      const res = await request(app.getHttpServer()).get('/api/v1/destinations/does-not-exist');
+      expect([404, 503]).toContain(res.status);
+    }
   });
 
   // 4. Spatial Module
