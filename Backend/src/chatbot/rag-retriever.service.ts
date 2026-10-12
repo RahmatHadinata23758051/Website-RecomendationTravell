@@ -23,11 +23,23 @@ interface ScoredDestination {
   score: number;
 }
 
+interface SemanticDocument {
+  id: string;
+  termFrequency: Map<string, number>;
+  length: number;
+}
+
 @Injectable()
 export class RagRetrieverService implements OnModuleInit {
   private readonly logger = new Logger(RagRetrieverService.name);
   private destinationsPool: DestinationFact[] = [];
   private dataLoaded = false;
+
+  // BM25 semantic index structures (in-process)
+  private readonly documentFrequency = new Map<string, number>();
+  private readonly semanticDocs = new Map<string, SemanticDocument>();
+  private avgDocLength = 0;
+  private corpusSize = 0;
 
   private readonly regencyAliasMap: Record<string, string> = {
     'bandar lampung': 'Kota Bandar Lampung',
@@ -102,6 +114,89 @@ export class RagRetrieverService implements OnModuleInit {
     'kabupaten', 'kota', 'lampung', 'harga', 'tiket', 'buka', 'jam',
   ]);
 
+  // Indonesian light stemmer: zero-dependency and domain-tuned. It strips the
+  // most common derivational prefixes/suffixes so morphological variants such
+  // as "berpasir" (pasir), "menyelam" (selam) or "menginap" (inap) collapse to
+  // the same BM25 term. Deliberately conservative: it never stems a token below
+  // three characters and never touches the protected domain vocabulary below.
+  private readonly indoPrefixes = [
+    'memper', 'menge', 'meng', 'meny', 'mem', 'men', 'me',
+    'peng', 'peny', 'pem', 'pen',
+    'ber', 'bel', 'be',
+    'ter', 'tel', 'te',
+    'per', 'pel', 'pe',
+    'di', 'ke', 'se',
+  ].sort((a, b) => b.length - a.length); // longest prefix first
+
+  private readonly indoSuffixes = [
+    'kannya', 'annya', 'kan', 'nya', 'wan', 'wati', 'an', 'i',
+  ].sort((a, b) => b.length - a.length); // longest suffix first
+
+  // Words that must never be reduced further: core tourism vocabulary whose
+  // trailing "an"/"i" is part of the root, not a suffix.
+  private readonly protectedStems = new Set([
+    'pengunjung', 'pendaki', 'penyelam', 'pemandu', 'penginapan',
+    'pengelola', 'perairan', 'pesisir', 'gunung', 'pantai', 'danau',
+    'pulau', 'bukit', 'sungai', 'seruit', 'lampung', 'pahawang',
+    'krui', 'liwa', 'teluk', 'kiluan', 'way', 'kanan', 'mesuji',
+  ]);
+
+  // Domain overrides applied before rule-based stripping, for irregular verbs
+  // whose rule-based stem would be wrong ("menyelam" -> "yelam").
+  private readonly domainStemOverrides = new Map<string, string>([
+    ['berpasir', 'pasir'],
+    ['berair', 'air'],
+    ['berselancar', 'selancar'],
+    ['menyelam', 'selam'],
+    ['penyelaman', 'selam'],
+    ['mengunjungi', 'kunjungi'],
+    ['menginap', 'inap'],
+    ['menikmati', 'nikmati'],
+    ['membeli', 'beli'],
+    ['memakan', 'makan'],
+    ['minum', 'minum'],
+    ['mendaki', 'daki'],
+  ]);
+
+  /**
+   * Forces an in-place reload of the destination dataset and rebuilds the BM25
+   * semantic index. Intended to be called when an administrator promotes a new
+   * submission or when dataset files on disk change.
+   */
+  public refreshIndex(): DestinationFact[] {
+    this.logger.log('[RAG RETRIEVER] Triggering manual/event-driven index refresh...');
+    this.dataLoaded = false;
+    this.destinationsPool = [];
+    this.documentFrequency.clear();
+    this.semanticDocs.clear();
+    this.corpusSize = 0;
+    this.avgDocLength = 0;
+    return this.loadDestinationsData();
+  }
+
+  /**
+   * Adds or replaces a destination that was just approved and synchronized to
+   * the ML catalog. This is intentionally fed by the verified submission payload
+   * rather than by synthetic data or a second network read, so chatbot retrieval
+   * becomes current immediately even though the static frontend catalog changes
+   * only on the next data release.
+   */
+  public upsertDestination(destination: Record<string, unknown>): DestinationFact {
+    this.loadDestinationsData();
+    const fact = this.toDestinationFact(destination, this.destinationsPool.length);
+    const existingIndex = this.destinationsPool.findIndex((item) => item.id === fact.id);
+
+    if (existingIndex >= 0) {
+      this.destinationsPool[existingIndex] = fact;
+    } else {
+      this.destinationsPool.push(fact);
+    }
+
+    this.buildSemanticIndex();
+    this.logger.log(`[RAG RETRIEVER] Upserted approved destination ${fact.id}; indexed ${this.destinationsPool.length} destinations.`);
+    return fact;
+  }
+
   onModuleInit() {
     this.loadDestinationsData();
   }
@@ -135,6 +230,8 @@ export class RagRetrieverService implements OnModuleInit {
 
     if (this.destinationsPool.length === 0) {
       this.logger.warn('[RAG RETRIEVER] Dataset unavailable; no synthetic fallback — returning empty pool.');
+    } else {
+      this.buildSemanticIndex();
     }
     return this.destinationsPool;
   }
@@ -166,7 +263,7 @@ export class RagRetrieverService implements OnModuleInit {
 
   private toDestinationFact(item: any, index: number): DestinationFact {
     const rawCategory = String(item.primary_category || item.category || 'alam').toLowerCase();
-    const name = String(item.name).trim();
+    const name = this.sanitizeCatalogText(String(item.name || ''), 300);
     let category = this.categoryAliases[rawCategory] || this.categoryAliases[rawCategory.replace(/[-_]/g, ' ')] || 'Alam';
     if (this.isCulinary(name, item.description, rawCategory)) {
       category = 'Kuliner';
@@ -175,7 +272,7 @@ export class RagRetrieverService implements OnModuleInit {
     const regency = String(item.city_or_regency || item.regency || '').trim();
     const location = String(item.address || item.location || regency).trim();
     const numericPrice = this.knownPrice(item);
-    const description = String(item.description || item.summary || '').trim() || 'Deskripsi belum tersedia.';
+    const description = this.sanitizeCatalogText(String(item.description || item.summary || ''), 2000) || 'Deskripsi belum tersedia.';
     const highlight = this.buildHighlight(category, description);
 
     return {
@@ -191,8 +288,38 @@ export class RagRetrieverService implements OnModuleInit {
       hours: String(item.hours || item.opening_hours || 'Jam buka tidak tersedia'),
       description,
       highlight,
-      facilities: Array.isArray(item.facilities) ? item.facilities.map(String) : [],
+      facilities: Array.isArray(item.facilities)
+        ? item.facilities.map((facility: unknown) => this.sanitizeCatalogText(String(facility), 120)).filter(Boolean)
+        : [],
     };
+  }
+
+  /**
+   * Defensive cleanup for scraped catalog text before it enters the BM25 index
+   * or the LLM prompt: removes control characters, collapses whitespace, caps
+   * length, and neutralises prompt-injection markers (role headers, instruction
+   * overrides, markdown fences). Only text is changed; no content is invented.
+   */
+  private sanitizeCatalogText(value: string, maxLength: number): string {
+    const injectionPatterns: RegExp[] = [
+      /ignore (all |any )?(previous|above|prior) (instructions?|prompts?)/gi,
+      /abaikan (semua |seluruh )?(instruksi|perintah)( sebelumnya)?/gi,
+      /\b(system|assistant|user)\s*:/gi,
+      /```+/g,
+      /#{2,}/g,
+    ];
+
+    let cleaned = value
+      .replace(/[\u0000-\u001f\u007f-\u009f\u200b-\u200f\u2028-\u202e\ufeff]/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+
+    for (const pattern of injectionPatterns) {
+      cleaned = cleaned.replace(pattern, ' ');
+    }
+
+    cleaned = cleaned.replace(/\s+/g, ' ').trim();
+    return cleaned.length > maxLength ? cleaned.slice(0, maxLength).trim() : cleaned;
   }
 
   private toRating(value: unknown): number {
@@ -220,6 +347,115 @@ export class RagRetrieverService implements OnModuleInit {
     const shortDescription = description.replace(/\s+/g, ' ').trim();
     return shortDescription.length > 180 ? shortDescription.slice(0, 177) + '...' :
       shortDescription || 'Highlight belum tersedia.';
+  }
+
+  /**
+   * Builds an in-process BM25 index over name, category, regency, location,
+   * description, highlight and facilities. Pure local computation: no external
+   * service, no embedding API, deterministic and offline.
+   */
+  private buildSemanticIndex(): void {
+    this.documentFrequency.clear();
+    this.semanticDocs.clear();
+
+    let totalLength = 0;
+    this.destinationsPool.forEach((destination) => {
+      const text = [
+        destination.name,
+        destination.name,            // name is the strongest signal: repeat once
+        destination.category,
+        destination.regency,
+        destination.location,
+        destination.description,
+        destination.highlight,
+        ...destination.facilities,
+      ].join(' ');
+
+      const tokens = this.semanticTokens(text);
+      const termFrequency = new Map<string, number>();
+      tokens.forEach((token) => termFrequency.set(token, (termFrequency.get(token) || 0) + 1));
+      termFrequency.forEach((_, term) => {
+        this.documentFrequency.set(term, (this.documentFrequency.get(term) || 0) + 1);
+      });
+
+      this.semanticDocs.set(destination.id, { id: destination.id, termFrequency, length: tokens.length });
+      totalLength += tokens.length;
+    });
+
+    this.corpusSize = this.destinationsPool.length;
+    this.avgDocLength = this.corpusSize ? totalLength / this.corpusSize : 0;
+    this.logger.log(`[RAG SEMANTIC] BM25 index built: ${this.corpusSize} docs, ${this.documentFrequency.size} terms.`);
+  }
+
+  private semanticTokens(value: string): string[] {
+    return this.normalize(value)
+      .split(' ')
+      .filter((token) => token.length >= 3 && !this.stopWords.has(token))
+      .map((token) => this.indoStem(token))
+      .filter((token) => token.length >= 3);
+  }
+
+  /**
+   * Conservative Indonesian stemmer. Applies domain overrides first, then strips
+   * at most one derivational prefix and one suffix. The stem is only accepted
+   * when it keeps at least three characters; otherwise the original is kept.
+   */
+  private indoStem(token: string): string {
+    if (this.protectedStems.has(token)) return token;
+
+    const override = this.domainStemOverrides.get(token);
+    if (override) return override;
+
+    let stem = token;
+
+    const prefix = this.indoPrefixes.find(
+      (candidate) => stem.startsWith(candidate) && stem.length - candidate.length >= 3,
+    );
+    if (prefix) stem = stem.slice(prefix.length);
+
+    const suffix = this.indoSuffixes.find(
+      (candidate) => stem.endsWith(candidate) && stem.length - candidate.length >= 3,
+    );
+    if (suffix) stem = stem.slice(0, stem.length - suffix.length);
+
+    return stem.length >= 3 ? stem : token;
+  }
+
+  /**
+   * Okapi BM25 ranking over the in-process index. Returns destinations with a
+   * positive score, best first. Scores are not normalized and are only used for
+   * ordering within the hybrid fusion.
+   */
+  public semanticSearch(query: string, limit = 20): DestinationFact[] {
+    const pool = this.loadDestinationsData();
+    if (!pool.length || !this.corpusSize) return [];
+
+    const queryTerms = [...new Set(this.semanticTokens(query))];
+    if (!queryTerms.length) return [];
+
+    const k1 = 1.2;
+    const b = 0.75;
+    const scored: ScoredDestination[] = [];
+
+    for (const destination of pool) {
+      const doc = this.semanticDocs.get(destination.id);
+      if (!doc) continue;
+
+      let score = 0;
+      for (const term of queryTerms) {
+        const tf = doc.termFrequency.get(term);
+        if (!tf) continue;
+        const df = this.documentFrequency.get(term) || 0;
+        const idf = Math.log(1 + (this.corpusSize - df + 0.5) / (df + 0.5));
+        const norm = tf + k1 * (1 - b + (b * doc.length) / (this.avgDocLength || 1));
+        score += idf * ((tf * (k1 + 1)) / norm);
+      }
+
+      if (score > 0) scored.push({ destination, score });
+    }
+
+    scored.sort((left, right) => right.score - left.score);
+    return scored.slice(0, limit).map(({ destination }) => destination);
   }
 
   public retrieveRelevantFacts(query: string, targetRegency?: string, targetCategory?: string): DestinationFact[] {
@@ -259,17 +495,141 @@ export class RagRetrieverService implements OnModuleInit {
         destination,
         score: this.scoreDestination(destination, normalizedQuery, queryTokens, detectedRegency, detectedCategory, budget),
       }))
-      .filter(({ score }) => score > 0);
+      .filter(({ score }) => score > 0)
+      .sort((left, right) => right.score - left.score);
 
-    scored.sort((left, right) => right.score - left.score || right.destination.rating - left.destination.rating);
+    // Hybrid fusion: combine the keyword/fuzzy ranking with the BM25 semantic
+    // ranking using Reciprocal Rank Fusion. RRF is scale-agnostic, so the two
+    // systems (raw keyword score vs. BM25 score) can be merged safely.
+    const fused = this.reciprocalRankFusion(scored, candidates, normalizedQuery);
 
     // When a budget is specified, prioritize items with known prices within budget.
     // If no prices are known, fall back to relevance-scored items rather than an empty list.
     const knownWithinBudget = budget
-      ? scored.filter(({ destination }) => destination.numericPrice > 0 && destination.numericPrice <= budget)
+      ? fused.filter(({ destination }) => destination.numericPrice > 0 && destination.numericPrice <= budget)
       : [];
-    const result = knownWithinBudget.length ? knownWithinBudget : scored;
-    return result.slice(0, 6).map(({ destination }) => destination);
+    const ranked = knownWithinBudget.length ? knownWithinBudget : fused;
+
+    // Diversify the final shortlist (MMR-style) so a broad query such as
+    // "pantai di lampung" is not answered with six places from one regency.
+    // Diversity only applies when the user did not ask for a specific regency or
+    // category. An explicit constraint is a hard filter and must never be traded
+    // away for variety.
+    const diversified = this.applyMmrDiversity(ranked, 6, {
+      regency: !detectedRegency,
+      category: !detectedCategory,
+    });
+    return diversified.map(({ destination }) => destination);
+  }
+
+  /**
+   * Maximal Marginal Relevance-style re-ranking. It greedily picks the best
+   * remaining candidate while penalising items that repeat the regency or
+   * category already represented in the selection. Relevance stays dominant;
+   * diversity only breaks near-ties.
+   */
+  private applyMmrDiversity(
+    ranked: ScoredDestination[],
+    limit: number,
+    options: { regency: boolean; category: boolean },
+  ): ScoredDestination[] {
+    if (ranked.length <= 1 || (!options.regency && !options.category)) {
+      return ranked.slice(0, limit);
+    }
+
+    const selected: ScoredDestination[] = [];
+    const remaining = [...ranked];
+
+    // Normalise scores so the diversity penalty (0..1) is comparable in scale.
+    const maxScore = Math.max(...remaining.map((entry) => entry.score)) || 1;
+    const REGENCY_PENALTY = 0.25;
+    const CATEGORY_PENALTY = 0.15;
+
+    while (selected.length < limit && remaining.length > 0) {
+      let bestIndex = 0;
+      let bestAdjusted = -Infinity;
+
+      remaining.forEach((candidate, index) => {
+        const normalized = candidate.score / maxScore;
+        let penalty = 0;
+        for (const chosen of selected) {
+          if (options.regency && candidate.destination.regency && candidate.destination.regency === chosen.destination.regency) {
+            penalty += REGENCY_PENALTY;
+          }
+          if (options.category && candidate.destination.category && candidate.destination.category === chosen.destination.category) {
+            penalty += CATEGORY_PENALTY;
+          }
+        }
+        const adjusted = normalized - penalty;
+        if (adjusted > bestAdjusted) {
+          bestAdjusted = adjusted;
+          bestIndex = index;
+        }
+      });
+
+      selected.push(remaining.splice(bestIndex, 1)[0]);
+    }
+
+    return selected;
+  }
+
+  /**
+   * Reciprocal Rank Fusion of the keyword ranking and the BM25 semantic
+   * ranking over the same candidate set. k=60 is the standard RRF constant.
+   */
+  private reciprocalRankFusion(
+    keywordScored: ScoredDestination[],
+    candidates: DestinationFact[],
+    normalizedQuery: string,
+  ): ScoredDestination[] {
+    const k = 60;
+    const fusedScores = new Map<string, number>();
+    const byId = new Map<string, DestinationFact>();
+
+    keywordScored.forEach((entry, index) => {
+      byId.set(entry.destination.id, entry.destination);
+      fusedScores.set(entry.destination.id, 1 / (k + index + 1));
+    });
+
+    const semanticQueryTerms = [...new Set(this.semanticTokens(normalizedQuery))];
+    const semanticRanking = candidates
+      .map((destination) => ({
+        destination,
+        score: this.semanticScore(destination, semanticQueryTerms),
+      }))
+      .filter(({ score }) => score > 0)
+      .sort((left, right) => right.score - left.score);
+
+    semanticRanking.forEach(({ destination }, index) => {
+      byId.set(destination.id, destination);
+      fusedScores.set(destination.id, (fusedScores.get(destination.id) || 0) + 1 / (k + index + 1));
+    });
+
+    return [...fusedScores.entries()]
+      .map(([id, score]) => ({ destination: byId.get(id)!, score }))
+      .filter(({ destination }) => Boolean(destination))
+      .sort((left, right) => right.score - left.score);
+  }
+
+  /** BM25 score of a single destination against the query terms. */
+  private semanticScore(destination: DestinationFact, queryTerms: string[]): number {
+    const doc = this.semanticDocs.get(destination.id);
+    if (!doc) return 0;
+
+    const k1 = 1.2;
+    const b = 0.75;
+    let score = 0;
+
+    for (const term of queryTerms) {
+      const tf = doc.termFrequency.get(term);
+      if (!tf) continue;
+      const df = this.documentFrequency.get(term) || 0;
+      const idf = Math.log(1 + (this.corpusSize - df + 0.5) / (df + 0.5));
+      const norm = tf + k1 * (1 - b + (b * doc.length) / (this.avgDocLength || 1));
+      score += idf * ((tf * (k1 + 1)) / norm);
+    }
+
+    return score;
   }
 
   private detectRegency(query: string, targetRegency?: string): string {
@@ -445,8 +805,13 @@ export class RagRetrieverService implements OnModuleInit {
     return row[rLen];
   }
 
-  public buildRagContextPrompt(query: string, regency?: string, category?: string): string {
-    const facts = this.retrieveRelevantFacts(query, regency, category);
+  public buildRagContextPrompt(
+    query: string,
+    regency?: string,
+    category?: string,
+    providedFacts?: DestinationFact[],
+  ): string {
+    const facts = providedFacts ?? this.retrieveRelevantFacts(query, regency, category);
     if (!facts.length) {
       return 'TIDAK ADA FAKTA SPESIFIK DALAM DATABASE. Jangan mengarang nama, harga, rating, atau jam buka; minta pengguna memperjelas kabupaten atau kategori.';
     }
