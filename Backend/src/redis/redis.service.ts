@@ -53,8 +53,17 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
         this.logger.log(`[REDIS] Connection established successfully on ${resolvedHost}:${resolvedPort}`);
       }
     } catch (err) {
-      this.logger.warn(`[REDIS] Initialization warning: ${err.message}. Using In-Memory Cache.`);
+      if (this.isProduction) {
+        throw err;
+      }
+      this.logger.warn(`[REDIS] Initialization warning: ${err.message}. Using in-memory cache for development.`);
       this.client = null;
+    }
+  }
+
+  private throwIfProductionFallback(operation: string): void {
+    if (this.isProduction) {
+      throw new Error(`[REDIS] Redis is unavailable during ${operation} in production.`);
     }
   }
 
@@ -63,6 +72,7 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
       return this.client.ping();
     }
 
+    this.throwIfProductionFallback('ping');
     throw new Error('Redis client not ready');
   }
 
@@ -71,10 +81,11 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
       try {
         return await this.client.get(key);
       } catch (e) {
-        // fallback
+        this.throwIfProductionFallback('get');
       }
     }
 
+    this.throwIfProductionFallback('get');
     const item = this.memoryFallback.get(key);
     if (!item) return null;
     if (Date.now() > item.expiresAt) {
@@ -90,10 +101,11 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
         await this.client.set(key, value, 'EX', ttlSeconds);
         return;
       } catch (e) {
-        // fallback
+        this.throwIfProductionFallback('set');
       }
     }
 
+    this.throwIfProductionFallback('set');
     const expiresAt = Date.now() + ttlSeconds * 1000;
     this.memoryFallback.set(key, { value, expiresAt });
   }
@@ -103,9 +115,11 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
       try {
         await this.client.del(key);
       } catch (e) {
-        // fallback
+        this.throwIfProductionFallback('del');
       }
     }
+
+    this.throwIfProductionFallback('del');
     this.memoryFallback.delete(key);
   }
 
@@ -129,9 +143,11 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
           }
         }
       } catch (e) {
-        // fallback
+        this.throwIfProductionFallback('invalidateByPrefix');
       }
     }
+
+    this.throwIfProductionFallback('invalidateByPrefix');
     // Clear memory fallback for matching keys
     for (const key of this.memoryFallback.keys()) {
       if (key.startsWith(prefix)) {
