@@ -7,17 +7,29 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(RedisService.name);
   private client: Redis | null = null;
   private memoryFallback = new Map<string, { value: string; expiresAt: number }>();
+  private readonly isProduction = process.env.NODE_ENV === 'production';
 
   constructor(private readonly configService: ConfigService) {}
 
   async onModuleInit() {
-    const host = this.configService.get<string>('REDIS_HOST') || 'localhost';
-    const port = this.configService.get<number>('REDIS_PORT') || 6379;
+    const host = this.configService.get<string>('REDIS_HOST');
+    const port = this.configService.get<number>('REDIS_PORT');
+
+    if (!host || !port) {
+      const message = '[REDIS] REDIS_HOST and REDIS_PORT must be configured.';
+      if (this.isProduction) {
+        throw new Error(message);
+      }
+      this.logger.warn(`${message} Using local development defaults.`);
+    }
+
+    const resolvedHost = host || 'localhost';
+    const resolvedPort = port || 6379;
 
     try {
       this.client = new Redis({
-        host,
-        port,
+        host: resolvedHost,
+        port: resolvedPort,
         retryStrategy: (times) => {
           if (times > 3) {
             this.logger.warn('[REDIS] Connection retry limit reached. Falling back to In-Memory Cache.');
@@ -29,12 +41,16 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
       });
 
       await this.client.connect().catch((err) => {
-        this.logger.warn(`[REDIS] Local connection bypassed: ${err.message}. Using In-Memory Cache.`);
+        const message = `[REDIS] Connection failed: ${err.message}`;
+        if (this.isProduction) {
+          throw new Error(message);
+        }
+        this.logger.warn(`${message}. Using in-memory cache for development.`);
         this.client = null;
       });
 
       if (this.client) {
-        this.logger.log(`[REDIS] Connection established successfully on ${host}:${port}`);
+        this.logger.log(`[REDIS] Connection established successfully on ${resolvedHost}:${resolvedPort}`);
       }
     } catch (err) {
       this.logger.warn(`[REDIS] Initialization warning: ${err.message}. Using In-Memory Cache.`);

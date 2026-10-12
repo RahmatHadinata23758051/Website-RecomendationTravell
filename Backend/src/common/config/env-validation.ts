@@ -34,11 +34,25 @@ export interface EnvValidationResult {
 export function validateEnv(read: Read): EnvValidationResult {
   const errors: string[] = [];
   const warnings: string[] = [];
+  const isProduction = read('NODE_ENV') === 'production';
   const get = (key: string) => read(key)?.trim() || undefined;
 
   // Required: fail closed
   for (const key of ['DATABASE_URL', 'JWT_ACCESS_SECRET', 'JWT_REFRESH_SECRET']) {
     if (!get(key)) errors.push(`${key} is required`);
+  }
+
+  // Production: additional required keys
+  if (isProduction) {
+    for (const key of ['REDIS_HOST', 'REDIS_PORT', 'ML_ENGINE_URL', 'NINE_ROUTER_URL', 'NINE_ROUTER_API_KEY', 'NINE_ROUTER_MODEL', 'ALLOWED_ORIGINS']) {
+      if (!get(key)) errors.push(`${key} is required in production`);
+    }
+    // Production JWT secrets must be long and distinct from dev defaults
+    const accessSecret = get('JWT_ACCESS_SECRET');
+    const refreshSecret = get('JWT_REFRESH_SECRET');
+    if (accessSecret && accessSecret.length < 32) errors.push('JWT_ACCESS_SECRET must be at least 32 characters in production');
+    if (refreshSecret && refreshSecret.length < 32) errors.push('JWT_REFRESH_SECRET must be at least 32 characters in production');
+    if (accessSecret && refreshSecret && accessSecret === refreshSecret) errors.push('JWT_ACCESS_SECRET and JWT_REFRESH_SECRET must be distinct in production');
   }
 
   // Optional with format checks
@@ -58,11 +72,29 @@ export function validateEnv(read: Read): EnvValidationResult {
     if (value && !isUrl(value)) errors.push(`${key} must be an http(s) URL`);
   }
 
-  // LLM gateway: warn (not fail) so non-chatbot work still boots
+  // LLM gateway: warn (not fail) in dev so non-chatbot work still boots; fail in prod
   const hasNineRouter = Boolean(get('NINE_ROUTER_URL') && get('NINE_ROUTER_API_KEY'));
   const hasOpenAiAlias = Boolean(get('OPENAI_BASE_URL') && get('OPENAI_API_KEY'));
   if (!hasNineRouter && !hasOpenAiAlias) {
-    warnings.push('No LLM gateway configured (NINE_ROUTER_URL + NINE_ROUTER_API_KEY or OPENAI_* aliases); chatbot will return 503');
+    if (isProduction) {
+      errors.push('LLM gateway (NINE_ROUTER_URL + NINE_ROUTER_API_KEY or OPENAI_* aliases) is required in production');
+    } else {
+      warnings.push('No LLM gateway configured (NINE_ROUTER_URL + NINE_ROUTER_API_KEY or OPENAI_* aliases); chatbot will return 503');
+    }
+  }
+
+  // Production: no localhost/127.0.0.1 in ALLOWED_ORIGINS
+  if (isProduction) {
+    const allowed = get('ALLOWED_ORIGINS');
+    if (allowed) {
+      const origins = allowed.split(',').map((o) => o.trim());
+      for (const origin of origins) {
+        if (/^(http:\/\/)?(localhost|127\.0\.0\.1)(:\d+)?$/i.test(origin)) {
+          errors.push('ALLOWED_ORIGINS must not contain localhost or 127.0.0.1 in production');
+          break;
+        }
+      }
+    }
   }
 
   return { errors, warnings };
