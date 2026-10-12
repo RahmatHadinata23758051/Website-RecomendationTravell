@@ -79,42 +79,51 @@ export const HomePage: React.FC = () => {
     loadRecommendations();
   }, []);
 
-  // OpenWeather API Integration for Provinsi Lampung with key 84071adb3c0d5f4d42ec9ab6b245e2df
   const [weatherData, setWeatherData] = useState<{
-    temp: number;
-    condition: string;
-    iconCode: string;
+    temp: number | null;
+    condition: string | null;
+    iconCode: string | null;
     location: string;
     province: string;
+    error: string | null;
   }>({
-    temp: 28,
-    condition: 'Cerah',
-    iconCode: '01d',
+    temp: null,
+    condition: null,
+    iconCode: null,
     location: 'Lampung',
     province: 'Provinsi Lampung',
+    error: null,
   });
 
   useEffect(() => {
     const fetchLampungWeather = async () => {
+      const apiKey = import.meta.env.VITE_OPENWEATHER_API_KEY;
       try {
-        const apiKey = import.meta.env.VITE_OPENWEATHER_API_KEY || '84071adb3c0d5f4d42ec9ab6b245e2df';
-        const response = await fetch(
-          `https://api.openweathermap.org/data/2.5/weather?q=Bandar%20Lampung,ID&units=metric&appid=${apiKey}&lang=id`
-        );
-        if (response.ok) {
-          const data = await response.json();
-          setWeatherData({
-            temp: Math.round(data.main.temp),
-            condition: data.weather[0]?.description
-              ? data.weather[0].description.charAt(0).toUpperCase() + data.weather[0].description.slice(1)
-              : 'Cerah',
-            iconCode: data.weather[0]?.icon || '01d',
-            location: 'Lampung',
-            province: 'Provinsi Lampung',
-          });
-          return;
+        // Prefer configured OpenWeather, then fall back to the free Open-Meteo endpoint
+        if (apiKey) {
+          try {
+            const response = await fetch(
+              `https://api.openweathermap.org/data/2.5/weather?q=Bandar%20Lampung,ID&units=metric&appid=${apiKey}&lang=id`
+            );
+            if (response.ok) {
+              const data = await response.json();
+              setWeatherData({
+                temp: Math.round(data.main.temp),
+                condition: data.weather[0]?.description
+                  ? data.weather[0].description.charAt(0).toUpperCase() + data.weather[0].description.slice(1)
+                  : null,
+                iconCode: data.weather[0]?.icon || '01d',
+                location: 'Lampung',
+                province: 'Provinsi Lampung',
+                error: null,
+              });
+              return;
+            }
+          } catch {
+            // fall through to Open-Meteo
+          }
         }
-        // Fallback to free Open-Meteo API if needed
+
         const freeRes = await fetch(
           'https://api.open-meteo.com/v1/forecast?latitude=-5.45&longitude=105.26&current_weather=true'
         );
@@ -123,15 +132,18 @@ export const HomePage: React.FC = () => {
           const code = freeData.current_weather?.weathercode ?? 0;
           const isClear = code <= 3;
           setWeatherData({
-            temp: Math.round(freeData.current_weather?.temperature ?? 28),
+            temp: Math.round(freeData.current_weather?.temperature),
             condition: isClear ? 'Cerah' : 'Berawan',
             iconCode: isClear ? '01d' : '03d',
             location: 'Lampung',
             province: 'Provinsi Lampung',
+            error: null,
           });
+          return;
         }
+        setWeatherData((prev) => ({ ...prev, error: 'Cuaca tidak tersedia' }));
       } catch {
-        // Keep initial state
+        setWeatherData((prev) => ({ ...prev, error: 'Cuaca tidak tersedia' }));
       }
     };
 
@@ -298,11 +310,19 @@ export const HomePage: React.FC = () => {
                 <div className="flex items-center justify-between border-b border-slate-200/50 pb-3 mb-3">
                   <div className="flex items-center gap-2.5">
                     <div className="w-10 h-10 rounded-2xl bg-amber-500/10 text-amber-500 flex items-center justify-center shrink-0">
-                      {renderWeatherIcon(weatherData.iconCode)}
+                      {weatherData.iconCode ? renderWeatherIcon(weatherData.iconCode) : <WiDaySunny className="w-8 h-8 text-slate-300" />}
                     </div>
                     <div>
-                      <p className="text-sm font-bold text-slate-900">{weatherData.temp}°C</p>
-                      <p className="text-[10px] text-slate-500 font-medium">{weatherData.condition}</p>
+                      {weatherData.error ? (
+                        <p className="text-[11px] text-slate-400 font-medium">Cuaca tidak tersedia</p>
+                      ) : weatherData.temp !== null ? (
+                        <>
+                          <p className="text-sm font-bold text-slate-900">{weatherData.temp}°C</p>
+                          <p className="text-[10px] text-slate-500 font-medium">{weatherData.condition || 'Lampung'}</p>
+                        </>
+                      ) : (
+                        <p className="text-[11px] text-slate-400 animate-pulse">Memuat cuaca...</p>
+                      )}
                     </div>
                   </div>
                   <div className="flex items-center gap-1.5 bg-white/70 px-3 py-1.5 rounded-full border border-slate-200/50">

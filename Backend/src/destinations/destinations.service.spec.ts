@@ -80,7 +80,7 @@ describe('DestinationsService', () => {
     expect(res.fallback_suggestions).toEqual([]);
   });
 
-  it('should return suggestions when a search has no matches', async () => {
+  it('should return an honest empty result when a search has no matches', async () => {
     mockHttpService.get.mockReturnValueOnce(of({
       data: {
         status: 'success', page: 1, limit: 20, total_items: 0, total_pages: 1, destinations: [],
@@ -90,7 +90,7 @@ describe('DestinationsService', () => {
     const res = await service.getDestinations({ search: 'tidak-ada-destinasi' });
 
     expect(res.destinations).toEqual([]);
-    expect(res.fallback_suggestions.length).toBeGreaterThan(0);
+    expect(res.fallback_suggestions).toEqual([]);
   });
 
   it('should return cached data on cache hit without calling ML Engine', async () => {

@@ -19,6 +19,7 @@ import { ActivityModule } from './activity/activity.module';
 import { PlacesSubmissionModule } from './places/places-submission.module';
 import { HealthModule } from './health/health.module';
 import { PerformanceInterceptor } from './common/interceptors/performance.interceptor';
+import { EnvValidationService } from './common/config/env-validation.service';
 import { APP_INTERCEPTOR } from '@nestjs/core';
 
 @Module({
@@ -49,6 +50,7 @@ import { APP_INTERCEPTOR } from '@nestjs/core';
   controllers: [AppController],
   providers: [
     AppService,
+    EnvValidationService,
     {
       provide: APP_GUARD,
       useClass: ThrottlerGuard,
