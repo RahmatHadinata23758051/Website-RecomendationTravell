@@ -1,6 +1,6 @@
 {
-  "precisionAt3": 0.7333333333333332,
+  "precisionAt3": 0.8,
   "hitRate": 1.0,
-  "ndcg": 0.7790436915230574,
-  "avgDiversity": 4.4
+  "ndcg": 0.7943900500970896,
+  "avgDiversity": 5.137931034482759
 }

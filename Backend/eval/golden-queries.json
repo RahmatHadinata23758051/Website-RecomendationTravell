@@ -10,6 +10,54 @@
     { "id": "park-way-kambas", "query": "taman nasional way kambas", "type": "name", "relevant": { "nameContains": "way kambas" } },
     { "id": "beach-krui-pesisir-barat", "query": "pantai di Krui Pesisir Barat", "type": "regency", "relevant": { "regency": "pesisir barat", "category": "Pantai" } },
     { "id": "beach-pasir-putih-descriptive", "query": "pantai berpasir putih", "type": "semantic", "relevant": { "nameContains": "pasir putih" } },
-    { "id": "kiluan-name", "query": "Teluk Kiluan", "type": "name", "relevant": { "nameContains": "kiluan" } }
+    { "id": "kiluan-name", "query": "Teluk Kiluan", "type": "name", "relevant": { "nameContains": "kiluan" } },
+
+    { "id": "name-exact-sari-ringgung", "query": "Pantai Sari Ringgung", "type": "name", "relevant": { "nameContains": "sari ringgung" } },
+    { "id": "name-typo-sari-ringgung", "query": "sari ringung pantai", "type": "typo", "relevant": { "nameContains": "sari ringgung" } },
+    { "id": "regency-pesawaran-kuliner", "query": "kuliner di Pesawaran", "type": "regency", "relevant": { "regency": "pesawaran", "category": "Kuliner" } },
+    { "id": "regency-bandar-lampung-alam", "query": "tempat alam di Bandar Lampung", "type": "regency", "relevant": { "regency": "bandar lampung", "category": "Alam" } },
+    { "id": "regency-lamsel-budaya", "query": "wisata budaya Lampung Selatan", "type": "regency", "relevant": { "regency": "lampung selatan", "category": "Budaya" } },
+    { "id": "regency-tanggamus-adventure", "query": "petualangan di Tanggamus", "type": "regency", "relevant": { "regency": "tanggamus", "category": "Adventure" } },
+    { "id": "category-kuliner-only", "query": "kuliner Lampung", "type": "category", "relevant": { "category": "Kuliner" } },
+    { "id": "category-budaya-only", "query": "museum sejarah Lampung", "type": "category", "relevant": { "category": "Budaya" } },
+    { "id": "category-adventure-only", "query": "waterpark kolam renang Lampung", "type": "category", "relevant": { "category": "Adventure" } },
+    { "id": "semantic-waterfall", "query": "air terjun indah", "type": "semantic", "relevant": { "category": "Alam", "nameContains": "air terjun" } },
+    { "id": "semantic-gunung", "query": "gunung tinggi untuk mendaki", "type": "semantic", "relevant": { "category": "Alam", "nameContains": "gunung" } },
+    { "id": "semantic-danau", "query": "danau di Lampung", "type": "semantic", "relevant": { "nameContains": "danau" } },
+
+    { "id": "budget-ekonomis", "query": "pantai budget dibawah 20 ribu", "type": "budget", "relevant": { "category": "Pantai" } },
+    { "id": "budget-unknown-honesty", "query": "pantai gratis di Pesawaran", "type": "budget", "relevant": { "regency": "pesawaran", "category": "Pantai" } },
+    { "id": "budget-midrange", "query": "pantai budget 50000 sampai 100000", "type": "budget", "relevant": { "category": "Pantai" } },
+    { "id": "budget-high", "query": "wisata mewah di Lampung", "type": "budget", "relevant": {} },
+
+    { "id": "multi-regency-category", "query": "pantai dan kuliner di Pesawaran", "type": "multi", "relevant": { "regency": "pesawaran" } },
+    { "id": "multi-category-regency", "query": "alam dan budaya di Tanggamus", "type": "multi", "relevant": { "regency": "tanggamus" } },
+    { "id": "multi-island-beach", "query": "pulau dan pantai di Lampung Selatan", "type": "multi", "relevant": { "regency": "lampung selatan" } },
+    { "id": "multi-facility-beach", "query": "pantai dengan toilet dan parkir", "type": "multi", "relevant": { "category": "Pantai" } },
+
+    { "id": "empty-generic", "query": "rekomendasi wisata lampung", "type": "generic", "relevant": {} },
+    { "id": "generic-kategori", "query": "tempat wisata", "type": "generic", "relevant": {} },
+    { "id": "generic-cuaca", "query": "cuaca lampung besok", "type": "generic", "relevant": {} },
+    { "id": "generic-tanya-harga", "query": "harga tiket masuk", "type": "generic", "relevant": {} },
+
+    { "id": "name-siger", "query": "Menara Siger", "type": "name", "relevant": { "nameContains": "siger" } },
+    { "id": "name-gigi-hiu", "query": "Pantai Gigi Hiu", "type": "name", "relevant": { "nameContains": "gigi hiu" } },
+    { "id": "name-ranau", "query": "Danau Ranau", "type": "name", "relevant": { "nameContains": "ranau" } },
+    { "id": "name-suoh", "query": "Kawah Suoh", "type": "name", "relevant": { "nameContains": "suoh" } },
+    { "id": "name-way-kambas-gajah", "query": "gajah way kambas", "type": "name", "relevant": { "nameContains": "gajah" } },
+    { "id": "name-krui", "query": "pantai Krui surfing", "type": "name", "relevant": { "nameContains": "krui" } },
+
+    { "id": "alias-bdl", "query": "wisata di BDL", "type": "alias", "relevant": { "regency": "bandar lampung" } },
+    { "id": "alias-lamtim", "query": "pantai di Lamtim", "type": "alias", "relevant": { "regency": "lampung timur" } },
+    { "id": "alias-lamsel", "query": "pulau di Lamsel", "type": "alias", "relevant": { "regency": "lampung selatan" } },
+    { "id": "alias-mesuji", "query": "air terjun Mesuji", "type": "alias", "relevant": { "regency": "mesuji" } },
+
+    { "id": "facility-wifi", "query": "cafe dengan wifi di Lampung", "type": "facility", "relevant": { "category": "Kuliner" } },
+    { "id": "facility-toilet-parkir", "query": "pantai lengkap fasilitas toilet parkir", "type": "facility", "relevant": { "category": "Pantai" } },
+
+    { "id": "typo-pesawaran", "query": "peswaran wisata", "type": "typo", "relevant": { "regency": "pesawaran" } },
+    { "id": "typo-tanggamus", "query": "tanggmas gunung", "type": "typo", "relevant": { "regency": "tanggamus" } },
+    { "id": "typo-lamsel", "query": "lamsl pantai", "type": "typo", "relevant": { "regency": "lampung selatan" } },
+    { "id": "regency-pesawaran-island", "query": "pulau di Pesawaran", "type": "regency", "relevant": { "regency": "pesawaran" } }
   ]
 }

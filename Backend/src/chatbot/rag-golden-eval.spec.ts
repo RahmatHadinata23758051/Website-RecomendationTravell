@@ -83,6 +83,14 @@ describe('RAG Golden Retrieval Evaluation', () => {
             .map((r, i) => `${relevantFlags[i] ? 'R' : '-'}${r.name}`)
             .join(' | ')}`,
         );
+      } else if (!relevantFlags.some((flag) => flag === 1)) {
+        // eslint-disable-next-line no-console
+        console.log(
+          `[RAG EVAL MISS] ${entry.id} (${entry.query}) -> ${results
+            .slice(0, K)
+            .map((r) => r.name)
+            .join(' | ')}`,
+        );
       }
 
       // Diversity is only meaningful for queries without an explicit regency
