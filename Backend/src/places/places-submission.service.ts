@@ -6,6 +6,7 @@ import {
   ConflictException,
   BadRequestException,
   ServiceUnavailableException,
+  Optional,
 } from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
 import { ConfigService } from '@nestjs/config';
@@ -16,6 +17,7 @@ import { SubmissionDedupService } from './submission-dedup.service';
 import { SubmitPlaceDto } from './dto/submit-place.dto';
 import { MySubmissionsDto, QuerySubmissionsDto } from './dto/query-submissions.dto';
 import { Prisma, PlaceSubmissionStatus } from '@prisma/client';
+import { RagRetrieverService } from '../chatbot/rag-retriever.service';
 
 @Injectable()
 export class PlacesSubmissionService {
@@ -27,6 +29,7 @@ export class PlacesSubmissionService {
     private readonly redisService: RedisService,
     private readonly httpService: HttpService,
     private readonly configService: ConfigService,
+    @Optional() private readonly ragRetriever?: RagRetrieverService,
   ) {}
 
   async submitPlace(
@@ -401,6 +404,28 @@ export class PlacesSubmissionService {
         where: { id: submissionId },
         data: { canonicalId, promotedAt: new Date(), promotionError: null },
       });
+      // Keep chatbot retrieval consistent with the catalog: the newly approved place
+      // must be answerable immediately. We upsert the verified submission payload
+      // into the RAG index so callers can retrieve it even before the static JSON
+      // on disk is rebuilt. A failure must not undo a successful promotion.
+      try {
+        this.ragRetriever?.upsertDestination({
+          canonical_id: canonicalId,
+          name: submission.name,
+          category: submission.category,
+          primary_category: submission.category,
+          city_or_regency: submission.cityRegency,
+          address: submission.address,
+          description: submission.description,
+          facilities: submission.facilities,
+          hours: submission.openingHours,
+          price_min_idr: submission.priceMin,
+          rating: 0,
+        });
+      } catch (upsertError) {
+        this.logger.warn(`RAG index upsert failed after promotion ${submissionId}: ${upsertError.message}`);
+      }
+
       this.logger.log(`Promotion complete: ${submissionId} -> ${canonicalId}`);
     } catch (error) {
       this.logger.error(`Promotion failed for ${submissionId}: ${error.message}`, error.stack);

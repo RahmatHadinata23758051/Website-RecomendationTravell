@@ -12,6 +12,6 @@ import { RagRetrieverService } from './rag-retriever.service';
   ],
   controllers: [ChatbotController],
   providers: [ChatbotService, RagRetrieverService],
-  exports: [ChatbotService],
+  exports: [ChatbotService, RagRetrieverService],
 })
 export class ChatbotModule {}

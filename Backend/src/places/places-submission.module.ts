@@ -8,9 +8,10 @@ import { SpatialModule } from '../spatial/spatial.module';
 import { AuthModule } from '../auth/auth.module';
 import { ActivityModule } from '../activity/activity.module';
 import { RedisModule } from '../redis/redis.module';
+import { ChatbotModule } from '../chatbot/chatbot.module';
 
 @Module({
-  imports: [SpatialModule, ActivityModule, RedisModule, HttpModule, AuthModule],
+  imports: [SpatialModule, ActivityModule, RedisModule, HttpModule, AuthModule, ChatbotModule],
   controllers: [PlacesSubmissionController, AdminSubmissionsController],
   providers: [PlacesSubmissionService, SubmissionDedupService],
   exports: [PlacesSubmissionService, SubmissionDedupService],

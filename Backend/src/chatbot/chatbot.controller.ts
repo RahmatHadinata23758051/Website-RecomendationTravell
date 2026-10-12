@@ -8,13 +8,30 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { Request } from 'express';
-import { OptionalJwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { JwtAuthGuard, OptionalJwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { RolesGuard } from '../auth/guards/roles.guard';
+import { Roles } from '../auth/decorators/roles.decorator';
+import { UserRole } from '@prisma/client';
 import { ChatbotService } from './chatbot.service';
 import { AskChatbotDto } from './dto/ask-chatbot.dto';
+import { RagRetrieverService } from './rag-retriever.service';
 
 @Controller('api/v1/chatbot')
 export class ChatbotController {
-  constructor(private readonly chatbotService: ChatbotService) {}
+  constructor(
+    private readonly chatbotService: ChatbotService,
+    private readonly ragRetriever: RagRetrieverService,
+  ) {}
+
+  /** Admin-only manual rebuild of the RAG index after catalog file changes. */
+  @Post('admin/refresh-index')
+  @HttpCode(HttpStatus.OK)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  refreshIndex() {
+    const pool = this.ragRetriever.refreshIndex();
+    return { status: 'success', data: { indexedDestinations: pool.length } };
+  }
 
   @Post('chat')
   @HttpCode(HttpStatus.OK)

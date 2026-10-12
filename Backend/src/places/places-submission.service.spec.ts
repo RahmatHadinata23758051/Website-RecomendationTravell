@@ -6,6 +6,7 @@ import { PlacesSubmissionService } from './places-submission.service';
 import { SubmissionDedupService } from './submission-dedup.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { RedisService } from '../redis/redis.service';
+import { RagRetrieverService } from '../chatbot/rag-retriever.service';
 import { SubmitPlaceDto } from './dto/submit-place.dto';
 import {
   NotFoundException,
@@ -58,6 +59,10 @@ describe('PlacesSubmissionService', () => {
     get: jest.fn().mockReturnValue('http://localhost:8000'),
   };
 
+  const mockRagRetriever = {
+    upsertDestination: jest.fn().mockReturnValue({}),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -81,6 +86,10 @@ describe('PlacesSubmissionService', () => {
         {
           provide: ConfigService,
           useValue: mockConfigService,
+        },
+        {
+          provide: RagRetrieverService,
+          useValue: mockRagRetriever,
         },
       ],
     }).compile();
@@ -368,6 +377,10 @@ describe('PlacesSubmissionService', () => {
           }),
         }),
       );
+      // The approved place must be retrievable by the chatbot immediately
+      expect(mockRagRetriever.upsertDestination).toHaveBeenCalledWith(
+        expect.objectContaining({ canonical_id: 'dest-sub-sub-1', name: 'Pantai Baru' }),
+      );
     });
 
     it('should not fail moderation when promotion side effects fail', async () => {
@@ -388,6 +401,34 @@ describe('PlacesSubmissionService', () => {
       await expect(
         service.moderateSubmission('sub-1', 'admin-1', 'APPROVE'),
       ).resolves.toEqual(updatedSubmission);
+    });
+
+    it('should keep promotion successful even if the RAG index upsert fails', async () => {
+      const existingSubmission = {
+        id: 'sub-refresh-fail',
+        name: 'Pantai Refresh',
+        status: 'PENDING',
+        submitterId: 'user-1',
+      };
+      const updatedSubmission = { ...existingSubmission, status: 'APPROVED' };
+
+      mockPrisma.placeSubmission.findUnique
+        .mockResolvedValueOnce(existingSubmission)
+        .mockResolvedValueOnce({ ...existingSubmission, status: 'APPROVED' });
+      mockPrisma.placeSubmission.update.mockResolvedValue(updatedSubmission);
+      mockRagRetriever.upsertDestination.mockImplementationOnce(() => {
+        throw new Error('index failure');
+      });
+
+      await expect(
+        service.moderateSubmission('sub-refresh-fail', 'admin-1', 'APPROVE'),
+      ).resolves.toEqual(updatedSubmission);
+      expect(mockPrisma.placeSubmission.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { id: 'sub-refresh-fail' },
+          data: expect.objectContaining({ promotedAt: expect.any(Date) }),
+        }),
+      );
     });
 
     it('should isolate XP rewards by submission and skip duplicate approvals', async () => {
