@@ -170,9 +170,9 @@ export const ProfilePage: React.FC = () => {
           const favIds = res.data.data.map((f: any) => f.canonicalId);
           const pool = allDests || [];
           const matched = pool.filter((d: Destination) => favIds.includes(d.id));
-          setFavoriteDestinations(matched.length > 0 ? matched : pool.slice(0, 4));
-        } else if (isMounted && allDests) {
-          setFavoriteDestinations(allDests.slice(0, 4));
+          setFavoriteDestinations(matched);
+        } else if (isMounted) {
+          setFavoriteDestinations([]);
         }
       } catch (err) {
         if (isMounted) setFavoriteDestinations([]);

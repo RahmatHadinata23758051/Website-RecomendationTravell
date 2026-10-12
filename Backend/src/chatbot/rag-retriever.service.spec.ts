@@ -101,7 +101,8 @@ describe('RagRetrieverService', () => {
     it('should enforce budget constraint when present in query', () => {
       const results = service.retrieveRelevantFacts('pantai dibawah 50 ribu');
       for (const dest of results) {
-        expect(dest.numericPrice).toBeLessThanOrEqual(50000);
+        // Unknown prices (0) are surfaced honestly, not silently treated as free
+        expect(dest.numericPrice > 0 ? dest.numericPrice <= 50000 : true).toBe(true);
       }
     });
 
@@ -131,8 +132,8 @@ describe('RagRetrieverService', () => {
       expect(prompt).toMatch(/Nama: ".*"/);
       expect(prompt).toMatch(/Kabupaten\/Kota: ".*"/);
       expect(prompt).toMatch(/Kategori: ".*"/);
-      expect(prompt).toMatch(/Rating: [\d.]+★/);
-      expect(prompt).toMatch(/Harga: Rp/);
+      expect(prompt).toMatch(/Rating: [\d.]+★|Rating: belum tersedia/);
+      expect(prompt).toMatch(/Harga: (Rp|Harga belum tersedia)/);
       expect(prompt).toMatch(/Jam buka: /);
       expect(prompt).toMatch(/Highlight: /);
     });

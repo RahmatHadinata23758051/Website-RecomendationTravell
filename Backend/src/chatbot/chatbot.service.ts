@@ -254,9 +254,9 @@ ${personalContext ? `\n${personalContext}` : ''}
             price: f.price,
             rating: f.rating,
             numericPrice: f.numericPrice || 0,
-            category: f.category || 'Alam',
-            hours: f.hours || '08:00 - 17:00 WIB',
-            highlight: f.highlight || f.description || 'Destinasi wisata Lampung.',
+            category: f.category || 'Kategori belum tersedia',
+            hours: f.hours || 'Jam buka tidak tersedia',
+            highlight: f.highlight || 'Highlight belum tersedia.',
           })),
         },
       };

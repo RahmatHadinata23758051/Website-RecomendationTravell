@@ -317,7 +317,12 @@ export const ExplorePage: React.FC = () => {
     const bMatch = userPrefs.includes(b.category) ? 1.25 : 1.0;
 
     if (sortBy === 'rating') return (b.rating * bMatch) - (a.rating * aMatch);
-    if (sortBy === 'price') return a.numericPrice - b.numericPrice;
+    if (sortBy === 'price') {
+      if (a.numericPrice === 0 && b.numericPrice === 0) return 0;
+      if (a.numericPrice === 0) return 1;
+      if (b.numericPrice === 0) return -1;
+      return a.numericPrice - b.numericPrice;
+    }
     return (b.reviews * bMatch) - (a.reviews * aMatch);
   });
 

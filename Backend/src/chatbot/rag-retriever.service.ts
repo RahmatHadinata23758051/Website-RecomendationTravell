@@ -102,84 +102,6 @@ export class RagRetrieverService implements OnModuleInit {
     'kabupaten', 'kota', 'lampung', 'harga', 'tiket', 'buka', 'jam',
   ]);
 
-  private readonly culinarySeedDestinations: Array<Partial<DestinationFact>> = [
-    {
-      id: 'culinary-seruit-buhajah',
-      name: 'Rumah Makan Seruit Ibu Hajah',
-      location: 'Kec. Sukarame, Kota Bandar Lampung',
-      regency: 'Kota Bandar Lampung',
-      category: 'Kuliner',
-      rating: 4.8,
-      price: 'Rp 35.000 (estimasi)',
-      numericPrice: 35000,
-      duration: '1-2 jam',
-      hours: '09:00 - 21:00 WIB',
-      description: 'Pusat kuliner legendaris Seruit ikan simba dan patin bakar dengan sambal tempoyak durian khas Lampung.',
-      highlight: 'Ikan bakar khas Pepadun & Saiburi disajikan dengan sambal tempoyak durian dan lalapan terong bulat segar.',
-      facilities: ['Area Parkir', 'Lesehan', 'Mushola', 'Toilet'],
-    },
-    {
-      id: 'culinary-begadang-v',
-      name: 'Rumah Makan Begadang V',
-      location: 'Jl. Soekarno Hatta, Kota Bandar Lampung',
-      regency: 'Kota Bandar Lampung',
-      category: 'Kuliner',
-      rating: 4.7,
-      price: 'Rp 30.000 (estimasi)',
-      numericPrice: 30000,
-      duration: '1-2 jam',
-      hours: '24 Jam',
-      description: 'Restoran ikonik di Lampung yang terkenal dengan Ayam Pop gurih legendaris dan rendang rempah Sumatra.',
-      highlight: 'Ayam Pop legendaris bercita rasa gurih empuk dengan sambal merah khas Begadang Lampung.',
-      facilities: ['Parkir Luas', 'Ruang AC', 'Mushola', 'Toilet'],
-    },
-    {
-      id: 'culinary-kopi-liwa',
-      name: 'Kedai Kopi Robusta Liwa',
-      location: 'Balik Bukit, Liwa, Kabupaten Lampung Barat',
-      regency: 'Kabupaten Lampung Barat',
-      category: 'Kuliner',
-      rating: 4.9,
-      price: 'Rp 15.000 (estimasi)',
-      numericPrice: 15000,
-      duration: '1-2 jam',
-      hours: '08:00 - 22:00 WIB',
-      description: 'Kedai kopi khas dataran tinggi Liwa menyajikan seduhan kopi robusta petik merah asli lereng Gunung Pesagi.',
-      highlight: 'Kopi hitam harum aroma cokelat karamel khas pegunungan sejuk Liwa Lampung Barat.',
-      facilities: ['Spot Santai', 'WiFi', 'Toilet', 'Area Parkir'],
-    },
-    {
-      id: 'culinary-tuhuk-krui',
-      name: 'Kedai Nelayan Vanie (Ikan Tuhuk Marlin Krui)',
-      location: 'Jl. Lintas Barat Sumatra, Krui, Kabupaten Pesisir Barat',
-      regency: 'Kabupaten Pesisir Barat',
-      category: 'Kuliner',
-      rating: 4.9,
-      price: 'Rp 40.000 (estimasi)',
-      numericPrice: 40000,
-      duration: '1-2 jam',
-      hours: '10:00 - 21:00 WIB',
-      description: 'Pusat olahan Ikan Tuhuk (Blue Marlin samudra) segar khas Krui dengan menu Gulai Taboh dan sate tuhuk.',
-      highlight: 'Gulai Taboh kuah santan kelapa muda gurih berpadu potongan daging tebal ikan marlin segar.',
-      facilities: ['Lesehan View Laut', 'Area Parkir', 'Toilet'],
-    },
-    {
-      id: 'culinary-seruit-pesawaran',
-      name: 'Pindang & Seruit Pesisir Pesawaran',
-      location: 'Padang Cermin, Kabupaten Pesawaran',
-      regency: 'Kabupaten Pesawaran',
-      category: 'Kuliner',
-      rating: 4.8,
-      price: 'Rp 35.000 (estimasi)',
-      numericPrice: 35000,
-      duration: '1-2 jam',
-      hours: '09:00 - 18:00 WIB',
-      description: 'Rumah makan seafood dan seruit ikan simba tepi laut Pesawaran dengan sambal rampai terasi segar.',
-      highlight: 'Ikan bakar segar tepi laut dinikmati dengan seruit tempoyak dan es kelapa muda.',
-      facilities: ['Gazebo Tepi Pantai', 'Parkir', 'Toilet'],
-    },
-  ];
-
   onModuleInit() {
     this.loadDestinationsData();
   }
@@ -205,25 +127,6 @@ export class RagRetrieverService implements OnModuleInit {
           .filter((item: any) => this.isTouristDestination(item))
           .map((item: any, index: number) => this.toDestinationFact(item, index));
 
-        // Augment with verified iconic culinary places to ensure complete coverage
-        for (const seed of this.culinarySeedDestinations) {
-          this.destinationsPool.push({
-            id: seed.id || `culinary-${Math.random()}`,
-            name: seed.name || 'Kuliner Khas Lampung',
-            location: seed.location || 'Lampung',
-            regency: seed.regency || 'Kota Bandar Lampung',
-            category: 'Kuliner',
-            rating: seed.rating || 4.8,
-            price: seed.price || 'Rp 35.000 (estimasi)',
-            numericPrice: seed.numericPrice || 35000,
-            duration: seed.duration || '1-2 jam',
-            hours: seed.hours || '09:00 - 21:00 WIB',
-            description: seed.description || 'Kuliner khas Lampung.',
-            highlight: seed.highlight || 'Kuliner khas Lampung.',
-            facilities: seed.facilities || ['Parkir', 'Toilet'],
-          });
-        }
-
         this.logger.log(`[RAG RETRIEVER] Indexed ${this.destinationsPool.length} destinations from ${datasetPath}.`);
       }
     } catch (error) {
@@ -231,27 +134,7 @@ export class RagRetrieverService implements OnModuleInit {
     }
 
     if (this.destinationsPool.length === 0) {
-      this.logger.warn('[RAG RETRIEVER] Dataset unavailable; using the minimal verified seed pool.');
-      this.destinationsPool = [
-        this.toDestinationFact({
-          canonical_id: 'seed-pahawang', name: 'Pulau Pahawang Snorkeling Spot',
-          address: 'Kecamatan Marga Punduh, Kabupaten Pesawaran', city_or_regency: 'Kabupaten Pesawaran',
-          primary_category: 'beach', rating: 4.9, price_min_idr: 150000,
-          description: 'Destinasi bahari untuk snorkeling dan melihat terumbu karang.',
-        }, 0),
-        this.toDestinationFact({
-          canonical_id: 'seed-sari-ringgung', name: 'Pantai Sari Ringgung',
-          address: 'Padang Cermin, Kabupaten Pesawaran', city_or_regency: 'Kabupaten Pesawaran',
-          primary_category: 'beach', rating: 4.7, price_min_idr: 20000,
-          description: 'Pantai pasir putih dengan fenomena Pasir Timbul dan wahana air.',
-        }, 1),
-        this.toDestinationFact({
-          canonical_id: 'seed-puncak-mas', name: 'Puncak Mas Bandar Lampung',
-          address: 'Kemiling, Kota Bandar Lampung', city_or_regency: 'Kota Bandar Lampung',
-          primary_category: 'nature', rating: 4.8, price_min_idr: 20000,
-          description: 'Wisata perbukitan dengan pemandangan kota dan spot foto.',
-        }, 2),
-      ];
+      this.logger.warn('[RAG RETRIEVER] Dataset unavailable; no synthetic fallback — returning empty pool.');
     }
     return this.destinationsPool;
   }
@@ -283,18 +166,17 @@ export class RagRetrieverService implements OnModuleInit {
 
   private toDestinationFact(item: any, index: number): DestinationFact {
     const rawCategory = String(item.primary_category || item.category || 'alam').toLowerCase();
-    const name = String(item.name || 'Destinasi Wisata Lampung').trim();
+    const name = String(item.name).trim();
     let category = this.categoryAliases[rawCategory] || this.categoryAliases[rawCategory.replace(/[-_]/g, ' ')] || 'Alam';
     if (this.isCulinary(name, item.description, rawCategory)) {
       category = 'Kuliner';
     }
 
-    const regency = String(item.city_or_regency || item.regency || 'Lampung').trim();
+    const regency = String(item.city_or_regency || item.regency || '').trim();
     const location = String(item.address || item.location || regency).trim();
-    const numericPrice = this.inferPrice(item, category, name);
-    const description = String(item.description || item.summary || '').trim() ||
-      `Destinasi ${category.toLowerCase()} di ${regency} dengan lanskap khas Lampung.`;
-    const highlight = this.buildHighlight(name, category, description);
+    const numericPrice = this.knownPrice(item);
+    const description = String(item.description || item.summary || '').trim() || 'Deskripsi belum tersedia.';
+    const highlight = this.buildHighlight(category, description);
 
     return {
       id: String(item.canonical_id || item.id || `dest-${index + 1}`),
@@ -303,43 +185,41 @@ export class RagRetrieverService implements OnModuleInit {
       regency,
       category,
       rating: this.toRating(item.rating),
-      price: this.formatPrice(numericPrice, category, name),
+      price: this.formatPrice(numericPrice),
       numericPrice,
-      duration: String(item.duration || '2-3 jam'),
-      hours: String(item.hours || item.opening_hours || '08:00 - 17:00 WIB'),
+      duration: String(item.duration || 'Tidak tersedia'),
+      hours: String(item.hours || item.opening_hours || 'Jam buka tidak tersedia'),
       description,
       highlight,
-      facilities: Array.isArray(item.facilities) && item.facilities.length > 0
-        ? item.facilities.map(String)
-        : ['Spot Foto', 'Area Parkir', 'Warung Makan', 'Toilet'],
+      facilities: Array.isArray(item.facilities) ? item.facilities.map(String) : [],
     };
   }
 
   private toRating(value: unknown): number {
     const rating = Number(value);
-    return Number.isFinite(rating) && rating > 0 ? Math.min(5, Math.max(0, rating)) : 4.5;
+    return Number.isFinite(rating) && rating > 0 ? Math.min(5, Math.max(0, rating)) : 0;
   }
 
-  private inferPrice(item: any, category: string, name: string): number {
-    const source = Number(item.numericPrice || item.price_min_idr || item.price || 0);
-    const price = Number.isFinite(source) && source > 0 && source !== 25000 ? source : 0;
-    if (/pahawang|kiluan|resort|diving|snorkeling|waterpark/i.test(name)) return price || 85000;
-    if (category === 'Kuliner' || /kopi|resto|sate|pindang|pempek/i.test(name)) return price || 35000;
-    if (/taman|tugu|alun|embung|hutan kota/i.test(name)) return price <= 10000 ? price : 5000;
-    return price || 20000;
+  /**
+   * Returns the price only when the source carries a real value. The scraped
+   * catalog stamps every row with a constant placeholder (25000), which is not
+   * a verified price, so it is treated as unknown (0).
+   */
+  private knownPrice(item: any): number {
+    const source = Number(item.numericPrice ?? item.price_min_idr ?? 0);
+    if (!Number.isFinite(source) || source <= 0 || source === 25000) return 0;
+    return source;
   }
 
-  private formatPrice(price: number, category: string, name: string): string {
-    const formatted = `Rp ${price.toLocaleString('id-ID')}`;
-    if (price === 0) return 'Gratis';
-    if (category === 'Kuliner' || /resto|kopi|sate|pindang|pempek/i.test(name)) return `${formatted} (estimasi)`;
-    return formatted;
+  private formatPrice(price: number): string {
+    if (price === 0) return 'Harga belum tersedia';
+    return `Rp ${price.toLocaleString('id-ID')}`;
   }
 
-  private buildHighlight(name: string, category: string, description: string): string {
+  private buildHighlight(category: string, description: string): string {
     const shortDescription = description.replace(/\s+/g, ' ').trim();
     return shortDescription.length > 180 ? shortDescription.slice(0, 177) + '...' :
-      shortDescription || `${name} merupakan destinasi ${category.toLowerCase()} pilihan di Lampung.`;
+      shortDescription || 'Highlight belum tersedia.';
   }
 
   public retrieveRelevantFacts(query: string, targetRegency?: string, targetCategory?: string): DestinationFact[] {
@@ -383,8 +263,12 @@ export class RagRetrieverService implements OnModuleInit {
 
     scored.sort((left, right) => right.score - left.score || right.destination.rating - left.destination.rating);
 
-    const affordable = budget ? scored.filter(({ destination }) => destination.numericPrice <= budget) : scored;
-    const result = affordable.length ? affordable : scored;
+    // When a budget is specified, prioritize items with known prices within budget.
+    // If no prices are known, fall back to relevance-scored items rather than an empty list.
+    const knownWithinBudget = budget
+      ? scored.filter(({ destination }) => destination.numericPrice > 0 && destination.numericPrice <= budget)
+      : [];
+    const result = knownWithinBudget.length ? knownWithinBudget : scored;
     return result.slice(0, 6).map(({ destination }) => destination);
   }
 
@@ -452,7 +336,8 @@ export class RagRetrieverService implements OnModuleInit {
       matchCount++;
     }
 
-    if (budget && destination.numericPrice <= budget) {
+    // Only match against budget if price is actually known (> 0)
+    if (budget && destination.numericPrice > 0 && destination.numericPrice <= budget) {
       relevanceScore += 10;
       matchCount++;
     }
@@ -494,7 +379,7 @@ export class RagRetrieverService implements OnModuleInit {
 
     let finalScore = relevanceScore + destination.rating * 2;
     if (/(malam|sore|siang)/.test(query) && /18|19|20|21|22/.test(destination.hours)) finalScore += 8;
-    if (/(murah|hemat|gratis|terjangkau)/.test(query) && destination.numericPrice <= 50000) finalScore += 8;
+    if (/(murah|hemat|gratis|terjangkau)/.test(query) && destination.numericPrice > 0 && destination.numericPrice <= 50000) finalScore += 8;
 
     return finalScore;
   }
@@ -573,7 +458,7 @@ export class RagRetrieverService implements OnModuleInit {
           `Nama: "${fact.name}"`,
           `Kabupaten/Kota: "${fact.regency}"`,
           `Kategori: "${fact.category}"`,
-          `Rating: ${fact.rating}★`,
+          `Rating: ${fact.rating > 0 ? fact.rating + '★' : 'belum tersedia'}`,
           `Harga: ${fact.price}`,
           `Jam buka: ${fact.hours}`,
           `Highlight: ${fact.highlight}`,
@@ -582,6 +467,6 @@ export class RagRetrieverService implements OnModuleInit {
       )
       .join('\n');
 
-    return `FAKTA TERVERIFIKASI DATABASE DESTINASI WISATA LAMPUNG (gunakan hanya fakta ini untuk detail destinasi):\n${factsText}`;
+    return `FAKTA TERVERIFIKASI DATABASE DESTINASI WISATA LAMPUNG (gunakan hanya fakta ini untuk detail destinasi).\nATURAN FAKTA:\n- Jika Harga berbunyi "Harga belum tersedia", sampaikan harga belum tersedia; JANGAN mengarang atau mengestimasi angka harga.\n- Jika Rating berbunyi "belum tersedia", jangan mengarang nilai rating.\n- Jika Jam buka berbunyi "Jam buka tidak tersedia", sampaikan jam buka tidak diketahui.\n- Jika Highlight berbunyi "Highlight belum tersedia.", jangan mengarang deskripsi singkat.\n- Gunakan HANYA fakta di bawah; dilarang mengarang tempat, harga, rating, jam buka, atau fasilitas lain.\n\n${factsText}`;
   }
 }
