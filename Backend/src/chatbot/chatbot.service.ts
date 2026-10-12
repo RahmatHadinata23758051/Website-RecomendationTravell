@@ -70,6 +70,11 @@ export class ChatbotService {
       .trim();
   }
 
+  private getLlmTimeoutMs(): number {
+    const raw = Number(this.configService.get<string>('NINE_ROUTER_TIMEOUT_MS'));
+    return Number.isFinite(raw) && raw > 0 ? raw : 60000;
+  }
+
   async askChatbot(dto: AskChatbotDto) {
     const { message, history, category, regency } = dto;
     const isAuthenticated = Boolean(dto.userId || dto.userContext);
@@ -180,14 +185,22 @@ ${personalContext ? `\n${personalContext}` : ''}
       ? history.slice(-5).map((h) => `${h.sender === 'user' ? 'Pengguna' : 'Muli AI'}: ${h.text}`).join('\n')
       : '';
 
-    // 4. Sole LLM gateway: 9Router. If it is unavailable we return an honest 503
-    //    instead of fabricated or template-based content.
-    const nineRouterUrl = this.configService.get<string>('NINE_ROUTER_URL');
-    const nineRouterKey = this.configService.get<string>('NINE_ROUTER_API_KEY');
-    const nineRouterModel = this.configService.get<string>('NINE_ROUTER_MODEL') || 'gemini-lampung-pool';
+    // 4. Sole LLM gateway: 9Router (OpenAI-compatible). If it is unavailable we return
+    //    an honest 503 instead of fabricated or template-based content.
+    //    Supports both NINE_ROUTER_* and standard OPENAI_* env keys.
+    const nineRouterUrl =
+      this.configService.get<string>('NINE_ROUTER_URL') ||
+      this.configService.get<string>('OPENAI_BASE_URL');
+    const nineRouterKey =
+      this.configService.get<string>('NINE_ROUTER_API_KEY') ||
+      this.configService.get<string>('OPENAI_API_KEY');
+    const nineRouterModel =
+      this.configService.get<string>('NINE_ROUTER_MODEL') ||
+      this.configService.get<string>('OPENAI_MODEL') ||
+      'gemini-lampung-pool';
 
     if (!nineRouterKey || !nineRouterUrl) {
-      this.logger.error('[9ROUTER] NINE_ROUTER_URL or NINE_ROUTER_API_KEY is not configured.');
+      this.logger.error('[9ROUTER] LLM base URL or API key is not configured (NINE_ROUTER_* or OPENAI_*).');
       throw this.llmUnavailable();
     }
 
@@ -201,6 +214,8 @@ ${personalContext ? `\n${personalContext}` : ''}
         ],
         temperature: 0.7,
         max_tokens: 800,
+        // 9Router default-nya streaming SSE; pakai stream:false agar balik single JSON
+        stream: false,
       };
 
       const res = await firstValueFrom(
@@ -209,7 +224,8 @@ ${personalContext ? `\n${personalContext}` : ''}
             'Content-Type': 'application/json',
             Authorization: `Bearer ${nineRouterKey}`,
           },
-          timeout: 3500,
+          // Reasoning model + prompt RAG lengkap bisa memakan >15 detik
+          timeout: this.getLlmTimeoutMs(),
         }),
       );
 

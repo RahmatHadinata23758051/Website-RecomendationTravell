@@ -159,12 +159,52 @@ describe('ChatbotService', () => {
 
     expect(httpPostSpy).toHaveBeenCalled();
     const requestPayload = httpPostSpy.mock.calls[0][1];
+    expect(requestPayload.stream).toBe(false);
     const systemPromptMessage = requestPayload.messages.find(
       (m: any) => m.role === 'system',
     )?.content;
     expect(systemPromptMessage).toContain('KONTEKS PRIBADI PENGGUNA');
     expect(systemPromptMessage).toContain('Wisata Bahari');
     expect(systemPromptMessage).toContain('Trip Eksotis Pesawaran 3H2M');
+  });
+
+  it('should use OPENAI_BASE_URL alias when NINE_ROUTER_URL is not set', async () => {
+    const freshModule = await Test.createTestingModule({
+      providers: [
+        ChatbotService,
+        { provide: HttpService, useValue: mockHttpService },
+        {
+          provide: ConfigService,
+          useValue: {
+            get: jest.fn().mockImplementation((key: string) => {
+              if (key === 'OPENAI_BASE_URL') return 'http://localhost:20128/v1';
+              if (key === 'OPENAI_API_KEY') return 'test-openai-key';
+              if (key === 'OPENAI_MODEL') return 'gemini-lampung-pool';
+              return null;
+            }),
+          },
+        },
+        { provide: PrismaService, useValue: mockPrismaService },
+        {
+          provide: RagRetrieverService,
+          useValue: {
+            retrieveRelevantFacts: jest.fn().mockReturnValue([]),
+            buildRagContextPrompt: jest.fn().mockReturnValue(''),
+          },
+        },
+      ],
+    }).compile();
+
+    const freshService = freshModule.get(ChatbotService);
+    const res = await freshService.askChatbot({
+      message: 'Rekomendasi pantai',
+    });
+
+    expect(res.status).toBe('success');
+    expect(httpPostSpy).toHaveBeenCalled();
+    const requestPayload = httpPostSpy.mock.calls[0][1];
+    expect(requestPayload.stream).toBe(false);
+    expect(requestPayload.model).toBe('gemini-lampung-pool');
   });
 
   it('should support Authenticated Mode when userContext is passed directly in payload', async () => {
