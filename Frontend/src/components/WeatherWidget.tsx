@@ -198,11 +198,21 @@ export const WeatherWidget: React.FC = () => {
       const data = await res.json();
       const current = data?.current || {};
 
-      const temp = Math.round(current.temperature_2m ?? 29);
-      const humidity = Math.round(current.relative_humidity_2m ?? 70);
-      const windSpeed = Math.round(current.wind_speed_10m ?? 10);
-      const uv = Math.round(current.uv_index ?? 6);
-      const wmo = parseWmoCode(current.weather_code ?? 1, temp);
+      if (
+        typeof current.temperature_2m !== 'number' ||
+        typeof current.relative_humidity_2m !== 'number' ||
+        typeof current.wind_speed_10m !== 'number' ||
+        typeof current.uv_index !== 'number' ||
+        typeof current.weather_code !== 'number'
+      ) {
+        throw new Error('Incomplete weather response');
+      }
+
+      const temp = Math.round(current.temperature_2m);
+      const humidity = Math.round(current.relative_humidity_2m);
+      const windSpeed = Math.round(current.wind_speed_10m);
+      const uv = Math.round(current.uv_index);
+      const wmo = parseWmoCode(current.weather_code, temp);
 
       const advisoryText = generateDynamicAdvisory(
         temp,
