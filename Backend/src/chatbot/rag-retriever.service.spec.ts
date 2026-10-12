@@ -1,4 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import * as fs from 'fs';
+import * as os from 'os';
+import * as path from 'path';
 import { RagRetrieverService } from './rag-retriever.service';
 
 describe('RagRetrieverService', () => {
@@ -210,6 +213,79 @@ describe('RagRetrieverService', () => {
       (service as any).destinationsPool = [];
       (service as any).dataLoaded = true;
       expect(service.semanticSearch('pantai')).toEqual([]);
+    });
+  });
+
+  describe('approved catalog overlay', () => {
+    const overlayRecord = {
+      canonical_id: 'dest-persistent-overlay-1',
+      name: 'Pantai Persisten Uji Coba',
+      primary_category: 'beach',
+      city_or_regency: 'Kabupaten Pesawaran',
+      address: 'Pesisir Pesawaran',
+      description: 'Destinasi yang harus tetap tersedia setelah restart.',
+      facilities: ['Parkir'],
+      price_status: 'unknown',
+      review_count: 0,
+      review_rating_mean: null,
+    };
+
+    it('should merge a persisted approved record during initial load', () => {
+      const overlayPath = path.join(os.tmpdir(), `kelana-rag-overlay-${process.pid}.json`);
+      fs.writeFileSync(overlayPath, JSON.stringify({ format_version: 1, records: [overlayRecord] }), 'utf8');
+      const previousPath = process.env.CATALOG_SUBMISSIONS_PATH;
+      process.env.CATALOG_SUBMISSIONS_PATH = overlayPath;
+
+      try {
+        const freshService = new RagRetrieverService();
+        const pool = freshService.loadDestinationsData();
+        expect(pool.some((destination) => destination.id === overlayRecord.canonical_id)).toBe(true);
+        expect(freshService.retrieveRelevantFacts('Pantai Persisten Uji Coba')[0]?.id).toBe(overlayRecord.canonical_id);
+      } finally {
+        if (previousPath === undefined) delete process.env.CATALOG_SUBMISSIONS_PATH;
+        else process.env.CATALOG_SUBMISSIONS_PATH = previousPath;
+        fs.rmSync(overlayPath, { force: true });
+      }
+    });
+
+    it('should ignore malformed overlay records without breaking the static catalog', () => {
+      const overlayPath = path.join(os.tmpdir(), `kelana-rag-overlay-invalid-${process.pid}.json`);
+      fs.writeFileSync(overlayPath, '{not-json', 'utf8');
+      const previousPath = process.env.CATALOG_SUBMISSIONS_PATH;
+      process.env.CATALOG_SUBMISSIONS_PATH = overlayPath;
+
+      try {
+        const freshService = new RagRetrieverService();
+        expect(freshService.loadDestinationsData().length).toBeGreaterThan(0);
+      } finally {
+        if (previousPath === undefined) delete process.env.CATALOG_SUBMISSIONS_PATH;
+        else process.env.CATALOG_SUBMISSIONS_PATH = previousPath;
+        fs.rmSync(overlayPath, { force: true });
+      }
+    });
+
+    it('should rebuild index including overlay after refreshIndex()', () => {
+      const overlayPath = path.join(os.tmpdir(), `kelana-rag-overlay-refresh-${process.pid}.json`);
+      fs.writeFileSync(overlayPath, JSON.stringify({ format_version: 1, records: [] }), 'utf8');
+      const previousPath = process.env.CATALOG_SUBMISSIONS_PATH;
+      process.env.CATALOG_SUBMISSIONS_PATH = overlayPath;
+
+      try {
+        const freshService = new RagRetrieverService();
+        expect(freshService.loadDestinationsData().some((d) => d.id === overlayRecord.canonical_id)).toBe(false);
+
+        // Add overlay record to the file and trigger refresh
+        fs.writeFileSync(overlayPath, JSON.stringify({ format_version: 1, records: [overlayRecord] }), 'utf8');
+        freshService.refreshIndex();
+
+        const pool = freshService.loadDestinationsData();
+        expect(pool.some((destination) => destination.id === overlayRecord.canonical_id)).toBe(true);
+        expect(freshService.retrieveRelevantFacts('Pantai Persisten Uji Coba')[0]?.id).toBe(overlayRecord.canonical_id);
+      } finally {
+        if (previousPath === undefined) delete process.env.CATALOG_SUBMISSIONS_PATH;
+        else process.env.CATALOG_SUBMISSIONS_PATH = previousPath;
+        fs.rmSync(overlayPath, { force: true });
+      }
     });
   });
 

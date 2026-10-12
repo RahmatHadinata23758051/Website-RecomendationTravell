@@ -197,6 +197,88 @@ export class RagRetrieverService implements OnModuleInit {
     return fact;
   }
 
+  /**
+   * Loads the approved crowdsourced catalog overlay from the ML engine store and
+   * merges it with the static catalog. The overlay is stored as a JSON file
+   * (default path: Machine-Learning/Data/consolidated/approved_catalog_submissions.json)
+   * which can be overridden via the CATALOG_SUBMISSIONS_PATH environment variable.
+   *
+   * Deduplication is by canonical_id: if an overlay record shares the same
+   * canonical_id as a static catalog entry, the static entry wins to preserve
+   * data provenance. Only truly new destinations are appended.
+   */
+  private mergeApprovedCatalogOverlay(): void {
+    const overlayPath = this.resolveCatalogOverlayPath();
+    if (!overlayPath || !fs.existsSync(overlayPath)) {
+      this.logger.debug('[RAG RETRIEVER] No approved catalog overlay found; using static catalog only.');
+      return;
+    }
+
+    try {
+      const raw = JSON.parse(fs.readFileSync(overlayPath, 'utf-8'));
+      const records = Array.isArray(raw) ? raw : raw.records || [];
+
+      const existingIds = new Set(this.destinationsPool.map((d) => d.id));
+      const overlayFacts: DestinationFact[] = [];
+
+      for (const record of records) {
+        const canonicalId = String(record?.canonical_id || record?.id || '').trim();
+        if (!canonicalId || existingIds.has(canonicalId)) continue;
+
+        // Map overlay record to the same schema as the static catalog.
+        const mapped: Record<string, unknown> = {
+          canonical_id: canonicalId,
+          name: record.name,
+          primary_category: record.primary_category,
+          category: record.category,
+          city_or_regency: record.city_or_regency,
+          address: record.address,
+          district: record.district,
+          village: record.village,
+          latitude: record.latitude,
+          longitude: record.longitude,
+          description: record.description,
+          image_url: record.image_url,
+          facilities: record.facilities,
+          opening_hours: record.opening_hours,
+          price_min_idr: record.price_min_idr,
+          price_max_idr: record.price_max_idr,
+          price_status: record.price_status,
+          operational_status: record.operational_status,
+          review_count: record.review_count,
+          review_rating_mean: record.review_rating_mean,
+        };
+
+        const fact = this.toDestinationFact(mapped, this.destinationsPool.length + overlayFacts.length);
+        overlayFacts.push(fact);
+        existingIds.add(canonicalId);
+      }
+
+      if (overlayFacts.length > 0) {
+        this.destinationsPool.push(...overlayFacts);
+        this.logger.log(`[RAG RETRIEVER] Merged ${overlayFacts.length} approved catalog overlay entries.`);
+      }
+    } catch (error) {
+      this.logger.warn(`[RAG RETRIEVER] Failed to load approved catalog overlay: ${error instanceof Error ? error.message : String(error)}`);
+    }
+  }
+
+  /**
+   * Resolves the path to the approved catalog overlay JSON.
+   * Priority: CATALOG_SUBMISSIONS_PATH env var -> package-relative default.
+   */
+  private resolveCatalogOverlayPath(): string | null {
+    const configured = process.env.CATALOG_SUBMISSIONS_PATH;
+    if (configured) {
+      return path.resolve(configured);
+    }
+    // Default: relative to this compiled file (dist/chatbot/rag-retriever.service.js)
+    // Goes up to project root, then into Machine-Learning/Data/consolidated/
+    const projectRoot = path.join(__dirname, '..', '..', '..', '..');
+    const defaultPath = path.join(projectRoot, 'Machine-Learning', 'Data', 'consolidated', 'approved_catalog_submissions.json');
+    return defaultPath;
+  }
+
   onModuleInit() {
     this.loadDestinationsData();
   }
@@ -231,6 +313,7 @@ export class RagRetrieverService implements OnModuleInit {
     if (this.destinationsPool.length === 0) {
       this.logger.warn('[RAG RETRIEVER] Dataset unavailable; no synthetic fallback — returning empty pool.');
     } else {
+      this.mergeApprovedCatalogOverlay();
       this.buildSemanticIndex();
     }
     return this.destinationsPool;
