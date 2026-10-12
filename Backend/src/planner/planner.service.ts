@@ -14,7 +14,7 @@ import { GeneratePlannerDto, SwapSlotDto } from './dto/generate-planner.dto';
 @Injectable()
 export class PlannerService {
   private readonly logger = new Logger(PlannerService.name);
-  private readonly mlApiUrl = process.env.ML_API_URL || 'http://localhost:8000';
+  private readonly mlApiUrl = process.env.ML_ENGINE_URL || 'http://localhost:8000';
 
   constructor(
     private readonly prisma: PrismaService,
