@@ -49,6 +49,11 @@ jobs:
           ML_ENGINE_URL: http://localhost:8000
           PORT: 4000
 
+      - name: Run RAG retrieval evaluation gate
+        run: npm run test:eval
+        env:
+          NODE_ENV: test
+
   frontend:
     name: Frontend Typecheck & Build
     runs-on: ubuntu-latest

@@ -16,6 +16,7 @@
     "test:watch": "jest --watch",
     "test:cov": "jest --coverage",
     "test:e2e": "jest --config ./test/jest-e2e.json",
+    "test:eval": "jest --runInBand --testPathIgnorePatterns=/node_modules/ --testRegex=rag-golden-eval",
     "prisma:generate": "prisma generate",
     "prisma:seed": "ts-node prisma/seed.ts"
   },
@@ -74,6 +75,9 @@
     ],
     "rootDir": "src",
     "testRegex": ".*\\.spec\\.ts$",
+    "testPathIgnorePatterns": [
+      "/rag-golden-eval\\.spec\\.ts$"
+    ],
     "transform": {
       "^.+\\.(t|j)s$": "ts-jest"
     },
