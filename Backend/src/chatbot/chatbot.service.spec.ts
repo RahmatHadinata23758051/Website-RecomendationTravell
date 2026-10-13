@@ -108,7 +108,7 @@ describe('ChatbotService', () => {
     });
 
     expect(res.status).toBe('success');
-    expect(res.bot_name).toBe('Raden Gajah (AI Concierge Lampung)');
+    expect(res.bot_name).toBe('Asisten KelanaLampung');
     expect(res.data.reply).toBeDefined();
     expect(res.data.destinations).toBeDefined();
     expect(res.data.destinations.length).toBeGreaterThan(0);
@@ -126,7 +126,7 @@ describe('ChatbotService', () => {
     });
 
     expect(res.status).toBe('success');
-    expect(res.bot_name).toBe('Raden Gajah (AI Concierge Lampung)');
+    expect(res.bot_name).toBe('Asisten KelanaLampung');
     expect(res.data.reply).toContain('Tabik Pun!');
     expect(mockPrismaService.user.findUnique).not.toHaveBeenCalled();
   });
@@ -137,7 +137,7 @@ describe('ChatbotService', () => {
     });
 
     expect(res.status).toBe('success');
-    expect(res.data.reply).toContain('Maaf ya, Muli khusus membantu seputar keindahan pariwisata');
+    expect(res.data.reply).toContain('Saya asisten wisata KelanaLampung. Mohon maaf');
   });
 
   it('should support Authenticated Mode: personalize response using user preferences & itineraries', async () => {
@@ -254,5 +254,49 @@ describe('ChatbotService', () => {
     await expect(
       freshService.askChatbot({ message: 'Rekomendasi pantai' }),
     ).rejects.toThrow(ServiceUnavailableException);
+  });
+
+  it('should inherit regency from history for follow-up queries without explicit location', async () => {
+    const freshModule = await Test.createTestingModule({
+      providers: [
+        ChatbotService,
+        { provide: HttpService, useValue: mockHttpService },
+        { provide: ConfigService, useValue: mockConfigService },
+        { provide: PrismaService, useValue: mockPrismaService },
+        {
+          provide: RagRetrieverService,
+          useValue: {
+            retrieveRelevantFacts: jest.fn().mockReturnValue([]),
+            buildRagContextPrompt: jest.fn().mockReturnValue(''),
+            detectRegencyFromText: jest.fn().mockImplementation((text: string) => {
+              const lower = String(text || '').toLowerCase();
+              if (lower.includes('lampung barat') || lower.includes('liwa')) {
+                return 'Kabupaten Lampung Barat';
+              }
+              return '';
+            }),
+          },
+        },
+      ],
+    }).compile();
+
+    const freshService = freshModule.get<ChatbotService>(ChatbotService);
+    const ragRetriever = freshModule.get<RagRetrieverService>(RagRetrieverService);
+    const spy = ragRetriever.retrieveRelevantFacts as jest.Mock;
+
+    const res = await freshService.askChatbot({
+      message: 'kalau budget saya 100rb bro kira kira bisa kemana aja sama kuliner nya',
+      history: [
+        { sender: 'user', text: 'saya mau ke liwa nih bro ada rekomendasi wisata apa disana' },
+        { sender: 'bot', text: 'Berikut rekomendasi di Liwa, Kabupaten Lampung Barat.' },
+      ],
+    });
+
+    expect(res.status).toBe('success');
+    expect(spy).toHaveBeenCalledWith(
+      'kalau budget saya 100rb bro kira kira bisa kemana aja sama kuliner nya',
+      'Kabupaten Lampung Barat',
+      undefined,
+    );
   });
 });

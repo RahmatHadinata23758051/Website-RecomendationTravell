@@ -85,10 +85,23 @@ export class ChatbotService {
     const cleanMsg = lowerMessage.replace(/[^a-z0-9\s]/gi, '').trim();
 
     // Multi-turn Context
-    const historyText = Array.isArray(history)
-      ? history.map((h) => h.text.toLowerCase()).join(' ')
-      : '';
-    const combinedContext = `${historyText} ${lowerMessage}`.trim();
+    // Detect regency from history (last bot turn that mentions a specific regency)
+    // This allows follow-up queries like "budget 100rb kuliner" to inherit the location
+    // from the previous turn ("saya mau ke liwa...") without polluting fresh queries.
+    let historyRegency = '';
+    if (Array.isArray(history) && history.length > 0) {
+      // Look at recent bot messages for explicit regency mentions
+      for (let i = history.length - 1; i >= 0; i--) {
+        const msg = history[i];
+        if (msg.sender === 'bot' && msg.text) {
+          const detected = this.ragRetriever.detectRegencyFromText(msg.text);
+          if (detected) {
+            historyRegency = detected;
+            break;
+          }
+        }
+      }
+    }
 
     // 0. Simple Greetings Guardrail
     const greetingWords = ['halo', 'hallo', 'hai', 'hi', 'hey', 'pagi', 'siang', 'sore', 'malam', 'tes', 'test', 'ping', 'p'];
@@ -97,10 +110,10 @@ export class ChatbotService {
     if (isPureGreeting && !cleanMsg.includes('wisata') && !cleanMsg.includes('pantai') && !cleanMsg.includes('kuliner') && !cleanMsg.includes('rekomendasi')) {
       return {
         status: 'success',
-        bot_name: 'Raden Gajah (AI Concierge Lampung)',
+        bot_name: 'Asisten KelanaLampung',
         data: {
           reply:
-            'Tabik Pun! Halo! Saya Muli, Customer Service & AI Concierge Resmi Panduan Wisata Provinsi Lampung. Selamat datang di Kelana Lampung!\n\nAda yang bisa Muli bantu untuk liburanmu hari ini? Kamu bisa bertanya seputar rekomendasi pantai eksotis, wisata alam hits, tempat makan Seruit khas Lampung, atau estimasi biaya liburan!',
+            'Tabik Pun! Halo! Saya asisten wisata KelanaLampung, panduan resmi pariwisata Provinsi Lampung.\n\nAda yang bisa saya bantu untuk rencana perjalanan Anda hari ini? Anda bisa menanyakan rekomendasi destinasi alam, pantai, kuliner khas, rute, atau tips liburan di 15 Kabupaten/Kota se-Lampung.',
           suggested_queries: [
             'Rekomendasi pantai di Pesawaran',
             'Tempat makan Seruit khas Lampung',
@@ -131,10 +144,10 @@ export class ChatbotService {
     if (isOutOfScope) {
       return {
         status: 'success',
-        bot_name: 'Raden Gajah (AI Concierge Lampung)',
+        bot_name: 'Asisten KelanaLampung',
         data: {
           reply:
-            'Tabik Pun! Saya Muli, Customer Service & AI Concierge Resmi Wisata Lampung. Maaf ya, Muli khusus membantu seputar keindahan pariwisata, kuliner khas, dan panduan liburan di Lampung. Ada tempat wisata atau kuliner yang ingin kamu tanyakan?',
+            'Tabik Pun! Saya asisten wisata KelanaLampung. Mohon maaf, saya khusus membantu seputar informasi pariwisata, kuliner, dan panduan liburan di Provinsi Lampung. Ada destinasi wisata atau kuliner yang ingin Anda tanyakan?',
           suggested_queries: [
             'Rekomendasi pantai di Pesawaran',
             'Tempat makan Seruit khas Lampung',
@@ -149,10 +162,10 @@ export class ChatbotService {
     if (lowerMessage.includes('siapa') || lowerMessage.includes('kamu siapa') || lowerMessage.includes('siapa anda')) {
       return {
         status: 'success',
-        bot_name: 'Raden Gajah (AI Concierge Lampung)',
+        bot_name: 'Asisten KelanaLampung',
         data: {
           reply:
-            'Tabik Pun! Halo! Saya Muli, Customer Service & AI Concierge Resmi Panduan Wisata Provinsi Lampung.\n\nSaya hadir untuk menemani liburanmu! Kamu bisa tanya Muli apa saja seputar rekomendasi pantai eksotis, wisata alam hits, kuliner tradisional seperti Seruit, estimasi biaya liburan, sampai rekomendasi tempat inap terbaik di 15 Kabupaten/Kota se-Lampung. Ada yang bisa Muli bantu hari ini?',
+            'Tabik Pun! Halo! Saya asisten wisata resmi KelanaLampung.\n\nSaya bertugas membantu merencanakan liburan Anda di Provinsi Lampung, mulai dari rekomendasi pantai, wisata alam, kuliner tradisional seperti Seruit, estimasi rute, hingga informasi destinasi di seluruh 15 Kabupaten/Kota se-Lampung. Ada yang bisa saya bantu hari ini?',
           suggested_queries: [
             'Rekomendasi pantai di Pesawaran',
             'Tempat makan Seruit khas Lampung',
@@ -164,14 +177,16 @@ export class ChatbotService {
     }
 
     // 2. Retrieve Grounded RAG Facts (single retrieval pass)
-    // Retrieval must follow the latest user turn. Conversation history is sent to
-    // the LLM for continuity, but must not affect the requested regency/category.
-    // Otherwise a previous "Pesisir Barat" turn can hijack a new "Pesawaran" query.
-    const relevantFacts: DestinationFact[] = this.ragRetriever.retrieveRelevantFacts(lowerMessage, regency, category);
-    const ragContext = this.ragRetriever.buildRagContextPrompt(lowerMessage, regency, category, relevantFacts);
+    // Use current query's explicit regency/category first. If absent, fall back to
+    // the regency detected from recent bot responses in history (e.g., user said
+    // "saya mau ke liwa" then follows up "budget 100rb kuliner" — inherit Liwa).
+    // This prevents location drift while still supporting natural follow-ups.
+    const effectiveRegency = regency || historyRegency;
+    const relevantFacts: DestinationFact[] = this.ragRetriever.retrieveRelevantFacts(lowerMessage, effectiveRegency, category);
+    const ragContext = this.ragRetriever.buildRagContextPrompt(lowerMessage, effectiveRegency, category, relevantFacts);
 
     // 3. Prompt Orchestration (single AI provider: 9Router)
-    const systemPrompt = `Anda adalah "Muli AI Concierge", Customer Service & Pemandu Wisata Digital Resmi Provinsi Lampung yang sangat ramah, hangat, luwes, dan cerdas.
+    const systemPrompt = `Anda adalah "Asisten KelanaLampung", Pemandu Wisata Digital Resmi Provinsi Lampung yang ramah, hangat, luwes, dan cerdas.
 
 ATURAN PERILAKU DAN FORMAT UTAMA:
 1. Sapa pengguna secara hangat "Tabik Pun!".
@@ -185,7 +200,7 @@ ${personalContext ? `\n${personalContext}` : ''}
 7. Di akhir jawaban, tanyakan dengan ramah bantuan apa lagi yang pengguna butuhkan.`;
 
     const formattedHistory = Array.isArray(history)
-      ? history.slice(-5).map((h) => `${h.sender === 'user' ? 'Pengguna' : 'Muli AI'}: ${h.text}`).join('\n')
+      ? history.slice(-5).map((h) => `${h.sender === 'user' ? 'Pengguna' : 'Asisten'}: ${h.text}`).join('\n')
       : '';
 
     // 4. Sole LLM gateway: 9Router (OpenAI-compatible). If it is unavailable we return
@@ -240,7 +255,7 @@ ${personalContext ? `\n${personalContext}` : ''}
       this.logger.log(`[9ROUTER GATEWAY SUCCESS] Received LLM response via 9Router.`);
       return {
         status: 'success',
-        bot_name: 'Raden Gajah (AI Concierge Lampung)',
+        bot_name: 'Asisten KelanaLampung',
         model_used: nineRouterModel,
         data: {
           reply: this.cleanFormattingAndEmojis(replyText),
@@ -273,7 +288,7 @@ ${personalContext ? `\n${personalContext}` : ''}
     return new ServiceUnavailableException({
       statusCode: 503,
       error: 'LLM_UNAVAILABLE',
-      message: 'Layanan AI Muli sedang tidak tersedia. Silakan coba lagi beberapa saat lagi.',
+      message: 'Layanan Asisten KelanaLampung sedang tidak tersedia. Silakan coba lagi beberapa saat lagi.',
     });
   }
 }

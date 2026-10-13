@@ -590,24 +590,18 @@ export class RagRetrieverService implements OnModuleInit {
 
     let candidates = pool;
     if (detectedRegency) {
-      const regencyKey = this.normalize(detectedRegency).replace(/^(kabupaten|kota)\s+/, '');
-      const filteredByReg = pool.filter((destination) => {
-        const regency = this.normalize(destination.regency);
-        const location = this.normalize(destination.location);
-        return regency.includes(regencyKey) || location.includes(regencyKey);
-      });
-      if (filteredByReg.length > 0) {
-        candidates = filteredByReg;
-      }
+      // A detected regency is a hard constraint. Never fall back to the full
+      // catalog when its verified subset is empty; that would leak spots from
+      // another kabupaten into the answer and into the related-spot cards.
+      candidates = pool.filter((destination) => this.isDestinationInRegency(destination, detectedRegency));
     }
 
     if (detectedCategory) {
-      const filteredByCat = candidates.filter(
+      // Category is also an explicit constraint. An empty category match must
+      // stay empty rather than silently returning unrelated destinations.
+      candidates = candidates.filter(
         (destination) => this.normalize(destination.category) === this.normalize(detectedCategory),
       );
-      if (filteredByCat.length > 0) {
-        candidates = filteredByCat;
-      }
     } else {
       // When the user explicitly asks for "wisata" or tourist spots without mentioning
       // culinary terms, prioritize non-culinary attractions (Pantai, Alam, Budaya, Adventure).
@@ -764,6 +758,27 @@ export class RagRetrieverService implements OnModuleInit {
     }
 
     return score;
+  }
+
+  /** Resolve a regency alias from user-visible text for multi-turn chat context. */
+  public detectRegencyFromText(query: string): string {
+    return this.detectRegency(this.normalize(query));
+  }
+
+  /**
+   * Validates a catalog row against an explicit regency constraint.
+   * city_or_regency is treated as the primary declaration, while an explicit
+   * conflicting region in the address invalidates the row. Addresses that do
+   * not mention a region are accepted because many scraped rows only contain a
+   * street or plus code.
+   */
+  private isDestinationInRegency(destination: DestinationFact, detectedRegency: string): boolean {
+    const regencyKey = this.normalize(detectedRegency).replace(/^(kabupaten|kota)\s+/, '');
+    const declaredRegency = this.normalize(destination.regency);
+    if (!declaredRegency.includes(regencyKey)) return false;
+
+    const locationRegency = this.detectRegency(this.normalize(destination.location));
+    return !locationRegency || this.normalize(locationRegency) === this.normalize(detectedRegency);
   }
 
   private detectRegency(query: string, targetRegency?: string): string {
@@ -954,12 +969,7 @@ export class RagRetrieverService implements OnModuleInit {
     let categoryTotal = 0;
     let categoryBreakdown: Record<string, number> = {};
     if (regency) {
-      const regencyKey = this.normalize(regency).replace(/^(kabupaten|kota)\s+/, '');
-      const inRegency = pool.filter((d) => {
-        const r = this.normalize(d.regency);
-        const l = this.normalize(d.location);
-        return r.includes(regencyKey) || l.includes(regencyKey);
-      });
+      const inRegency = pool.filter((d) => this.isDestinationInRegency(d, regency));
       regencyTotal = inRegency.length;
       if (category) {
         categoryTotal = inRegency.filter((d) => this.normalize(d.category) === this.normalize(category)).length;

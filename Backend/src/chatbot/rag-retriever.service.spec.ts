@@ -353,4 +353,22 @@ describe('RagRetrieverService', () => {
       expect(factMatches?.length ?? 0).toBeLessThanOrEqual(6);
     });
   });
+
+  describe('cross-check regency against conflicting address', () => {
+    it('should exclude destinations whose address explicitly mentions a conflicting regency', () => {
+      const results = service.retrieveRelevantFacts('kuliner', 'lampung barat');
+      for (const dest of results) {
+        expect(dest.regency.toLowerCase()).toContain('lampung barat');
+        expect(dest.location.toLowerCase()).not.toContain('kota bandar lampung');
+        expect(dest.location.toLowerCase()).not.toContain('pesawaran');
+      }
+    });
+
+    it('should never leak other regencies when a requested regency has zero matching facts', () => {
+      const results = service.retrieveRelevantFacts('museum super langka robot', 'kabupaten mesuji');
+      for (const dest of results) {
+        expect(dest.regency.toLowerCase()).toContain('mesuji');
+      }
+    });
+  });
 });
