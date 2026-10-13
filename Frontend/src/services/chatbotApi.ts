@@ -44,7 +44,7 @@ const cleanFormattingAndEmojis = (text: string): string => {
 };
 
 export const askRadenGajahChatbot = async (payload: AskChatbotPayload): Promise<ChatbotResponseData> => {
-  const res = await apiClient.post('/chatbot/chat', payload);
+  const res = await apiClient.post('/chatbot/chat', payload, { timeout: 70000 });
   const responseData = res.data?.data;
 
   if (!responseData?.reply) {

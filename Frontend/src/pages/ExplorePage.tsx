@@ -33,6 +33,7 @@ import {
   ReviewSummary,
 } from '../services/reviewsApi';
 import { WeatherWidget } from '../components/WeatherWidget';
+import { SafeImage } from '../components/SafeImage';
 
 export interface Destination {
   id: string;
@@ -1021,10 +1022,11 @@ export const ExplorePage: React.FC = () => {
 
             {/* Modal Image Header */}
             <div className="relative aspect-[16/9] w-full overflow-hidden bg-slate-900">
-              <img
+              <SafeImage
                 src={selectedDestination.image}
                 alt={selectedDestination.name}
                 className="w-full h-full object-cover"
+                fallbackSrc="/assets/images/heroes/hero-pahawang-bg.png"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-slate-950/20 to-transparent" />
 

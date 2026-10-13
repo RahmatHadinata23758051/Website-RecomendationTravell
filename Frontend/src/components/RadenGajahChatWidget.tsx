@@ -12,7 +12,6 @@ import {
   Utensils,
   Sun,
   BadgePercent,
-  ShieldCheck,
   Headphones,
   AlertTriangle,
 } from 'lucide-react';
@@ -49,8 +48,8 @@ export const RadenGajahChatWidget: React.FC = () => {
     id: 'msg-welcome',
     sender: 'bot',
     text: isAuthenticated
-      ? 'Tabik Pun! Selamat datang kembali! Saya Muli, Personal AI Concierge Anda. Dengan login, Muli bisa mengakses preferensi dan itinerary tersimpan untuk saran yang lebih personal. Ada yang bisa Muli bantu hari ini?'
-      : 'Tabik Pun! Saya Muli, Customer Service & AI Concierge Resmi Wisata Lampung. Mode Publik aktif — tanya seputar pantai, kuliner, atau tips liburan umum. Login untuk membuka fitur perencanaan perjalanan personal & akses itinerary tersimpan!',
+      ? 'Tabik Pun! Selamat datang kembali. Saya Muli, AI Concierge Kelana Lampung. Dengan login, Muli akses preferensi & itinerary tersimpan untuk saran lebih personal. Ada yang bisa dibantu?'
+      : 'Tabik Pun! Saya Muli, AI Concierge Wisata Lampung. Mode Publik — tanya pantai, kuliner, estimasi biaya, atau tips liburan. Login untuk fitur perencanaan personal & itinerary tersimpan.',
     timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
   };
 
@@ -144,12 +143,12 @@ export const RadenGajahChatWidget: React.FC = () => {
   };
 
   return (
-    <div className="fixed bottom-4 right-3 z-50 max-w-[calc(100vw-1.5rem)] font-sans sm:bottom-6 sm:right-6">
+    <div className="fixed bottom-3 right-3 z-50 max-w-[calc(100vw-1.5rem)] font-sans sm:bottom-6 sm:right-6">
       {/* ------------------ PREMIUM CS FLOATING TOGGLE BUTTON ------------------ */}
       {!isOpen && (
         <button
           onClick={() => setIsOpen(true)}
-          className="group relative flex items-center gap-3.5 rounded-full border border-amber-300/60 bg-gradient-to-r from-[#0F766E] via-[#0D9488] to-[#047857] p-2 pr-5 text-white shadow-2xl transition-all duration-300 hover:scale-105 hover:shadow-teal-900/40 active:scale-95"
+          className="group relative flex items-center gap-3 rounded-full bg-gradient-to-r from-[#0F766E] via-[#0D9488] to-[#047857] p-2 pr-4 text-white shadow-2xl transition-all duration-300 hover:scale-105 hover:shadow-teal-900/40 active:scale-95"
           aria-label="Buka Chatbot Muli AI Concierge Lampung"
         >
           {/* Online Pulsing Indicator */}
@@ -159,7 +158,7 @@ export const RadenGajahChatWidget: React.FC = () => {
           </span>
 
           {/* Muli Mascot CS Avatar Badge (Ultra HD Face Crop) */}
-          <div className="relative flex h-12 w-12 items-center justify-center overflow-hidden rounded-full border-2 border-amber-300 bg-[#FFFDF8] shadow-md">
+          <div className="relative flex h-11 w-11 items-center justify-center overflow-hidden rounded-full border-2 border-amber-300 bg-[#FFFDF8] shadow-md">
             <img
               src="/assets/images/mascot/muli-avatar-face.png"
               alt="Muli AI CS Lampung"
@@ -167,58 +166,38 @@ export const RadenGajahChatWidget: React.FC = () => {
             />
           </div>
 
-          <div className="flex flex-col text-left">
-            <div className="flex items-center gap-1">
-              <span className="text-[10px] font-extrabold uppercase tracking-wider text-amber-300">
-                CS AI CONCIERGE
-              </span>
-              <ShieldCheck className="h-3 w-3 text-amber-300" />
-            </div>
-            <span className="font-display text-sm font-extrabold text-white leading-tight">
-              Tanya Muli AI
-            </span>
-          </div>
+          <span className="font-display text-sm font-extrabold text-white leading-tight hidden sm:block">
+            Tanya Muli AI
+          </span>
         </button>
       )}
 
       {/* ------------------ FLOATING CHAT WINDOW ------------------ */}
       {isOpen && (
-        <div className="flex h-[min(580px,85vh)] w-[calc(100vw-1.5rem)] sm:w-[380px] max-w-[420px] flex-col overflow-hidden rounded-3xl border border-[#EBE0C9] bg-white shadow-2xl transition-all duration-300">
-          {/* CS HEADER */}
-          <div className="flex items-center justify-between border-b border-[#E2D6BE] bg-gradient-to-r from-[#0F766E] via-[#0D9488] to-[#047857] px-5 py-3.5 text-white shadow-sm">
-            <div className="flex items-center gap-3">
-              {/* High Quality Muli CS Avatar Header */}
-              <div className="relative flex h-11 w-11 items-center justify-center overflow-hidden rounded-full border-2 border-amber-300 bg-[#FFFDF8] shadow-md">
+        <div className="flex h-[min(580px,85vh)] w-[calc(100vw-1.5rem)] sm:w-[380px] max-w-[420px] flex-col overflow-hidden rounded-3xl border border-slate-200/80 bg-white shadow-2xl transition-all duration-300">
+          {/* CS HEADER - Clean & Minimal */}
+          <div className="flex items-center justify-between border-b border-slate-200/80 bg-gradient-to-r from-[#0F766E] via-[#0D9488] to-[#047857] px-4 py-3 text-white shadow-sm">
+            <div className="flex items-center gap-2.5">
+              <div className="relative flex h-9 w-9 items-center justify-center overflow-hidden rounded-full border-2 border-amber-300 bg-[#FFFDF8] shadow-md">
                 <img
                   src="/assets/images/mascot/muli-avatar-face.png"
                   alt="Muli AI CS"
                   className="h-full w-full object-cover"
                 />
-                <span className="absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-white bg-emerald-500"></span>
+                <span className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full border-2 border-white bg-emerald-500"></span>
               </div>
-
               <div>
-                <div className="flex items-center gap-1.5">
-                  <h3 className="font-display text-base font-extrabold text-white leading-tight">
-                    Muli AI Concierge
-                  </h3>
-                  <span className="rounded-full bg-amber-400/20 px-2 py-0.5 text-[9px] font-extrabold text-amber-200 border border-amber-300/40">
-                    CS RESMI
-                  </span>
-                </div>
-                <p className="text-[11px] font-medium text-emerald-100 flex items-center gap-1 mt-0.5">
-                  <Headphones className="h-3 w-3 text-amber-300 inline" />
-                  Pemandu Wisata Lampung (Tabik Pun!)
+                <h3 className="font-display text-sm font-extrabold text-white leading-tight">
+                  Muli AI Concierge
+                </h3>
+                <p className="text-[10px] font-medium text-emerald-100 flex items-center gap-1">
+                  <Headphones className="h-2.5 w-2.5 text-amber-300 inline" />
+                  Pemandu Wisata Lampung
                 </p>
               </div>
             </div>
 
-            <div className="flex items-center gap-2">
-              <span className="rounded-full border border-emerald-200/40 bg-white/10 px-2 py-1 text-[9px] font-bold uppercase tracking-wide text-emerald-50">
-                {isAuthenticated ? 'Personal' : 'Publik'}
-              </span>
-
-              <div className="flex items-center gap-1">
+            <div className="flex items-center gap-1">
               <button
                 onClick={handleResetChat}
                 title="Bersihkan Percakapan"
@@ -226,7 +205,6 @@ export const RadenGajahChatWidget: React.FC = () => {
               >
                 <RotateCcw className="h-4 w-4" />
               </button>
-
               <button
                 onClick={() => setIsOpen(false)}
                 title="Tutup Chat"
@@ -234,7 +212,6 @@ export const RadenGajahChatWidget: React.FC = () => {
               >
                 <X className="h-5 w-5" />
               </button>
-              </div>
             </div>
           </div>
 
@@ -339,7 +316,7 @@ export const RadenGajahChatWidget: React.FC = () => {
           )}
 
           {/* QUICK SUGGESTION PILLS WITH REACT ICONS */}
-          <div className="border-t border-[#EAE0D0] bg-[#FFFDF8] px-3 py-2 flex items-center gap-1.5 overflow-x-auto no-scrollbar">
+          <div className="border-t border-[#EAE0D0] bg-[#FFFDF8] px-3 py-2 flex items-center gap-1.5 overflow-x-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
             {quickPillsList.map((item, idx) => (
               <button
                 key={idx}

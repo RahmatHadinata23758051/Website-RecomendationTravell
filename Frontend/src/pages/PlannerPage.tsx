@@ -29,6 +29,7 @@ import { useAuth } from '../context/AuthContext';
 import { apiClient, getApiErrorMessage } from '../lib/api';
 import { logUserActivity } from '../services/activitiesApi';
 import { WeatherWidget } from '../components/WeatherWidget';
+import { SafeImage } from '../components/SafeImage';
 
 interface ItinerarySlot extends RouteSlot {
   canonical_id?: string;
@@ -722,10 +723,11 @@ export const PlannerPage: React.FC = () => {
 
                             {/* Destination Main Row */}
                             <div className="flex items-start gap-4">
-                              <img
+                              <SafeImage
                                 src={slot.image}
                                 alt={slot.activityTitle}
                                 className="w-20 sm:w-24 h-20 sm:h-24 rounded-xl object-cover shrink-0 shadow-sm"
+                                fallbackSrc="/assets/images/heroes/hero-pahawang-bg.png"
                               />
                               <div className="space-y-1 min-w-0">
                                 <h4 className="text-sm font-bold text-slate-900 font-display">
@@ -811,10 +813,11 @@ export const PlannerPage: React.FC = () => {
                       className="p-3.5 rounded-2xl border border-slate-200 hover:border-[#0D9488] hover:bg-teal-50/30 transition-all cursor-pointer flex items-center justify-between gap-3 group"
                     >
                       <div className="flex items-center gap-3 min-w-0">
-                        <img
+                        <SafeImage
                           src={alt.image}
                           alt={alt.activityTitle}
                           className="w-14 h-14 rounded-xl object-cover shrink-0 shadow-sm"
+                          fallbackSrc="/assets/images/heroes/hero-pahawang-bg.png"
                         />
                         <div className="min-w-0 space-y-0.5">
                           <span className="text-[10px] font-extrabold text-[#0D9488] uppercase tracking-wider">{alt.category}</span>

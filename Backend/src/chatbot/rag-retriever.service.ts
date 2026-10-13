@@ -74,6 +74,11 @@ export class RagRetrieverService implements OnModuleInit {
     laut: 'Pantai',
     snorkeling: 'Pantai',
     surfing: 'Pantai',
+    snorkling: 'Pantai',
+    pulau: 'Pantai',
+    island: 'Pantai',
+    selam: 'Pantai',
+    ombak: 'Pantai',
     alam: 'Alam',
     nature: 'Alam',
     mountain: 'Alam',
@@ -81,17 +86,39 @@ export class RagRetrieverService implements OnModuleInit {
     waterfall: 'Alam',
     air: 'Alam',
     terjun: 'Alam',
+    curug: 'Alam',
     taman: 'Alam',
     park: 'Alam',
     agrotourism: 'Alam',
     agrowisata: 'Alam',
     hill: 'Alam',
     bukit: 'Alam',
+    hutan: 'Alam',
+    forest: 'Alam',
+    danau: 'Alam',
+    lake: 'Alam',
+    lembah: 'Alam',
+    valley: 'Alam',
+    kawah: 'Alam',
+    crater: 'Alam',
+    kebun: 'Alam',
+    teluk: 'Alam',
+    bay: 'Alam',
+    kiluan: 'Alam',
+    lumba: 'Alam',
+    dolphin: 'Alam',
+    gigi: 'Alam',
+    hiu: 'Alam',
     budaya: 'Budaya',
     culture: 'Budaya',
     history: 'Budaya',
     sejarah: 'Budaya',
     museum: 'Budaya',
+    menara: 'Budaya',
+    siger: 'Budaya',
+    keratuan: 'Budaya',
+    situs: 'Budaya',
+    tugu: 'Budaya',
     kuliner: 'Kuliner',
     culinary: 'Kuliner',
     makanan: 'Kuliner',
@@ -100,7 +127,14 @@ export class RagRetrieverService implements OnModuleInit {
     resto: 'Kuliner',
     cafe: 'Kuliner',
     kopi: 'Kuliner',
+    koppi: 'Kuliner',
+    coffe: 'Kuliner',
+    coffee: 'Kuliner',
     seruit: 'Kuliner',
+    warung: 'Kuliner',
+    masakan: 'Kuliner',
+    food: 'Kuliner',
+    jajanan: 'Kuliner',
     adventure: 'Adventure',
     petualangan: 'Adventure',
     wahana: 'Adventure',
@@ -545,6 +579,9 @@ export class RagRetrieverService implements OnModuleInit {
     const pool = this.loadDestinationsData();
     if (!pool.length) return [];
 
+    // Use ONLY the current user query for regency/category detection.
+    // Do NOT use combinedContext (which includes history) — it pollutes detection
+    // when a previous turn mentioned a different regency.
     const normalizedQuery = this.normalize(query);
     const queryTokens = this.tokens(normalizedQuery);
     const detectedRegency = this.detectRegency(normalizedQuery, targetRegency);
@@ -570,6 +607,20 @@ export class RagRetrieverService implements OnModuleInit {
       );
       if (filteredByCat.length > 0) {
         candidates = filteredByCat;
+      }
+    } else {
+      // When the user explicitly asks for "wisata" or tourist spots without mentioning
+      // culinary terms, prioritize non-culinary attractions (Pantai, Alam, Budaya, Adventure).
+      const asksForTourismNotFood =
+        /(wisata|destinasi|liburan|rekreasi|jalan|pantai|alam)/i.test(normalizedQuery) &&
+        !/(kuliner|makan|food|restoran|resto|cafe|kopi|seruit|warung)/i.test(normalizedQuery);
+      if (asksForTourismNotFood) {
+        const touristSpots = candidates.filter(
+          (destination) => this.normalize(destination.category) !== 'kuliner',
+        );
+        if (touristSpots.length > 0) {
+          candidates = touristSpots;
+        }
       }
     }
 
@@ -895,8 +946,42 @@ export class RagRetrieverService implements OnModuleInit {
     providedFacts?: DestinationFact[],
   ): string {
     const facts = providedFacts ?? this.retrieveRelevantFacts(query, regency, category);
+    const pool = this.loadDestinationsData();
+
+    // Compute summary stats for the detected regency/category so the LLM can answer
+    // count queries accurately (e.g. "ada berapa wisata di pesisir barat").
+    let regencyTotal = 0;
+    let categoryTotal = 0;
+    let categoryBreakdown: Record<string, number> = {};
+    if (regency) {
+      const regencyKey = this.normalize(regency).replace(/^(kabupaten|kota)\s+/, '');
+      const inRegency = pool.filter((d) => {
+        const r = this.normalize(d.regency);
+        const l = this.normalize(d.location);
+        return r.includes(regencyKey) || l.includes(regencyKey);
+      });
+      regencyTotal = inRegency.length;
+      if (category) {
+        categoryTotal = inRegency.filter((d) => this.normalize(d.category) === this.normalize(category)).length;
+      } else {
+        // breakdown by top-level category
+        for (const d of inRegency) {
+          const cat = d.category || 'Alam';
+          categoryBreakdown[cat] = (categoryBreakdown[cat] || 0) + 1;
+        }
+      }
+    }
+
     if (!facts.length) {
-      return 'TIDAK ADA FAKTA SPESIFIK DALAM DATABASE. Jangan mengarang nama, harga, rating, atau jam buka; minta pengguna memperjelas kabupaten atau kategori.';
+      let msg = 'TIDAK ADA FAKTA SPESIFIK DALAM DATABASE. Jangan mengarang nama, harga, rating, atau jam buka; minta pengguna memperjelas kabupaten atau kategori.';
+      if (regencyTotal > 0) {
+        msg += ` (Catatan sistem: database memiliki ${regencyTotal} destinasi di ${regency}`;
+        if (Object.keys(categoryBreakdown).length > 0) {
+          msg += ` — rincian: ${Object.entries(categoryBreakdown).map(([k, v]) => `${k}: ${v}`).join(', ')}`;
+        }
+        msg += '.)';
+      }
+      return msg;
     }
 
     const factsText = facts
@@ -915,6 +1000,17 @@ export class RagRetrieverService implements OnModuleInit {
       )
       .join('\n');
 
-    return `FAKTA TERVERIFIKASI DATABASE DESTINASI WISATA LAMPUNG (gunakan hanya fakta ini untuk detail destinasi).\nATURAN FAKTA:\n- Jika Harga berbunyi "Harga belum tersedia", sampaikan harga belum tersedia; JANGAN mengarang atau mengestimasi angka harga.\n- Jika Rating berbunyi "belum tersedia", jangan mengarang nilai rating.\n- Jika Jam buka berbunyi "Jam buka tidak tersedia", sampaikan jam buka tidak diketahui.\n- Jika Highlight berbunyi "Highlight belum tersedia.", jangan mengarang deskripsi singkat.\n- Gunakan HANYA fakta di bawah; dilarang mengarang tempat, harga, rating, jam buka, atau fasilitas lain.\n\n${factsText}`;
+    let header = `FAKTA TERVERIFIKASI DATABASE DESTINASI WISATA LAMPUNG (gunakan hanya fakta ini untuk detail destinasi).\nATURAN FAKTA:\n- Jika Harga berbunyi "Harga belum tersedia", sampaikan harga belum tersedia; JANGAN mengarang atau mengestimasi angka harga.\n- Jika Rating berbunyi "belum tersedia", jangan mengarang nilai rating.\n- Jika Jam buka berbunyi "Jam buka tidak tersedia", sampaikan jam buka tidak diketahui.\n- Jika Highlight berbunyi "Highlight belum tersedia.", jangan mengarang deskripsi singkat.\n- Gunakan HANYA fakta di bawah; dilarang mengarang tempat, harga, rating, jam buka, atau fasilitas lain.`;
+
+    if (regencyTotal > 0) {
+      header += `\n\n[STATISTIK SISTEM UNTUK KONTEKS] Total destinasi di ${regency}: ${regencyTotal}.`;
+      if (categoryTotal > 0) {
+        header += ` Kategori "${category}": ${categoryTotal}.`;
+      } else if (Object.keys(categoryBreakdown).length > 0) {
+        header += ` Rincian per kategori: ${Object.entries(categoryBreakdown).map(([k, v]) => `${k}: ${v}`).join(', ')}.`;
+      }
+    }
+
+    return `${header}\n\n${factsText}`;
   }
 }

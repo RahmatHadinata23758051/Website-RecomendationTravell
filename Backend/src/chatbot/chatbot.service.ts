@@ -164,8 +164,11 @@ export class ChatbotService {
     }
 
     // 2. Retrieve Grounded RAG Facts (single retrieval pass)
-    const relevantFacts: DestinationFact[] = this.ragRetriever.retrieveRelevantFacts(combinedContext, regency, category);
-    const ragContext = this.ragRetriever.buildRagContextPrompt(combinedContext, regency, category, relevantFacts);
+    // Retrieval must follow the latest user turn. Conversation history is sent to
+    // the LLM for continuity, but must not affect the requested regency/category.
+    // Otherwise a previous "Pesisir Barat" turn can hijack a new "Pesawaran" query.
+    const relevantFacts: DestinationFact[] = this.ragRetriever.retrieveRelevantFacts(lowerMessage, regency, category);
+    const ragContext = this.ragRetriever.buildRagContextPrompt(lowerMessage, regency, category, relevantFacts);
 
     // 3. Prompt Orchestration (single AI provider: 9Router)
     const systemPrompt = `Anda adalah "Muli AI Concierge", Customer Service & Pemandu Wisata Digital Resmi Provinsi Lampung yang sangat ramah, hangat, luwes, dan cerdas.

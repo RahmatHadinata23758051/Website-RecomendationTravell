@@ -70,10 +70,23 @@ export const RouteMap3D: React.FC<RouteMap3DProps> = ({
         zoomControl: false,
       });
 
-      L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+      // Free basemaps: CARTO Voyager needs an API key now, so prefer
+      // OpenStreetMap Standard (no key). Fall back to CARTO for style.
+      const primary = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+        maxZoom: 19,
+      });
+      const fallback = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
         attribution: '&copy; OpenStreetMap &copy; CARTO',
         maxZoom: 19,
-      }).addTo(map);
+      });
+      primary.addTo(map);
+      primary.on('tileerror', () => {
+        if (!map.hasLayer(fallback)) {
+          map.removeLayer(primary);
+          fallback.addTo(map);
+        }
+      });
 
       L.control.zoom({ position: 'topright' }).addTo(map);
       leafletMapRef.current = map;

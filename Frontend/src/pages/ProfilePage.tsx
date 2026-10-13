@@ -371,40 +371,40 @@ export const ProfilePage: React.FC = () => {
               </button>
             </div>
 
-            {/* Bottom 4 Metric Columns Bar */}
-            <div className="pt-4 border-t border-slate-100 grid grid-cols-4 gap-2 text-center">
-              <div className="space-y-0.5">
-                <div className="flex items-center justify-center gap-1 text-[#0D9488]">
-                  <Compass className="w-3.5 h-3.5" />
-                  <span className="text-base font-extrabold font-display">{savedTrips.length}</span>
+              {/* 4 Metric Columns Bar */}
+              <div className="pt-4 border-t border-slate-100 grid grid-cols-4 gap-2 text-center">
+                <div className="space-y-0.5">
+                  <div className="flex items-center justify-center gap-1 text-[#0D9488]">
+                    <Compass className="w-3.5 h-3.5" />
+                    <span className="text-base font-extrabold font-display">{savedTrips.length}</span>
+                  </div>
+                  <p className="text-[9px] font-semibold text-slate-500">Perjalanan Disimpan</p>
                 </div>
-                <p className="text-[9px] font-semibold text-slate-500">Perjalanan Disimpan</p>
-              </div>
 
-              <div className="space-y-0.5 border-l border-slate-100">
-                <div className="flex items-center justify-center gap-1 text-red-500">
-                  <Heart className="w-3.5 h-3.5 fill-current" />
-                  <span className="text-base font-extrabold font-display">{favoriteDestinations.length}</span>
+                <div className="space-y-0.5 border-l border-slate-100">
+                  <div className="flex items-center justify-center gap-1 text-red-500">
+                    <Heart className="w-3.5 h-3.5 fill-current" />
+                    <span className="text-base font-extrabold font-display">{favoriteDestinations.length}</span>
+                  </div>
+                  <p className="text-[9px] font-semibold text-slate-500">Destinasi Favorit</p>
                 </div>
-                <p className="text-[9px] font-semibold text-slate-500">Destinasi Favorit</p>
-              </div>
 
-              <div className="space-y-0.5 border-l border-slate-100">
-                <div className="flex items-center justify-center gap-1 text-amber-500">
-                  <MessageSquare className="w-3.5 h-3.5" />
-                  <span className="text-base font-extrabold font-display">24</span>
+                <div className="space-y-0.5 border-l border-slate-100">
+                  <div className="flex items-center justify-center gap-1 text-amber-500">
+                    <MessageSquare className="w-3.5 h-3.5" />
+                    <span className="text-base font-extrabold font-display">{userActivities.filter(a=>a.title?.includes('ulasan')).length}</span>
+                  </div>
+                  <p className="text-[9px] font-semibold text-slate-500">Ulasan Ditulis</p>
                 </div>
-                <p className="text-[9px] font-semibold text-slate-500">Ulasan Ditulis</p>
-              </div>
 
-              <div className="space-y-0.5 border-l border-slate-100">
-                <div className="flex items-center justify-center gap-1 text-amber-600">
-                  <Star className="w-3.5 h-3.5 fill-current" />
-                  <span className="text-base font-extrabold font-display">1.250</span>
+                <div className="space-y-0.5 border-l border-slate-100">
+                  <div className="flex items-center justify-center gap-1 text-amber-600">
+                    <Star className="w-3.5 h-3.5 fill-current" />
+                    <span className="text-base font-extrabold font-display">{user.xp || 0}</span>
+                  </div>
+                  <p className="text-[9px] font-semibold text-slate-500">Poin XP</p>
                 </div>
-                <p className="text-[9px] font-semibold text-slate-500">Poin Perjalanan</p>
               </div>
-            </div>
           </div>
 
           {/* CARD 2 (4 COLS): PREFERENSI PERJALANAN CARD */}
@@ -738,83 +738,60 @@ export const ProfilePage: React.FC = () => {
                   <Sparkles className="w-4 h-4 text-[#0D9488]" />
                   <h3 className="text-base font-extrabold font-display text-slate-900">Aktivitas Terbaru</h3>
                 </div>
-                <button
-                  onClick={() => setIsActivitiesModalOpen(true)}
-                  className="text-xs font-bold text-[#0D9488] hover:text-[#0F766E] transition-colors"
-                >
-                  Lihat Semua (10) &gt;
-                </button>
+                {userActivities.length > 0 && (
+                  <button
+                    onClick={() => setIsActivitiesModalOpen(true)}
+                    className="text-xs font-bold text-[#0D9488] hover:text-[#0F766E] transition-colors"
+                  >
+                    Lihat Semua ({userActivities.length}) &gt;
+                  </button>
+                )}
               </div>
 
-              {/* Timeline Items (Display top 4 only on profile card) */}
-              <div className="space-y-4">
-                {(userActivities.length > 0
-                  ? userActivities.slice(0, 4)
-                  : [
-                      {
-                        id: 'act-1',
-                        title: 'Menyimpan destinasi Pulau Pahawang ke wishlist',
-                        subtitle: '+15 XP',
-                        iconType: 'heart',
-                        createdAt: new Date().toISOString(),
-                      },
-                      {
-                        id: 'act-2',
-                        title: 'Membuat Rute Perjalanan AI Lampung',
-                        subtitle: '+50 XP',
-                        iconType: 'map',
-                        createdAt: new Date(Date.now() - 3600000 * 2).toISOString(),
-                      },
-                      {
-                        id: 'act-3',
-                        title: 'Memperbarui Foto & Biodata Profil',
-                        subtitle: '+20 XP',
-                        iconType: 'user',
-                        createdAt: new Date(Date.now() - 3600000 * 24).toISOString(),
-                      },
-                      {
-                        id: 'act-4',
-                        title: 'Memberi ulasan destinasi Seruit Lampung',
-                        subtitle: '+30 XP',
-                        iconType: 'star',
-                        createdAt: new Date(Date.now() - 3600000 * 48).toISOString(),
-                      },
-                    ]
-                ).map((act, i) => {
-                  let IconComp = Star;
-                  let colorClass = 'text-amber-500 bg-amber-50';
-                  if (act.iconType === 'heart') {
-                    IconComp = Heart;
-                    colorClass = 'text-red-500 bg-red-50';
-                  } else if (act.iconType === 'map') {
-                    IconComp = Compass;
-                    colorClass = 'text-teal-800 bg-teal-50';
-                  } else if (act.iconType === 'user') {
-                    IconComp = UserIcon;
-                    colorClass = 'text-blue-500 bg-blue-50';
-                  }
+              {/* Timeline Items */}
+              {userActivities.length === 0 ? (
+                <div className="text-center py-6 text-slate-400 text-xs">
+                  <p>Belum ada aktivitas tercatat.</p>
+                  <p className="text-[10px] text-slate-500 mt-1">Coba simpan rute atau beri ulasan destinasi!</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {userActivities.slice(0, 4).map((act, i) => {
+                    let IconComp = Star;
+                    let colorClass = 'text-amber-500 bg-amber-50';
+                    if (act.iconType === 'heart') {
+                      IconComp = Heart;
+                      colorClass = 'text-red-500 bg-red-50';
+                    } else if (act.iconType === 'map') {
+                      IconComp = Compass;
+                      colorClass = 'text-teal-800 bg-teal-50';
+                    } else if (act.iconType === 'user') {
+                      IconComp = UserIcon;
+                      colorClass = 'text-blue-500 bg-blue-50';
+                    }
 
-                  return (
-                    <div key={act.id || i} className="flex items-start gap-3">
-                      <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${colorClass}`}>
-                        <IconComp className="w-4 h-4" />
-                      </div>
-                      <div className="flex-1 space-y-0.5">
-                        <p className="text-xs font-semibold text-slate-800 leading-snug">{act.title}</p>
-                        <div className="flex items-center justify-between text-[10px] text-slate-400 font-sans">
-                          <span>{act.subtitle || 'Aktivitas Explorer'}</span>
-                          <span>
-                            {new Date(act.createdAt).toLocaleDateString('id-ID', {
-                              day: 'numeric',
-                              month: 'short',
-                            })}
-                          </span>
+                    return (
+                      <div key={act.id || i} className="flex items-start gap-3">
+                        <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${colorClass}`}>
+                          <IconComp className="w-4 h-4" />
+                        </div>
+                        <div className="flex-1 space-y-0.5">
+                          <p className="text-xs font-semibold text-slate-800 leading-snug">{act.title}</p>
+                          <div className="flex items-center justify-between text-[10px] text-slate-400 font-sans">
+                            <span>{act.subtitle || 'Aktivitas Explorer'}</span>
+                            <span>
+                              {new Date(act.createdAt).toLocaleDateString('id-ID', {
+                                day: 'numeric',
+                                month: 'short',
+                              })}
+                            </span>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  );
-                })}
-              </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
 
             {/* CARD 2: PENGATURAN CEPAT */}
@@ -843,6 +820,27 @@ export const ProfilePage: React.FC = () => {
                     <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
                   </button>
                 ))}
+              </div>
+
+              {/* Quick Actions - Value Prop */}
+              <div className="pt-2 space-y-2 border-t border-slate-100">
+                <p className="text-[10px] text-slate-500 font-medium">Lanjutkan perjalananmu:</p>
+                <div className="grid grid-cols-2 gap-2">
+                  <Link
+                    to="/planner"
+                    className="flex items-center justify-center gap-2 p-3 min-h-[44px] rounded-2xl bg-[#0D9488] text-white text-xs font-bold shadow-md hover:bg-[#0F766E] transition-all focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
+                  >
+                    <Sparkles className="w-3.5 h-3.5 text-amber-300" />
+                    <span>Buat Rute AI</span>
+                  </Link>
+                  <Link
+                    to="/explore"
+                    className="flex items-center justify-center gap-2 p-3 min-h-[44px] rounded-2xl bg-white border border-slate-200 text-slate-700 text-xs font-bold hover:bg-slate-50 transition-all focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
+                  >
+                    <Compass className="w-3.5 h-3.5 text-[#0D9488]" />
+                    <span>Jelajahi Tempat</span>
+                  </Link>
+                </div>
               </div>
 
               {/* Logout Button */}
