@@ -73,7 +73,7 @@ export const AuthModal: React.FC = () => {
           <p className="text-xs text-slate-500 mt-1 font-sans">
             {authModalMode === 'login'
               ? 'Masuk untuk mengakses rencana perjalanan & bookmark favorit'
-              : 'Buat akun gratis untuk menikmati rekomendasi wisata AI yang presisi'}
+              : 'Buat akun gratis untuk rekomendasi wisata yang presisi dan terkurasi lokal'}
           </p>
         </div>
 

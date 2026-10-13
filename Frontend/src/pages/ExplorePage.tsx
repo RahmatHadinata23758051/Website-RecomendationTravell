@@ -1005,7 +1005,7 @@ export const ExplorePage: React.FC = () => {
                 <div className="flex items-center justify-between gap-2">
                   <span className="text-[11px] font-extrabold text-[#0D9488] flex items-center gap-1.5">
                     <Compass className="w-4 h-4" />
-                    Rekomendasi Musim & Cuaca AI:
+                    Rekomendasi Musim & Cuaca:
                   </span>
                   <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-[#0D9488] text-white">
                     Mei - Oktober (Cerah Ideal) ☀️

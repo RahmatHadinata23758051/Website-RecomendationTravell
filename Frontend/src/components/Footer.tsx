@@ -29,7 +29,7 @@ export const Footer: React.FC = () => {
                 Kelana<span className="text-[#2DD4BF]">Lampung</span>
               </span>
               <p className="text-[10px] text-slate-300 font-sans mt-0.5">
-                Platform Pariwisata Cerdas Berbasis AI
+                Panduan Pariwisata Lampung Berbasis Data Lokal
               </p>
             </div>
           </div>
