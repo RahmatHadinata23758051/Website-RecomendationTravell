@@ -41,7 +41,7 @@ export const FavoritesPage: React.FC = () => {
   // Fetch Real Destinations & User Favorites from Backend API
   useEffect(() => {
     let isMounted = true;
-    fetchRealDestinations({ limit: 200 }).then((dests) => {
+    fetchRealDestinations({ limit: 100 }).then((dests) => {
       if (isMounted && dests && dests.length > 0) {
         setAllDestinations(dests);
       }
