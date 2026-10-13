@@ -263,7 +263,7 @@ export const RadenGajahChatWidget: React.FC = () => {
             <div ref={messagesEndRef} />
           </div>
 
-          {/* AI ERROR STATE (honest: no fabricated fallback reply) */}
+          {/* ERROR STATE (honest: no fabricated fallback reply) */}
           {errorMessage && (
             <div
               role="alert"

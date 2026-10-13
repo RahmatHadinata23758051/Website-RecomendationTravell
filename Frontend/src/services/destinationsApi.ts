@@ -143,7 +143,7 @@ export const mapApiToDestination = (item: any): Destination => {
 };
 
 // ==========================================
-// AI PLANNER LIVE API SERVICES (FASE 11)
+// LIVE PLANNER API SERVICES
 // ==========================================
 
 export interface GeneratePlannerPayload {

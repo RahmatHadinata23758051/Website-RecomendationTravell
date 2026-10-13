@@ -149,7 +149,7 @@ export const PlannerPage: React.FC = () => {
     setTimeout(() => setToastMessage(null), 3000);
   };
 
-  // AI Generator Handler (server-side planner only; failures surface honestly)
+  // Planner Generator Handler (server-side only; failures surface honestly)
   const handleGenerateItinerary = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsGenerating(true);
@@ -176,7 +176,7 @@ export const PlannerPage: React.FC = () => {
       if (Array.isArray(itinerary) && itinerary.length > 0) {
         setGeneratedItinerary(itinerary);
         setActiveDayTab(1);
-        triggerToast(`Itinerary AI ${selectedRegency} Berhasil Dibuat!`);
+        triggerToast(`Itinerary ${selectedRegency} berhasil dibuat!`);
       } else {
         setGenerateError('Server tidak mengembalikan itinerary. Coba ubah preferensi atau coba lagi.');
       }
@@ -311,7 +311,7 @@ export const PlannerPage: React.FC = () => {
         </div>
       )}
 
-      {/* CLEAN TOOL HEADER — no hero image, no mascot, no AI branding */}
+      {/* CLEAN TOOL HEADER — no hero image, no mascot, no hype */}
       <header className="w-full max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-10 mb-6">
         <div className="space-y-2">
           <h1 className="font-display text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">

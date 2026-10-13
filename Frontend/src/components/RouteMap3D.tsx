@@ -341,15 +341,15 @@ export const RouteMap3D: React.FC<RouteMap3DProps> = ({
   };
 
   return (
-    <div className="relative w-full h-[520px] sm:h-[580px] rounded-[28px] overflow-hidden shadow-xl border border-slate-200/90 bg-[#F8FAFC]">
+    <div className="relative w-full h-[380px] sm:h-[480px] lg:h-[560px] rounded-2xl sm:rounded-[28px] overflow-hidden shadow-xl border border-slate-200/90 bg-[#F8FAFC]">
       
       {/* Header Controls */}
-      <div className="absolute top-3 left-3 right-3 z-20 flex items-center justify-between gap-2 pointer-events-none">
+      <div className="absolute top-2 sm:top-3 left-2 sm:left-3 right-2 sm:right-3 z-20 flex items-center justify-between gap-1.5 sm:gap-2 pointer-events-none">
         
         {/* Left: Regency Badge + Route Summary */}
-        <div className="pointer-events-auto flex items-center gap-2">
-          <div className="flex items-center gap-1.5 bg-white/95 backdrop-blur-md px-3 py-1.5 rounded-full shadow-md border border-slate-200/80 text-xs font-bold text-slate-800 truncate max-w-[180px] sm:max-w-none">
-            <MapPin className="w-3.5 h-3.5 text-[#0D9488] shrink-0" />
+        <div className="pointer-events-auto flex items-center gap-1.5 sm:gap-2">
+          <div className="flex items-center gap-1.5 bg-white/95 backdrop-blur-md px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-full shadow-md border border-slate-200/80 text-[11px] sm:text-xs font-bold text-slate-800 truncate max-w-[130px] sm:max-w-none">
+            <MapPin className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-[#0D9488] shrink-0" />
             <span className="truncate">{regencyName}</span>
           </div>
 
@@ -365,56 +365,56 @@ export const RouteMap3D: React.FC<RouteMap3DProps> = ({
         </div>
 
         {/* Right: Layer Toggle + Distance Toggle + Recenter */}
-        <div className="pointer-events-auto flex items-center gap-1.5">
-          <div className="flex items-center gap-1 bg-white/95 backdrop-blur-md p-1 rounded-full shadow-md border border-slate-200">
+        <div className="pointer-events-auto flex items-center gap-1 sm:gap-1.5">
+          <div className="flex items-center gap-0.5 sm:gap-1 bg-white/95 backdrop-blur-md p-0.5 sm:p-1 rounded-full shadow-md border border-slate-200">
             <button
               type="button"
               onClick={() => toggleLayer('street')}
-              className={`px-3 py-1.5 rounded-full text-xs font-bold transition-all flex items-center gap-1 ${
+              className={`px-2 sm:px-3 py-1 sm:py-1.5 rounded-full text-[11px] sm:text-xs font-bold transition-all flex items-center gap-1 ${
                 activeLayer === 'street'
                   ? 'bg-[#0D9488] text-white shadow-sm'
                   : 'text-slate-600 hover:text-slate-900'
               }`}
               title="Tampilan Jalan (OpenStreetMap)"
             >
-              <Layers className="w-3.5 h-3.5" />
+              <Layers className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
               <span>Jalan</span>
             </button>
             <button
               type="button"
               onClick={() => toggleLayer('satellite')}
-              className={`px-3 py-1.5 rounded-full text-xs font-bold transition-all flex items-center gap-1 ${
+              className={`px-2 sm:px-3 py-1 sm:py-1.5 rounded-full text-[11px] sm:text-xs font-bold transition-all flex items-center gap-1 ${
                 activeLayer === 'satellite'
                   ? 'bg-[#0D9488] text-white shadow-sm'
                   : 'text-slate-600 hover:text-slate-900'
               }`}
               title="Tampilan Satelit (ESRI)"
             >
-              <Layers className="w-3.5 h-3.5" style={{ transform: 'rotate(45deg)' }} />
-              <span>Satelit</span>
+              <Layers className="w-3 h-3 sm:w-3.5 sm:h-3.5" style={{ transform: 'rotate(45deg)' }} />
+              <span className="hidden xs:inline">Satelit</span>
             </button>
           </div>
 
           <button
             type="button"
             onClick={() => setShowDistanceLabels((p) => !p)}
-            className={`p-2 rounded-full bg-white/95 backdrop-blur-md shadow-md border border-slate-200 transition-all active:scale-95 ${
+            className={`p-1.5 sm:p-2 rounded-full bg-white/95 backdrop-blur-md shadow-md border border-slate-200 transition-all active:scale-95 ${
               showDistanceLabels
                 ? 'text-[#0D9488] ring-2 ring-[#0D9488]/30'
                 : 'text-slate-600 hover:text-slate-900'
             }`}
             title={showDistanceLabels ? 'Sembunyikan estimasi perjalanan' : 'Tampilkan estimasi perjalanan'}
           >
-            <Car className="w-4 h-4" />
+            <Car className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
           </button>
 
           <button
             type="button"
             onClick={fitBoundsToSlots}
-            className="p-2 rounded-full bg-white/95 backdrop-blur-md text-slate-700 hover:text-[#0D9488] shadow-md border border-slate-200 transition-all active:scale-95"
+            className="p-1.5 sm:p-2 rounded-full bg-white/95 backdrop-blur-md text-slate-700 hover:text-[#0D9488] shadow-md border border-slate-200 transition-all active:scale-95"
             title="Fokus Ulang Peta Spasial"
           >
-            <Maximize2 className="w-4 h-4" />
+            <Maximize2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
           </button>
         </div>
       </div>
@@ -423,12 +423,12 @@ export const RouteMap3D: React.FC<RouteMap3DProps> = ({
       <div ref={mapRef} className="w-full h-full z-10" />
 
       {/* Subtle Legend Hint */}
-      <div className="absolute bottom-3 left-3 right-3 z-20 pointer-events-none">
-        <div className="pointer-events-auto mx-auto max-w-sm bg-white/90 backdrop-blur-md rounded-full px-3 py-1.5 shadow-md border border-slate-200/80 text-[10px] font-medium text-slate-600 text-center flex items-center justify-center gap-2">
+      <div className="absolute bottom-2 sm:bottom-3 left-2 sm:left-3 right-2 sm:right-3 z-20 pointer-events-none">
+        <div className="pointer-events-auto mx-auto max-w-sm bg-white/90 backdrop-blur-md rounded-full px-2.5 sm:px-3 py-1 sm:py-1.5 shadow-md border border-slate-200/80 text-[9.5px] sm:text-[10px] font-medium text-slate-600 text-center flex items-center justify-center gap-1.5 sm:gap-2">
           <span>Klik pin untuk detail</span>
           <span>&bull;</span>
           <span className="font-semibold text-teal-800">
-            {isLoadingRoute ? 'Menghitung rute jalan...' : routeResult?.isRealRoad ? 'Rute mengikuti jalan raya nyata' : 'Rute lurus langsung'}
+            {isLoadingRoute ? 'Menghitung rute jalan...' : routeResult?.isRealRoad ? 'Rute jalan raya nyata' : 'Rute lurus langsung'}
           </span>
         </div>
       </div>

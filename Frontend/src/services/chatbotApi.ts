@@ -34,7 +34,7 @@ export const askRadenGajahChatbot = async (payload: AskChatbotPayload): Promise<
   const responseData = res.data?.data;
 
   if (!responseData?.reply) {
-    throw new Error('Layanan AI mengembalikan respons yang tidak valid.');
+    throw new Error('Layanan asisten mengembalikan respons yang tidak valid.');
   }
 
   return {

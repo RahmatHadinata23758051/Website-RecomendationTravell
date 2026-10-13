@@ -43,7 +43,7 @@ export interface CategoryPillsProps {
 }
 
 /**
- * Functional category filters without AI slop sparkles.
+ * Functional category filters without decorative clutter.
  * Complies with WCAG touch targets (min 44px height) and visible focus rings.
  */
 export const CategoryPills: React.FC<CategoryPillsProps> = ({
