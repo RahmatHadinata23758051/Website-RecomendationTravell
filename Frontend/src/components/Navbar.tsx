@@ -90,10 +90,7 @@ export const Navbar: React.FC = () => {
                   isActive('/planner') ? 'text-[#0D9488] font-bold' : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
-                AI Planner
-              </span>
-              <span className="px-1.5 py-0.5 text-[9px] font-bold bg-[#E0F2FE] text-[#0284C7] rounded-full uppercase">
-                AI
+                Perencana Perjalanan
               </span>
             </div>
             {isActive('/planner') && (
@@ -263,7 +260,7 @@ export const Navbar: React.FC = () => {
             onClick={() => setIsMobileMenuOpen(false)}
             className="block py-2.5 min-h-[44px] text-xs font-semibold text-slate-700 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
           >
-            AI Planner
+            Perencana Perjalanan
           </Link>
           <Link
             to="/favorites"
