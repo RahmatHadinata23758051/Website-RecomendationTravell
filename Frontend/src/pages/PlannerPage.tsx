@@ -1,8 +1,6 @@
-﻿import React, { useState, useEffect } from 'react';
+﻿import React, { useState } from 'react';
 import {
-  Sparkles,
   Calendar,
-  DollarSign,
   Compass,
   Clock,
   MapPin,
@@ -20,8 +18,7 @@ import {
   Car,
   RotateCw,
   RefreshCw,
-  Zap,
-  Sun,
+  Loader2,
 } from 'lucide-react';
 import { RouteMap3D, RouteSlot } from '../components/RouteMap3D';
 import { generateAiPlannerItinerary, swapPlannerSlotApi } from '../services/destinationsApi';
@@ -121,7 +118,7 @@ export const PlannerPage: React.FC = () => {
   ];
 
   const categories = [
-    { name: 'Semua', icon: Sparkles },
+    { name: 'Semua', icon: Compass },
     { name: 'Pantai', icon: Palmtree },
     { name: 'Alam', icon: Mountain },
     { name: 'Budaya', icon: Landmark },
@@ -260,91 +257,27 @@ export const PlannerPage: React.FC = () => {
   const activeDaySlots =
     generatedItinerary?.find((day) => day.dayNumber === activeDayTab)?.slots || [];
 
-  const mascotMessages = [
-    'Tabik Pun! Mau liburan seru di Lampung? Pilih Kabupaten & beberapa Kategori favoritmu yuk!',
-    'Raden Gajah & Muli Lampung siap menyusun rute peta spasial 3D harian untukmu!',
-    'Mau budget Ekonomis, Standar, atau Mewah? Semua bisa disesuaikan!',
-    'Tips: Wisata bahari Pesawaran & Pesisir Barat paling pas dikunjungi pagi hari lho!',
-  ];
-
-  const [mascotMsgIndex, setMascotMsgIndex] = useState<number>(0);
-
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setMascotMsgIndex((prev) => (prev + 1) % mascotMessages.length);
-    }, 4500);
-    return () => clearInterval(timer);
-  }, [mascotMessages.length]);
-
   return (
-    <div className="flex flex-col min-h-[100dvh] pt-24 pb-16">
+    <div className="flex flex-col min-h-[100dvh] pt-24 pb-16 bg-[#F4F8FA]">
       {/* Toast Notification */}
       {toastMessage && (
-        <div className="fixed bottom-6 right-6 z-50 bg-[#0F2937] text-white px-5 py-3 rounded-2xl shadow-2xl border border-siger-400/30 flex items-center gap-3 transition-all animate-bounce">
+        <div className="fixed bottom-6 right-6 z-50 bg-[#0F2937] text-white px-5 py-3 rounded-2xl shadow-xl border border-slate-200/50 flex items-center gap-3 transition-all">
           <CheckCircle2 className="w-5 h-5 text-[#2DD4BF]" />
           <span className="text-xs font-semibold">{toastMessage}</span>
         </div>
       )}
 
-      {/* FULL-BLEED PAHAWANG BEACH HERO BACKGROUND BANNER */}
-      <section className="relative w-screen overflow-hidden -mt-24 mb-8" style={{ marginLeft: 'calc(-50vw + 50%)', width: '100vw' }}>
-        {/* Background Image */}
-        <img
-          src="/assets/images/heroes/hero-pahawang-bg.png"
-          alt="Panorama Pantai Pahawang Lampung"
-          className="absolute inset-0 w-full h-full object-cover object-center z-0"
-        />
-        {/* Gradient overlays */}
-        <div className="absolute inset-0 bg-gradient-to-r from-white/95 via-white/80 to-white/40 z-[1]" />
-        <div className="absolute inset-0 z-[1]" style={{ background: 'linear-gradient(to bottom, transparent 30%, rgba(248,250,252,0.6) 70%, #F8FAFC 100%)' }} />
-
-        {/* Hero Content */}
-        <div className="relative z-10 w-full max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-10 pt-28 pb-10">
-          <div className="glass-card-container rounded-[32px] p-6 sm:p-10 relative overflow-hidden backdrop-blur-xl border border-white/80 shadow-2xl">
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
-              
-              {/* Left Column: Text & Title */}
-              <div className="lg:col-span-7 space-y-3">
-                <div className="inline-flex items-center gap-1.5 rounded-full border border-amber-300/70 bg-amber-50 px-3.5 py-1 text-amber-800">
-                  <Sparkles className="w-3.5 h-3.5 text-amber-600" />
-                  <span className="font-sans text-[10px] font-extrabold uppercase tracking-wider sm:text-[11px]">
-                    AI Itinerary Generator &bull; Raden Gajah Engine
-                  </span>
-                </div>
-
-                <h1 className="font-display text-2xl font-extrabold leading-tight tracking-tight text-[#0F172A] sm:text-3xl lg:text-[2.1rem]">
-                  Perencana Liburan Multi-Hari AI
-                </h1>
-                <p className="max-w-xl font-sans text-xs leading-relaxed text-slate-600 sm:text-sm">
-                  Pilih Kabupaten/Kota & beberapa kategori impianmu di Lampung, lalu biarkan AI menyusun rute peta spasial 3D & jadwal perjalanan harian secara akurat!
-                </p>
-              </div>
-
-              {/* Right Column: Muli Lampung Mascot with Animated Chat Bubble */}
-              <div className="lg:col-span-5 flex items-center justify-center lg:justify-end gap-3 pt-2 lg:pt-0">
-                {/* Speech Bubble */}
-                <div className="relative bg-white/95 border border-teal-200 rounded-2xl p-4 shadow-xl max-w-xs transition-all duration-300">
-                  <p className="text-xs font-semibold text-slate-800 leading-relaxed font-sans min-h-[36px] flex items-center">
-                    {mascotMessages[mascotMsgIndex]}
-                  </p>
-                  <div className="hidden sm:block absolute top-1/2 -right-2 -translate-y-1/2 w-0 h-0 border-y-8 border-y-transparent border-l-8 border-l-white" />
-                </div>
-
-                {/* Mascot Avatar */}
-                <div className="relative w-20 h-20 sm:w-24 sm:h-24 shrink-0 flex items-center justify-center">
-                  <div className="absolute inset-1 rounded-full bg-teal-100/70 animate-pulse" />
-                  <img
-                    src="/assets/images/mascot/muli-lampung-mascot.png"
-                    alt="Muli Lampung Mascot"
-                    className="w-20 h-20 sm:w-24 sm:h-24 object-contain relative z-10 transition-transform hover:scale-105"
-                  />
-                </div>
-              </div>
-
-            </div>
-          </div>
+      {/* CLEAN TOOL HEADER — no hero image, no mascot, no AI branding */}
+      <header className="w-full max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-10 mb-6">
+        <div className="space-y-2">
+          <h1 className="font-display text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
+            Perencana Perjalanan Lampung
+          </h1>
+          <p className="text-sm text-slate-600 max-w-2xl">
+            Pilih kabupaten, kategori, budget & ritme &rarr; dapatkan rute harian & peta spasial.
+          </p>
         </div>
-      </section>
+      </header>
 
       {/* Main Container */}
       <div className="w-full max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-10 space-y-6">
@@ -352,25 +285,23 @@ export const PlannerPage: React.FC = () => {
         {/* FASE 9: WEATHER & SEASON ALERT WIDGET */}
         <WeatherWidget />
 
-        {/* AI WIZARD FORM INPUT */}
+        {/* PLANNER FORM */}
         <form
           onSubmit={handleGenerateItinerary}
-          className="glass-card-container rounded-[28px] p-6 sm:p-8 space-y-6"
+          className="bg-white rounded-[24px] border border-slate-200 p-6 sm:p-8 space-y-6 shadow-sm"
         >
-          <div className="border-b border-slate-200/80 pb-4 flex items-center justify-between">
+          <div className="border-b border-slate-200 pb-4 flex items-center justify-between">
             <h2 className="text-lg font-bold font-display text-slate-900 flex items-center gap-2">
               <Compass className="w-5 h-5 text-[#0D9488]" />
-              <span>Atur Preferensi Perjalananmu</span>
+              <span>Preferensi Perjalanan</span>
             </h2>
-            <span className="text-xs text-slate-500 font-medium">100% Otomatis & Spasial</span>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-5">
 
             {/* 1. SELECT REGENCY */}
             <div className="space-y-2">
-              <label className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
-                <MapPin className="w-4 h-4 text-[#0D9488]" />
+              <label className="text-xs font-bold text-slate-800">
                 <span>Pilih Kabupaten/Kota</span>
               </label>
               <select
@@ -388,8 +319,7 @@ export const PlannerPage: React.FC = () => {
 
             {/* 2. DURATION DAYS */}
             <div className="space-y-2">
-              <label className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
-                <Calendar className="w-4 h-4 text-[#0D9488]" />
+              <label className="text-xs font-bold text-slate-800">
                 <span>Durasi Hari</span>
               </label>
               <select
@@ -408,10 +338,7 @@ export const PlannerPage: React.FC = () => {
             {/* 3. MULTI-SELECT CATEGORY PREFERENCE */}
             <div className="space-y-2 lg:col-span-2">
               <label className="text-xs font-bold text-slate-800 flex items-center justify-between">
-                <span className="flex items-center gap-1.5">
-                  <Sparkles className="w-4 h-4 text-[#0D9488]" />
-                  <span>Kategori Wisata (Multi-Pilih)</span>
-                </span>
+                <span>Kategori Wisata (Multi-Pilih)</span>
                 <span className="text-[10px] text-slate-500 font-normal">Pilih &gt;1 kategori</span>
               </label>
 
@@ -442,8 +369,7 @@ export const PlannerPage: React.FC = () => {
 
             {/* 4. BUDGET LEVEL */}
             <div className="space-y-2">
-              <label className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
-                <DollarSign className="w-4 h-4 text-[#0D9488]" />
+              <label className="text-xs font-bold text-slate-800">
                 <span>Batas Budget</span>
               </label>
               <select
@@ -460,8 +386,7 @@ export const PlannerPage: React.FC = () => {
             {/* 5. PACE STYLE */}
             <div className="space-y-2 lg:col-span-5 flex flex-col sm:flex-row sm:items-center justify-between border-t border-slate-100 pt-4 gap-3">
               <div className="space-y-1">
-                <label className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
-                  <Clock className="w-4 h-4 text-[#0D9488]" />
+                <label className="text-xs font-bold text-slate-800">
                   <span>Ritme Liburan (Pace)</span>
                 </label>
                 <p className="text-[11px] text-slate-500">Tentukan kepadatan jam kunjungan destinasi harianmu</p>
@@ -472,13 +397,12 @@ export const PlannerPage: React.FC = () => {
                   type="button"
                   onClick={() => setSelectedPace('Santai')}
                   aria-pressed={selectedPace === 'Santai'}
-                  className={`px-4 py-2.5 min-h-[44px] rounded-2xl text-xs font-bold transition-all flex items-center gap-2 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none ${
+                  className={`px-4 py-2.5 min-h-[44px] rounded-2xl text-xs font-bold transition-all focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none ${
                     selectedPace === 'Santai'
                       ? 'bg-[#0D9488] text-white shadow-md'
                       : 'bg-slate-100 text-slate-600 hover:text-slate-900'
                   }`}
                 >
-                  <Sun className="w-3.5 h-3.5 text-amber-300" />
                   <span>Santai (3 Slot/Hari)</span>
                 </button>
 
@@ -486,13 +410,12 @@ export const PlannerPage: React.FC = () => {
                   type="button"
                   onClick={() => setSelectedPace('Padat')}
                   aria-pressed={selectedPace === 'Padat'}
-                  className={`px-4 py-2.5 min-h-[44px] rounded-2xl text-xs font-bold transition-all flex items-center gap-2 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none ${
+                  className={`px-4 py-2.5 min-h-[44px] rounded-2xl text-xs font-bold transition-all focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none ${
                     selectedPace === 'Padat'
                       ? 'bg-[#0D9488] text-white shadow-md'
                       : 'bg-slate-100 text-slate-600 hover:text-slate-900'
                   }`}
                 >
-                  <Zap className="w-3.5 h-3.5 text-amber-300" />
                   <span>Padat Wisata (4-5 Slot/Hari)</span>
                 </button>
               </div>
@@ -509,14 +432,11 @@ export const PlannerPage: React.FC = () => {
             >
               {isGenerating ? (
                 <>
-                  <RefreshCw className="w-4 h-4 animate-spin" />
-                  <span>Meracik Rute Spasial AI...</span>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <span>Menyusun rute...</span>
                 </>
               ) : (
-                <>
-                  <Sparkles className="w-4 h-4 text-amber-300" />
-                  <span>Buat Itinerary AI {selectedRegency}</span>
-                </>
+                <span>Buat Rute</span>
               )}
             </button>
           </div>
@@ -526,11 +446,8 @@ export const PlannerPage: React.FC = () => {
         {generateError && !isGenerating && (
           <div
             role="alert"
-            className="rounded-[28px] border border-rose-200 bg-rose-50/80 p-6 sm:p-8 text-center space-y-3 shadow-sm"
+            className="rounded-[24px] border border-rose-200 bg-rose-50/80 p-6 sm:p-8 text-center space-y-3 shadow-sm"
           >
-            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-rose-100 text-rose-600">
-              <Info className="h-6 w-6" />
-            </div>
             <h3 className="font-display text-lg font-bold text-rose-900">
               Gagal Menyusun Itinerary
             </h3>
@@ -548,25 +465,11 @@ export const PlannerPage: React.FC = () => {
           </div>
         )}
 
-        {/* LOADING ANIMATED STATE */}
+        {/* INLINE LOADING STATE — no mascot, no marketing copy */}
         {isGenerating && (
-          <div className="glass-card-container rounded-[32px] p-12 text-center space-y-5 animate-pulse">
-            <div className="relative w-24 h-24 mx-auto flex items-center justify-center">
-              <div className="absolute inset-0 rounded-full bg-[#0D9488]/20 animate-ping" />
-              <img
-                src="/assets/images/mascot/muli-lampung-mascot.png"
-                alt="AI Mascot Loading"
-                className="w-20 h-20 object-contain relative z-10 animate-bounce"
-              />
-            </div>
-            <div className="space-y-2">
-              <h3 className="text-xl font-bold font-display text-slate-900">
-                Meracik Rute Wisata Terbaik di {selectedRegency}...
-              </h3>
-              <p className="text-xs text-slate-500 font-sans max-w-md mx-auto">
-                AI Raden Gajah sedang menyesuaikan {selectedCategories.join(', ')} di {selectedRegency}, menyisipkan kuliner khas, dan menghitung urutan jarak spasial terpendek.
-              </p>
-            </div>
+          <div className="bg-white rounded-[24px] border border-slate-200 p-8 text-center space-y-3 animate-pulse">
+            <Loader2 className="w-8 h-8 text-[#0D9488] animate-spin mx-auto" />
+            <p className="text-xs font-medium text-slate-600">Menyusun rute di {selectedRegency}...</p>
           </div>
         )}
 
@@ -712,7 +615,7 @@ export const PlannerPage: React.FC = () => {
                                     handleOpenSwapModal(slot, activeDayTab, index);
                                   }}
                                   className="px-3 py-1.5 min-h-[44px] rounded-full text-xs font-bold bg-white border border-teal-200 text-[#0D9488] hover:bg-[#0F766E] hover:text-white transition-all flex items-center gap-1.5 shadow-sm active:scale-95 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
-                                  title="Tukar spot wisata ini dengan rekomendasi AI lain"
+                                  title="Tukar spot wisata ini dengan alternatif lain"
                                   aria-label={`Ganti spot ${slot.activityTitle}`}
                                 >
                                   <RotateCw className="w-3.5 h-3.5" />
@@ -780,7 +683,7 @@ export const PlannerPage: React.FC = () => {
                 </div>
                 <div>
                   <h3 className="text-base font-bold font-display text-slate-900">
-                    Pilih Alternatif Spot AI
+                    Pilih Alternatif Spot
                   </h3>
                   <p className="text-xs text-slate-500">
                     Mengganti: <span className="font-semibold text-slate-800">{swapTargetInfo.slot.activityTitle}</span>

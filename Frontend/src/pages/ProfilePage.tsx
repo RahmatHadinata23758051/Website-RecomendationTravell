@@ -7,15 +7,12 @@ import {
   Heart,
   Trash2,
   LogOut,
-  Sparkles,
   CheckCircle2,
   ChevronRight,
   RefreshCw,
   MapPin,
-  Star,
-  Camera,
   MessageSquare,
-  Award,
+  Edit2,
   Settings,
   Bell,
   Lock,
@@ -25,13 +22,11 @@ import {
   Landmark,
   Utensils,
   Footprints,
-  Bookmark,
-  ExternalLink,
   Edit3,
   Share2,
   Upload,
   X,
-  Crown,
+  Camera,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { apiClient } from '../lib/api';
@@ -59,7 +54,6 @@ export const ProfilePage: React.FC = () => {
   const [isActivitiesModalOpen, setIsActivitiesModalOpen] = useState<boolean>(false);
   const [selectedTripForModal, setSelectedTripForModal] = useState<SavedItinerary | null>(null);
   const [isTripDetailModalOpen, setIsTripDetailModalOpen] = useState<boolean>(false);
-  const [isLoadingTrips, setIsLoadingTrips] = useState<boolean>(true);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   // Edit Profile Modal State
@@ -70,6 +64,11 @@ export const ProfilePage: React.FC = () => {
   const [editAvatarUrl, setEditAvatarUrl] = useState<string>('');
   const [isSavingProfile, setIsSavingProfile] = useState<boolean>(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+  // Computed stats
+  const totalSaved = savedTrips.length;
+  const totalPlanned = userActivities.filter(a => a.title?.includes('itinerary') || a.title?.includes('rute')).length;
+  const totalVisited = favoriteDestinations.length;
 
   const handleTogglePreference = async (categoryName: string) => {
     const currentPrefs = user?.preferences || [];
@@ -87,9 +86,9 @@ export const ProfilePage: React.FC = () => {
 
   const handleOpenEditModal = () => {
     setEditFullName(user?.fullName || '');
-    setEditBio(user?.bio || 'Pecinta alam & budaya Lampung 🌴');
+    setEditBio(user?.bio || '');
     setEditLocation(user?.location || 'Bandar Lampung, Lampung, Indonesia');
-    setEditAvatarUrl(user?.avatarUrl || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80');
+    setEditAvatarUrl(user?.avatarUrl || '');
     setIsEditModalOpen(true);
   };
 
@@ -148,7 +147,6 @@ export const ProfilePage: React.FC = () => {
 
     // Fetch My Saved Trips
     const fetchMyTrips = async () => {
-      setIsLoadingTrips(true);
       try {
         const res = await apiClient.get('/itineraries/my-trips');
         if (isMounted && res.data?.data?.itineraries) {
@@ -156,8 +154,6 @@ export const ProfilePage: React.FC = () => {
         }
       } catch (err) {
         // Fallback mock
-      } finally {
-        if (isMounted) setIsLoadingTrips(false);
       }
     };
 
@@ -200,23 +196,15 @@ export const ProfilePage: React.FC = () => {
     };
   }, [isAuthenticated]);
 
-  const handleRemoveFavorite = async (id: string, name: string, e: React.MouseEvent) => {
-    e.stopPropagation();
-    try {
-      await apiClient.delete(`/favorites/${id}`);
-      setFavoriteDestinations((prev) => prev.filter((d) => d.id !== id));
-      triggerToast(`Destinasi "${name}" dihapus dari wishlist`);
-    } catch (err) {
-      triggerToast('Gagal menghapus dari wishlist');
-    }
-  };
-
-  const handleDeleteTrip = async (id: string, title: string, e: React.MouseEvent) => {
-    e.stopPropagation();
+  const handleDeleteTrip = async (id: string, title: string, e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
     if (window.confirm(`Hapus itinerary "${title}" dari simpanan?`)) {
       try {
         await apiClient.delete(`/itineraries/${id}`);
         setSavedTrips((prev) => prev.filter((item) => item.id !== id));
+        if (selectedTripForModal?.id === id) {
+          setIsTripDetailModalOpen(false);
+        }
         triggerToast(`Itinerary "${title}" berhasil dihapus`);
       } catch (err) {
         triggerToast('Gagal menghapus itinerary');
@@ -228,6 +216,10 @@ export const ProfilePage: React.FC = () => {
     await logout();
     triggerToast('Anda telah keluar dari akun');
     navigate('/');
+  };
+
+  const handleEditBio = () => {
+    handleOpenEditModal();
   };
 
   if (!user) {
@@ -249,204 +241,242 @@ export const ProfilePage: React.FC = () => {
   }
 
   return (
-    <div className="flex flex-col min-h-[100dvh] pt-24 pb-16 bg-[#F8FAFC]">
-      {/* Toast Notification */}
+    <div className="flex flex-col min-h-[100dvh] pt-24 pb-16 bg-[#F4F8FA]">
+      {/* Toast Notification - clean, no bounce */}
       {toastMessage && (
-        <div className="fixed bottom-6 right-6 z-50 bg-[#0F2937] text-white px-5 py-3 rounded-2xl shadow-2xl border border-teal-400/30 flex items-center gap-3 transition-all animate-bounce">
+        <div className="fixed bottom-6 right-6 z-50 bg-[#0F2937] text-white px-5 py-3 rounded-2xl shadow-xl border border-slate-200/50 flex items-center gap-3 transition-all">
           <CheckCircle2 className="w-5 h-5 text-[#2DD4BF]" />
           <span className="text-xs font-semibold">{toastMessage}</span>
         </div>
       )}
 
-      {/* ================================================================
-          HERO BANNER SECTION (Matching Reference Image)
-          - Scenic Pahawang Beach background with subtle Tapis overlay
-          ================================================================ */}
-      <section className="relative w-screen overflow-hidden -mt-24 mb-6" style={{ marginLeft: 'calc(-50vw + 50%)', width: '100vw' }}>
-        {/* Background Scenic Image */}
-        <img
-          src="/assets/images/heroes/hero-pahawang-bg.png"
-          alt="Pahawang Beach Banner"
-          className="absolute inset-0 w-full h-full object-cover object-center z-0"
-        />
-        {/* Soft White Gradient Overlay for Text Clarity */}
-        <div className="absolute inset-0 bg-gradient-to-r from-white/95 via-white/85 to-white/40 z-[1]" />
-        <div className="absolute inset-0 z-[1]" style={{ background: 'linear-gradient(to bottom, transparent 30%, rgba(248,250,252,0.8) 75%, #F8FAFC 100%)' }} />
-
-        {/* Faint Tapis Watermark */}
-        <img
-          src="/assets/images/patterns/lampung-tapis-pattern-transparent.png"
-          alt=""
-          aria-hidden="true"
-          className="absolute top-0 left-0 w-[550px] h-auto opacity-40 pointer-events-none z-[2]"
-        />
-
-        {/* Hero Welcome Banner Content */}
-        <div className="relative z-10 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 pt-28 pb-4 space-y-2">
-          <div className="flex items-center gap-2">
-            <img
-              src="/assets/images/logos/siger-gold-icon.png"
-              alt="Siger Crown"
-              className="w-5 h-5 object-contain"
-            />
-            <span className="text-xs font-semibold text-slate-600 font-sans">
-              Selamat datang kembali,
-            </span>
+      {/* CLEAN HEADER — no hero banner, no gradient overlays, no tapis watermark */}
+      <header className="w-full max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-10 mb-6">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div className="space-y-1">
+            <h1 className="font-display text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
+              Profil Saya
+            </h1>
+            <p className="text-sm text-slate-600">Kelola preferensi, lihat aktivitas, dan atur akun.</p>
           </div>
-
-          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-display font-extrabold text-slate-900 tracking-tight">
-            {user.fullName}
-          </h1>
-
-          <p className="text-xs sm:text-sm text-slate-600 font-sans max-w-2xl leading-relaxed">
-            Jelajahi keindahan Lampung dan temukan pengalaman terbaik yang personal, akurat, dan sesuai minatmu.
-          </p>
-        </div>
-      </section>
-
-      {/* MAIN CONTAINER */}
-      <div className="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 space-y-8">
-
-        {/* ================================================================
-            TOP 3 PROFILE FEATURE CARDS GRID (Matching Mockup)
-            ================================================================ */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
-
-          {/* CARD 1 (5 COLS): USER AVATAR & STATS CARD */}
-          <div className="lg:col-span-5 bg-white rounded-[28px] p-6 shadow-sm border border-slate-200/80 flex flex-col justify-between space-y-5">
-            <div className="flex items-start justify-between gap-4">
-              <div className="flex items-center gap-4">
-                {/* Circular Avatar with Camera Upload Icon */}
-                <div className="relative shrink-0 cursor-pointer" onClick={handleOpenEditModal}>
-                  <div className="w-20 h-20 rounded-full overflow-hidden border-2 border-white shadow-md bg-[#0D9488] text-white flex items-center justify-center font-display font-extrabold text-2xl">
-                    {user.avatarUrl ? (
-                      <SafeImage
-                        src={user.avatarUrl}
-                        alt={`Avatar ${user.fullName}`}
-                        className="w-full h-full object-cover"
-                        fallbackSrc="/assets/images/mascot/muli-avatar-face.png"
-                      />
-                    ) : null}
-                    <span className="uppercase">{user.fullName ? user.fullName.charAt(0) : 'U'}</span>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={handleOpenEditModal}
-                    title="Ganti Foto Profil"
-                    className="absolute bottom-0 right-0 w-11 h-11 min-w-[44px] min-h-[44px] rounded-full bg-[#0D9488] hover:bg-[#0F766E] text-white flex items-center justify-center shadow-md hover:scale-110 transition-transform border border-white focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
-                  >
-                    <Camera className="w-3 h-3" />
-                  </button>
-                </div>
-
-                {/* User Info */}
-                <div className="space-y-1">
-                  <div className="flex items-center gap-1.5">
-                    <h2 className="text-base font-extrabold font-display text-slate-900">{user.fullName}</h2>
-                    <span title="VIP Explorer">
-                      <Crown className="w-4 h-4 text-amber-500 shrink-0" />
-                    </span>
-                  </div>
-                  <p className="text-[11px] text-slate-500 font-medium flex items-center gap-1">
-                    <span>{user.bio || 'Pecinta alam & budaya Lampung 🌴'}</span>
-                  </p>
-                  <p className="text-[11px] text-slate-600 font-sans flex items-center gap-1">
-                    <MapPin className="w-3 h-3 text-[#0D9488] shrink-0" />
-                    <span>{user.location || 'Bandar Lampung, Lampung, Indonesia'}</span>
-                  </p>
-                  <p className="text-[10px] text-slate-400 font-sans flex items-center gap-1 pt-0.5">
-                    <Calendar className="w-3 h-3 text-slate-400 shrink-0" />
-                    <span>Bergabung sejak Mei 2024</span>
-                  </p>
-                </div>
+          <div className="flex items-center gap-3">
+            {user?.avatarUrl ? (
+              <img
+                src={user.avatarUrl}
+                alt={user.fullName || 'User'}
+                className="w-12 h-12 rounded-xl object-cover border border-slate-200"
+              />
+            ) : (
+              <div className="w-12 h-12 rounded-xl bg-slate-100 flex items-center justify-center border border-slate-200">
+                <UserIcon className="w-6 h-6 text-slate-400" />
               </div>
+            )}
+          </div>
+        </div>
+      </header>
 
-              {/* Edit Profil Button */}
-              <button
-                onClick={handleOpenEditModal}
-                className="px-3.5 py-2 min-h-[44px] rounded-full border border-[#0D9488]/40 hover:bg-teal-50 text-[#0D9488] text-xs font-bold transition-all shrink-0 flex items-center gap-1 shadow-2xs active:scale-95 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
-              >
-                <Edit3 className="w-3.5 h-3.5" />
-                <span>Edit Profil</span>
-              </button>
+      {/* Main Content */}
+      <div className="w-full max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-10 space-y-6">
+
+        {/* USER INFO & STATS ROW */}
+        <div className="bg-white rounded-[24px] border border-slate-200 p-6 sm:p-8 shadow-sm">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 items-center">
+            {/* User Identity */}
+            <div className="flex items-center gap-4 sm:col-span-1 lg:col-span-1">
+              <div className="space-y-1">
+                <h2 className="text-lg font-bold font-display text-slate-900">
+                  {user?.fullName || 'Pengguna'}
+                </h2>
+                <p className="text-xs text-slate-500">{user?.email || 'Belum login'}</p>
+                <p className="text-xs text-slate-400 flex items-center gap-1">
+                  <MapPin className="w-3 h-3" />
+                  <span>{user?.location || 'Bandar Lampung, Lampung'}</span>
+                </p>
+              </div>
             </div>
 
-              {/* 4 Metric Columns Bar */}
-              <div className="pt-4 border-t border-slate-100 grid grid-cols-4 gap-2 text-center">
-                <div className="space-y-0.5">
-                  <div className="flex items-center justify-center gap-1 text-[#0D9488]">
-                    <Compass className="w-3.5 h-3.5" />
-                    <span className="text-base font-extrabold font-display">{savedTrips.length}</span>
-                  </div>
-                  <p className="text-[9px] font-semibold text-slate-500">Perjalanan Disimpan</p>
+            {/* Stats - clean, no gradients */}
+            <div className="grid grid-cols-3 gap-4 sm:col-span-1 lg:col-span-3 border-y border-slate-100 py-4 sm:border-y-0 sm:border-x sm:py-0">
+              <div className="text-center">
+                <div className="text-2xl sm:text-3xl font-extrabold font-display text-[#0D9488]">
+                  {totalSaved}
                 </div>
-
-                <div className="space-y-0.5 border-l border-slate-100">
-                  <div className="flex items-center justify-center gap-1 text-red-500">
-                    <Heart className="w-3.5 h-3.5 fill-current" />
-                    <span className="text-base font-extrabold font-display">{favoriteDestinations.length}</span>
-                  </div>
-                  <p className="text-[9px] font-semibold text-slate-500">Destinasi Favorit</p>
-                </div>
-
-                <div className="space-y-0.5 border-l border-slate-100">
-                  <div className="flex items-center justify-center gap-1 text-amber-500">
-                    <MessageSquare className="w-3.5 h-3.5" />
-                    <span className="text-base font-extrabold font-display">{userActivities.filter(a=>a.title?.includes('ulasan')).length}</span>
-                  </div>
-                  <p className="text-[9px] font-semibold text-slate-500">Ulasan Ditulis</p>
-                </div>
-
-                <div className="space-y-0.5 border-l border-slate-100">
-                  <div className="flex items-center justify-center gap-1 text-amber-600">
-                    <Star className="w-3.5 h-3.5 fill-current" />
-                    <span className="text-base font-extrabold font-display">{user.xp || 0}</span>
-                  </div>
-                  <p className="text-[9px] font-semibold text-slate-500">Poin XP</p>
+                <div className="text-[10px] text-slate-500 font-medium uppercase tracking-wider">
+                  Destinasi Tersimpan
                 </div>
               </div>
+              <div className="border-x border-slate-100">
+                <div className="text-2xl sm:text-3xl font-extrabold font-display text-amber-600">
+                  {totalPlanned}
+                </div>
+                <div className="text-[10px] text-slate-500 font-medium uppercase tracking-wider">
+                  Itinerary Dibuat
+                </div>
+              </div>
+              <div>
+                <div className="text-2xl sm:text-3xl font-extrabold font-display text-rose-600">
+                  {totalVisited}
+                </div>
+                <div className="text-[10px] text-slate-500 font-medium uppercase tracking-wider">
+                  Tempat Favorit
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* QUICK ACTIONS & BIO */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Quick Actions */}
+          <div className="lg:col-span-1 bg-white rounded-[24px] border border-slate-200 p-6 shadow-sm space-y-3">
+            <h3 className="text-xs font-extrabold text-slate-600 uppercase tracking-wider">Aksi Cepat</h3>
+            <div className="space-y-2">
+              <button
+                onClick={() => navigate('/planner')}
+                className="w-full bg-slate-50 hover:bg-slate-100 rounded-xl p-3 text-left border border-slate-200 transition-all min-h-[44px] focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none flex items-center gap-2"
+              >
+                <Compass className="w-4 h-4 text-[#0D9488]" />
+                <span className="text-xs font-bold text-slate-800">Buat Itinerary</span>
+              </button>
+              <button
+                onClick={() => navigate('/explore')}
+                className="w-full bg-slate-50 hover:bg-slate-100 rounded-xl p-3 text-left border border-slate-200 transition-all min-h-[44px] focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none flex items-center gap-2"
+              >
+                <MapPin className="w-4 h-4 text-[#0D9488]" />
+                <span className="text-xs font-bold text-slate-800">Jelajahi Tempat</span>
+              </button>
+              <button
+                onClick={() => navigate('/favorites')}
+                className="w-full bg-slate-50 hover:bg-slate-100 rounded-xl p-3 text-left border border-slate-200 transition-all min-h-[44px] focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none flex items-center gap-2"
+              >
+                <Heart className="w-4 h-4 text-rose-500" />
+                <span className="text-xs font-bold text-slate-800">Favorit Saya</span>
+              </button>
+              <button
+                onClick={() => navigate('/chatbot')}
+                className="w-full bg-slate-50 hover:bg-slate-100 rounded-xl p-3 text-left border border-slate-200 transition-all min-h-[44px] focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none flex items-center gap-2"
+              >
+                <MessageSquare className="w-4 h-4 text-[#0D9488]" />
+                <span className="text-xs font-bold text-slate-800">Tanya Chatbot</span>
+              </button>
+            </div>
           </div>
 
-          {/* CARD 2 (4 COLS): PREFERENSI PERJALANAN CARD */}
-          <div className="lg:col-span-4 bg-white rounded-[28px] p-6 shadow-sm border border-slate-200/80 flex flex-col justify-between space-y-4">
+          {/* Bio / About Me */}
+          <div className="lg:col-span-2 bg-white rounded-[24px] border border-slate-200 p-6 shadow-sm space-y-4">
+            <h3 className="text-xs font-extrabold text-slate-600 uppercase tracking-wider">Tentang Saya</h3>
             <div className="space-y-3">
-              <div className="flex items-center gap-2">
-                <Sparkles className="w-4 h-4 text-amber-500" />
-                <div>
-                  <h3 className="text-sm font-extrabold font-display text-slate-900">Preferensi Perjalanan</h3>
-                  <p className="text-[10px] text-slate-500 font-medium">Minat & kategori favoritmu</p>
-                </div>
-              </div>
+              <p className="text-sm text-slate-600 leading-relaxed">
+                {user?.bio || 'Belum ada bio. Tambahkan deskripsi singkat untuk personalisasi.'}
+              </p>
+              <button
+                onClick={handleEditBio}
+                className="inline-flex items-center gap-1.5 text-sm font-bold text-[#0D9488] hover:text-[#0F766E] px-3 py-2 rounded-lg border border-[#0D9488]/30 bg-[#0D9488]/5 hover:bg-[#0D9488]/10 transition-all min-h-[44px]"
+              >
+                <Edit2 className="w-4 h-4" />
+                <span>Edit Bio</span>
+              </button>
+            </div>
+          </div>
+        </div>
 
-              {/* Category Pills Grid */}
-              <div className="flex flex-wrap gap-2 pt-1">
-                {[
-                  { name: 'Pantai', icon: Palmtree },
-                  { name: 'Kuliner', icon: Utensils },
-                  { name: 'Budaya', icon: Landmark },
-                  { name: 'Alam', icon: Mountain },
-                  { name: 'Adventure', icon: Footprints },
-                ].map(({ name, icon: Icon }) => {
-                  const isActive = (user?.preferences || []).includes(name);
-                  return (
-                    <button
-                      key={name}
-                      type="button"
-                      onClick={() => handleTogglePreference(name)}
-                      aria-pressed={isActive}
-                      className={`flex items-center gap-1.5 px-3.5 py-2 min-h-[44px] rounded-2xl text-xs font-bold transition-all border cursor-pointer active:scale-95 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none ${
-                        isActive
-                          ? 'bg-[#0D9488] text-white border-[#0D9488] shadow-md shadow-[#0D9488]/20'
-                          : 'bg-slate-50 hover:bg-slate-100 border-slate-200/80 text-slate-700'
-                      }`}
-                    >
-                      <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-white' : 'text-[#0D9488]'}`} />
-                      <span>{name}</span>
-                      {isActive && <CheckCircle2 className="w-3 h-3 text-teal-200 ml-0.5" />}
-                    </button>
-                  );
-                })}
-              </div>
+        {/* SAVED ITINERARIES ROW */}
+        <div className="bg-white rounded-[24px] border border-slate-200 p-6 shadow-sm space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Compass className="w-5 h-5 text-[#0D9488]" />
+              <h3 className="text-base font-extrabold font-display text-slate-900">Itinerary Tersimpan</h3>
+            </div>
+            <Link
+              to="/planner"
+              className="text-xs font-bold text-[#0D9488] hover:text-[#0F766E] flex items-center gap-1 transition-colors"
+            >
+              <span>Buat Baru</span>
+              <ChevronRight className="w-3.5 h-3.5" />
+            </Link>
+          </div>
+
+          {savedTrips.length === 0 ? (
+            <div className="p-8 text-center space-y-3 bg-slate-50 rounded-2xl border border-slate-200/60">
+              <Compass className="w-8 h-8 text-slate-300 mx-auto" />
+              <p className="text-xs font-bold text-slate-700">Belum ada rute perjalanan tersimpan</p>
+              <Link
+                to="/planner"
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-[#0D9488] text-white text-xs font-bold shadow-sm hover:bg-[#0F766E] transition-all"
+              >
+                <span>Mulai Buat Rute</span>
+              </Link>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {savedTrips.map((trip) => (
+                <div
+                  key={trip.id}
+                  onClick={() => {
+                    setSelectedTripForModal(trip);
+                    setIsTripDetailModalOpen(true);
+                  }}
+                  className="p-4 rounded-2xl bg-slate-50 border border-slate-200/70 hover:border-[#0D9488]/60 hover:shadow-md transition-all cursor-pointer space-y-3 group"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 rounded-xl bg-slate-900 overflow-hidden shrink-0">
+                      <SafeImage
+                        src="/assets/images/heroes/hero-pahawang-bg.png"
+                        alt={trip.title}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                      />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <h4 className="text-sm font-bold font-display text-slate-900 truncate group-hover:text-[#0D9488] transition-colors">
+                        {trip.title}
+                      </h4>
+                      <p className="text-xs text-slate-500">
+                        {Array.isArray(trip.daysJson) ? `${trip.daysJson.length} Hari` : '3 Hari'}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* PREFERENCES & ACTIVITY */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+          {/* PREFERENSI PERJALANAN */}
+          <div className="bg-white rounded-[24px] border border-slate-200 p-6 shadow-sm space-y-4">
+            <h3 className="text-sm font-bold font-display text-slate-900">Preferensi Perjalanan</h3>
+            <p className="text-xs text-slate-500">Minat & kategori favoritmu untuk rekomendasi yang lebih relevan</p>
+
+            {/* Category Pills Grid */}
+            <div className="flex flex-wrap gap-2 pt-1">
+              {[
+                { name: 'Pantai', icon: Palmtree },
+                { name: 'Kuliner', icon: Utensils },
+                { name: 'Budaya', icon: Landmark },
+                { name: 'Alam', icon: Mountain },
+                { name: 'Adventure', icon: Footprints },
+              ].map(({ name, icon: Icon }) => {
+                const isActive = (user?.preferences || []).includes(name);
+                return (
+                  <button
+                    key={name}
+                    type="button"
+                    onClick={() => handleTogglePreference(name)}
+                    aria-pressed={isActive}
+                    className={`flex items-center gap-1.5 px-3.5 py-2 min-h-[44px] rounded-2xl text-xs font-bold transition-all border cursor-pointer active:scale-95 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none ${
+                      isActive
+                        ? 'bg-[#0D9488] text-white border-[#0D9488] shadow-md shadow-[#0D9488]/20'
+                        : 'bg-slate-50 hover:bg-slate-100 border-slate-200/80 text-slate-700'
+                    }`}
+                  >
+                    <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-white' : 'text-[#0D9488]'}`} />
+                    <span>{name}</span>
+                    {isActive && <CheckCircle2 className="w-3 h-3 text-teal-200 ml-0.5" />}
+                  </button>
+                );
+              })}
             </div>
 
             <p className="text-[10px] text-slate-400 font-sans pt-1">
@@ -454,409 +484,127 @@ export const ProfilePage: React.FC = () => {
             </p>
           </div>
 
-          {/* CARD 3 (3 COLS): LEVEL KEANGGOTAAN EXPLORER CARD */}
-          {(() => {
-            const userXp = user?.xp || 0;
-            const getExplorerLevelInfo = (xp: number = 0) => {
-              if (xp >= 1000) return { level: 5, name: 'Legenda Kelana Lampung', minXp: 1000, maxXp: 2000, badgeBg: 'bg-gradient-to-r from-amber-500 to-amber-600' };
-              if (xp >= 600) return { level: 4, name: 'Pakar Wisata Lampung', minXp: 600, maxXp: 1000, badgeBg: 'bg-gradient-to-r from-purple-500 to-purple-700' };
-              if (xp >= 300) return { level: 3, name: 'Explorer Sejati', minXp: 300, maxXp: 600, badgeBg: 'bg-gradient-to-r from-blue-500 to-teal-600' };
-              if (xp >= 100) return { level: 2, name: 'Kelana Muda', minXp: 100, maxXp: 300, badgeBg: 'bg-gradient-to-r from-teal-500 to-emerald-600' };
-              return { level: 1, name: 'Penjelajah Pemula', minXp: 0, maxXp: 100, badgeBg: 'bg-gradient-to-r from-slate-600 to-slate-800' };
-            };
-
-            const levelInfo = getExplorerLevelInfo(userXp);
-            const progressPercent = Math.min(100, Math.max(0, ((userXp - levelInfo.minXp) / (levelInfo.maxXp - levelInfo.minXp)) * 100));
-
-            return (
-              <div className="lg:col-span-3 bg-gradient-to-br from-[#FFFBEB] via-[#FEF3C7]/40 to-[#FFFBEB] rounded-[28px] p-6 shadow-sm border border-amber-200/80 flex flex-col justify-between space-y-4 relative overflow-hidden">
-                <div className="space-y-3 relative z-10">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <div className="flex items-center gap-1.5">
-                        <span className={`px-2 py-0.5 rounded-full text-[9px] font-extrabold text-white shadow-xs ${levelInfo.badgeBg}`}>
-                          Level {levelInfo.level}
-                        </span>
-                        <p className="text-[10px] font-bold text-amber-800 uppercase tracking-wider">Level Keanggotaan</p>
-                      </div>
-                      <h3 className="text-base sm:text-lg font-extrabold font-display text-slate-900 pt-0.5">
-                        {levelInfo.name}
-                      </h3>
-                    </div>
-                    {/* Gold Medal / Crown Icon */}
-                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-amber-400 to-amber-600 text-white flex items-center justify-center shadow-md border border-white shrink-0">
-                      <Award className="w-5 h-5" />
-                    </div>
-                  </div>
-
-                  <p className="text-[11px] text-slate-600 font-sans leading-relaxed">
-                    Dapatkan XP dengan membuat rute AI (+50), menulis ulasan (+30), edit profil (+20), atau simpan favorit (+15)!
-                  </p>
-
-                  {/* Progress Bar */}
-                  <div className="space-y-1 pt-1">
-                    <div className="w-full h-2.5 rounded-full bg-amber-200/70 overflow-hidden relative border border-amber-300/40">
-                      <div
-                        className="h-full bg-gradient-to-r from-amber-400 to-amber-600 rounded-full transition-all duration-500 shadow-sm"
-                        style={{ width: `${progressPercent}%` }}
-                      />
-                    </div>
-                    <div className="flex items-center justify-between text-[10px] font-bold text-amber-900 font-mono">
-                      <span>{userXp} / {levelInfo.maxXp} XP</span>
-                      <span>Level {levelInfo.level < 5 ? levelInfo.level + 1 : 'MAX'}</span>
-                    </div>
-                  </div>
-                </div>
-
+          {/* AKTIVITAS TERBARU */}
+          <div className="bg-white rounded-[24px] border border-slate-200 p-6 shadow-sm space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-bold font-display text-slate-900">Aktivitas Terbaru</h3>
+              {userActivities.length > 0 && (
                 <button
-                  onClick={() => triggerToast(`Status: ${levelInfo.name} (${userXp} XP). Dapatkan +50 XP tiap buat Rute AI!`)}
-                  className="text-xs font-bold text-amber-800 hover:text-amber-950 transition-colors flex items-center gap-1 pt-1 min-h-[44px] self-start relative z-10 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
+                  onClick={() => setIsActivitiesModalOpen(true)}
+                  className="text-xs font-bold text-[#0D9488] hover:text-[#0F766E] transition-colors"
                 >
-                  <span>Lihat Perolehan XP</span>
-                  <ChevronRight className="w-3.5 h-3.5" />
+                  Lihat Semua ({userActivities.length})
                 </button>
+              )}
+            </div>
+
+            {/* Timeline Items */}
+            {userActivities.length === 0 ? (
+              <div className="text-center py-6 text-slate-400 text-xs">
+                <p>Belum ada aktivitas tercatat.</p>
+                <p className="text-[10px] text-slate-500 mt-1">Coba simpan rute atau beri ulasan destinasi!</p>
               </div>
-            );
-          })()}
+            ) : (
+              <div className="space-y-4">
+                {userActivities.slice(0, 5).map((act, i) => {
+                  let IconComp = Compass;
+                  let colorClass = 'text-teal-800 bg-teal-50';
+                  if (act.iconType === 'heart') {
+                    IconComp = Heart;
+                    colorClass = 'text-red-500 bg-red-50';
+                  } else if (act.iconType === 'star') {
+                    IconComp = MessageSquare;
+                    colorClass = 'text-amber-500 bg-amber-50';
+                  } else if (act.iconType === 'user') {
+                    IconComp = UserIcon;
+                    colorClass = 'text-blue-500 bg-blue-50';
+                  }
+
+                  return (
+                    <div key={act.id || i} className="flex items-start gap-3">
+                      <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${colorClass}`}>
+                        <IconComp className="w-4 h-4" />
+                      </div>
+                      <div className="flex-1 space-y-0.5">
+                        <p className="text-xs font-semibold text-slate-800 leading-snug">{act.title}</p>
+                        <div className="flex items-center justify-between text-[10px] text-slate-400 font-sans">
+                          <span>{act.subtitle || 'Aktivitas Explorer'}</span>
+                          <span>
+                            {new Date(act.createdAt).toLocaleDateString('id-ID', {
+                              day: 'numeric',
+                              month: 'short',
+                            })}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
 
         </div>
 
-        {/* ================================================================
-            MAIN CONTENT SECTION (2 COLUMNS: LEFT 8 COLS, RIGHT 4 COLS)
-            ================================================================ */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-
-          {/* LEFT COLUMN (8 COLS): WISHLIST & RIWAYAT PERJALANAN */}
-          <div className="lg:col-span-8 space-y-8">
-
-            {/* SECTION 1: WISHLIST DESTINASI */}
-            <div className="bg-white rounded-[28px] p-6 shadow-sm border border-slate-200/80 space-y-5">
-              <div className="flex items-center justify-between border-b border-slate-100 pb-4">
-                <div className="space-y-0.5">
-                  <div className="flex items-center gap-2">
-                    <Bookmark className="w-4 h-4 text-amber-500" />
-                    <h3 className="text-base font-extrabold font-display text-slate-900">Wishlist Destinasi</h3>
-                  </div>
-                  <p className="text-xs text-slate-500">Destinasi yang ingin kamu kunjungi</p>
-                </div>
-
-                <Link
-                  to="/favorites"
-                  className="text-xs font-bold text-[#0D9488] hover:text-[#0F766E] flex items-center gap-1 transition-colors"
-                >
-                  <span>Lihat Semua</span>
-                  <ChevronRight className="w-3.5 h-3.5" />
-                </Link>
-              </div>
-
-              {/* Destination Cards Grid */}
-              {favoriteDestinations.length === 0 ? (
-                <div className="text-center py-8 bg-slate-50 rounded-2xl border border-dashed border-slate-200 space-y-2">
-                  <Bookmark className="w-8 h-8 text-slate-300 mx-auto" />
-                  <p className="text-xs text-slate-500 font-medium">Belum ada destinasi impian di wishlist kamu</p>
-                  <Link
-                    to="/explore"
-                    className="inline-block text-xs font-bold text-[#0D9488] hover:underline"
-                  >
-                    Jelajahi Destinasi Sekarang &rarr;
-                  </Link>
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                  {favoriteDestinations.slice(0, 4).map((dest) => (
-                    <div
-                      key={dest.id}
-                      onClick={() => navigate(`/explore?search=${encodeURIComponent(dest.name)}`)}
-                      className="group relative rounded-2xl overflow-hidden bg-slate-900 shadow-sm hover:shadow-xl transition-all duration-300 cursor-pointer aspect-[4/5] flex flex-col justify-between p-3.5"
-                    >
-                      <SafeImage
-                        src={dest.image}
-                        alt={dest.name}
-                        className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                        fallbackSrc="/assets/images/heroes/hero-pahawang-bg.png"
-                      />
-                      <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/30 to-slate-950/20" />
-
-                      {/* Category Tag & Heart Icon */}
-                      <div className="relative z-10 flex items-center justify-between">
-                        <span className="px-2 py-0.5 rounded-full text-[9px] font-extrabold bg-[#0D9488] text-white">
-                          {dest.category}
-                        </span>
-                        <button
-                          onClick={(e) => handleRemoveFavorite(dest.id, dest.name, e)}
-                          className="w-11 h-11 min-w-[44px] min-h-[44px] rounded-full bg-slate-900/60 text-white flex items-center justify-center backdrop-blur-sm transition-transform hover:scale-110 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
-                          title="Hapus dari Wishlist"
-                          aria-label={`Hapus ${dest.name} dari wishlist`}
-                        >
-                          <Heart className="w-3 h-3 fill-current text-red-400" />
-                        </button>
-                      </div>
-
-                      {/* Bottom Info */}
-                      <div className="relative z-10 space-y-1 text-white">
-                        <h4 className="text-xs font-bold font-display leading-tight line-clamp-1 group-hover:text-teal-300 transition-colors">
-                          {dest.name}
-                        </h4>
-                        <p className="text-[10px] text-slate-300">{dest.location}</p>
-                        <div className="flex items-center justify-between text-[10px] text-amber-400 font-bold pt-0.5">
-                          <span>★ {dest.rating} ({dest.reviews})</span>
-                          <span className="text-slate-300 font-normal">{dest.duration}</span>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* SECTION 2: RIWAYAT PERJALANAN (ITINERARY TERSIMPAN) */}
-            <div className="bg-white rounded-[28px] p-6 shadow-sm border border-slate-200/80 space-y-5">
-              <div className="flex items-center justify-between border-b border-slate-100 pb-4">
-                <div className="space-y-0.5">
-                  <div className="flex items-center gap-2">
-                    <Compass className="w-4 h-4 text-[#0D9488]" />
-                    <h3 className="text-base font-extrabold font-display text-slate-900">Riwayat Perjalanan</h3>
-                  </div>
-                  <p className="text-xs text-slate-500">Perjalanan yang telah kamu jadwalkan atau simpan</p>
-                </div>
-
-                <Link
-                  to="/planner"
-                  className="text-xs font-bold text-[#0D9488] hover:text-[#0F766E] flex items-center gap-1 transition-colors"
-                >
-                  <span>Lihat Semua</span>
-                  <ChevronRight className="w-3.5 h-3.5" />
-                </Link>
-              </div>
-
-              {/* Saved Trips List */}
-              {isLoadingTrips ? (
-                <div className="p-8 text-center space-y-2">
-                  <RefreshCw className="w-6 h-6 text-[#0D9488] animate-spin mx-auto" />
-                  <p className="text-xs text-slate-500">Memuat rute perjalanan...</p>
-                </div>
-              ) : savedTrips.length === 0 ? (
-                <div className="p-8 text-center space-y-3 bg-slate-50 rounded-2xl border border-slate-200/60">
-                  <Compass className="w-10 h-10 text-slate-300 mx-auto" />
-                  <p className="text-xs font-bold text-slate-700">Belum ada rute perjalanan tersimpan</p>
-                  <Link
-                    to="/planner"
-                    className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-[#0D9488] text-white text-xs font-bold shadow-sm hover:bg-[#0F766E] transition-all"
-                  >
-                    <Sparkles className="w-3.5 h-3.5 text-amber-300" />
-                    <span>Buat Itinerary Baru</span>
-                  </Link>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  {savedTrips.map((trip) => (
-                    <div
-                      key={trip.id}
-                      onClick={() => {
-                        setSelectedTripForModal(trip);
-                        setIsTripDetailModalOpen(true);
-                      }}
-                      className="flex items-center justify-between gap-4 p-4 rounded-2xl bg-slate-50 border border-slate-200/70 hover:border-[#0D9488]/60 hover:shadow-md transition-all group cursor-pointer"
-                    >
-                      <div className="flex items-center gap-4">
-                        <div className="w-14 h-14 rounded-xl bg-slate-900 overflow-hidden shrink-0 relative">
-                          <SafeImage
-                            src="/assets/images/heroes/hero-pahawang-bg.png"
-                            alt="Trip Thumbnail"
-                            className="w-full h-full object-cover group-hover:scale-105 transition-transform"
-                          />
-                        </div>
-
-                        <div className="space-y-1">
-                          <h4 className="text-sm font-bold font-display text-slate-900 group-hover:text-[#0D9488] transition-colors">
-                            {trip.title}
-                          </h4>
-                          <div className="flex items-center gap-3 text-[11px] text-slate-500 font-sans">
-                            <span className="flex items-center gap-1">
-                              <MapPin className="w-3 h-3 text-[#0D9488]" />
-                              <span>Lampung</span>
-                            </span>
-                            <span className="flex items-center gap-1">
-                              <Calendar className="w-3 h-3 text-slate-400" />
-                              <span>{Array.isArray(trip.daysJson) ? `${trip.daysJson.length} Hari` : '3 Hari'}</span>
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="flex items-center gap-2 shrink-0">
-                        <span className="hidden sm:inline-block px-3 py-1 rounded-full text-[10px] font-bold bg-teal-100 text-[#0D9488]">
-                          Tersimpan
-                        </span>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            navigator.clipboard.writeText(`${window.location.origin}/share/${trip.shareToken}`);
-                            triggerToast('Link rute perjalanan berhasil disalin!');
-                          }}
-                          className="p-2.5 min-w-[44px] min-h-[44px] rounded-full hover:bg-teal-50 text-slate-500 hover:text-[#0D9488] transition-colors flex items-center justify-center focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
-                          title="Bagikan Link Rute"
-                          aria-label={`Bagikan link rute ${trip.title}`}
-                        >
-                          <Share2 className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setSelectedTripForModal(trip);
-                            setIsTripDetailModalOpen(true);
-                          }}
-                          className="p-2.5 min-w-[44px] min-h-[44px] rounded-full hover:bg-slate-200 text-slate-600 transition-colors flex items-center justify-center focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
-                          title="Lihat Detail Rute"
-                          aria-label={`Lihat detail rute ${trip.title}`}
-                        >
-                          <ExternalLink className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={(e) => handleDeleteTrip(trip.id, trip.title, e)}
-                          className="p-2.5 min-w-[44px] min-h-[44px] rounded-full hover:bg-red-100 text-slate-500 hover:text-red-600 transition-colors flex items-center justify-center focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
-                          title="Hapus Rute"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-
+        {/* SETTINGS & QUICK ACTIONS */}
+        <div className="bg-white rounded-[24px] border border-slate-200 p-6 shadow-sm space-y-4">
+          <div className="flex items-center gap-2 border-b border-slate-100 pb-3">
+            <Settings className="w-4 h-4 text-slate-600" />
+            <h3 className="text-sm font-extrabold font-display text-slate-900">Pengaturan Cepat</h3>
           </div>
 
-          {/* RIGHT COLUMN (4 COLS): AKTIVITAS TERBARU & PENGATURAN CEPAT */}
-          <div className="lg:col-span-4 space-y-8">
-
-            {/* CARD 1: AKTIVITAS TERBARU */}
-            <div className="bg-white rounded-[28px] p-6 shadow-sm border border-slate-200/80 space-y-5">
-              <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+          <div className="grid grid-cols-2 gap-2">
+            {[
+              { label: 'Akun', icon: UserIcon },
+              { label: 'Notifikasi', icon: Bell },
+              { label: 'Privasi', icon: Lock },
+              { label: 'Bahasa', icon: Globe },
+            ].map(({ label, icon: Icon }) => (
+              <button
+                key={label}
+                onClick={() => triggerToast(`Pengaturan ${label} dibuka`)}
+                className="flex items-center justify-between p-3 min-h-[44px] rounded-2xl bg-slate-50 hover:bg-slate-100 border border-slate-200/70 text-xs font-bold text-slate-700 transition-all focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
+              >
                 <div className="flex items-center gap-2">
-                  <Sparkles className="w-4 h-4 text-[#0D9488]" />
-                  <h3 className="text-base font-extrabold font-display text-slate-900">Aktivitas Terbaru</h3>
+                  <Icon className="w-3.5 h-3.5 text-slate-500" />
+                  <span>{label}</span>
                 </div>
-                {userActivities.length > 0 && (
-                  <button
-                    onClick={() => setIsActivitiesModalOpen(true)}
-                    className="text-xs font-bold text-[#0D9488] hover:text-[#0F766E] transition-colors"
-                  >
-                    Lihat Semua ({userActivities.length}) &gt;
-                  </button>
-                )}
-              </div>
-
-              {/* Timeline Items */}
-              {userActivities.length === 0 ? (
-                <div className="text-center py-6 text-slate-400 text-xs">
-                  <p>Belum ada aktivitas tercatat.</p>
-                  <p className="text-[10px] text-slate-500 mt-1">Coba simpan rute atau beri ulasan destinasi!</p>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  {userActivities.slice(0, 4).map((act, i) => {
-                    let IconComp = Star;
-                    let colorClass = 'text-amber-500 bg-amber-50';
-                    if (act.iconType === 'heart') {
-                      IconComp = Heart;
-                      colorClass = 'text-red-500 bg-red-50';
-                    } else if (act.iconType === 'map') {
-                      IconComp = Compass;
-                      colorClass = 'text-teal-800 bg-teal-50';
-                    } else if (act.iconType === 'user') {
-                      IconComp = UserIcon;
-                      colorClass = 'text-blue-500 bg-blue-50';
-                    }
-
-                    return (
-                      <div key={act.id || i} className="flex items-start gap-3">
-                        <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${colorClass}`}>
-                          <IconComp className="w-4 h-4" />
-                        </div>
-                        <div className="flex-1 space-y-0.5">
-                          <p className="text-xs font-semibold text-slate-800 leading-snug">{act.title}</p>
-                          <div className="flex items-center justify-between text-[10px] text-slate-400 font-sans">
-                            <span>{act.subtitle || 'Aktivitas Explorer'}</span>
-                            <span>
-                              {new Date(act.createdAt).toLocaleDateString('id-ID', {
-                                day: 'numeric',
-                                month: 'short',
-                              })}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-
-            {/* CARD 2: PENGATURAN CEPAT */}
-            <div className="bg-white rounded-[28px] p-6 shadow-sm border border-slate-200/80 space-y-4">
-              <div className="flex items-center gap-2 border-b border-slate-100 pb-3">
-                <Settings className="w-4 h-4 text-slate-600" />
-                <h3 className="text-sm font-extrabold font-display text-slate-900">Pengaturan Cepat</h3>
-              </div>
-
-              <div className="grid grid-cols-2 gap-2">
-                {[
-                  { label: 'Akun', icon: UserIcon },
-                  { label: 'Notifikasi', icon: Bell },
-                  { label: 'Privasi', icon: Lock },
-                  { label: 'Bahasa', icon: Globe },
-                ].map(({ label, icon: Icon }) => (
-                  <button
-                    key={label}
-                    onClick={() => triggerToast(`Pengaturan ${label} dibuka`)}
-                    className="flex items-center justify-between p-3 min-h-[44px] rounded-2xl bg-slate-50 hover:bg-slate-100 border border-slate-200/70 text-xs font-bold text-slate-700 transition-all focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
-                  >
-                    <div className="flex items-center gap-2">
-                      <Icon className="w-3.5 h-3.5 text-slate-500" />
-                      <span>{label}</span>
-                    </div>
-                    <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
-                  </button>
-                ))}
-              </div>
-
-              {/* Quick Actions - Value Prop */}
-              <div className="pt-2 space-y-2 border-t border-slate-100">
-                <p className="text-[10px] text-slate-500 font-medium">Lanjutkan perjalananmu:</p>
-                <div className="grid grid-cols-2 gap-2">
-                  <Link
-                    to="/planner"
-                    className="flex items-center justify-center gap-2 p-3 min-h-[44px] rounded-2xl bg-[#0D9488] text-white text-xs font-bold shadow-md hover:bg-[#0F766E] transition-all focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
-                  >
-                    <Sparkles className="w-3.5 h-3.5 text-amber-300" />
-                    <span>Buat Rute AI</span>
-                  </Link>
-                  <Link
-                    to="/explore"
-                    className="flex items-center justify-center gap-2 p-3 min-h-[44px] rounded-2xl bg-white border border-slate-200 text-slate-700 text-xs font-bold hover:bg-slate-50 transition-all focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
-                  >
-                    <Compass className="w-3.5 h-3.5 text-[#0D9488]" />
-                    <span>Jelajahi Tempat</span>
-                  </Link>
-                </div>
-              </div>
-
-              {/* Logout Button */}
-              <div className="pt-2">
-                <button
-                  onClick={handleLogout}
-                  className="w-full py-2.5 min-h-[44px] rounded-2xl bg-red-50 hover:bg-red-100 text-red-600 text-xs font-bold transition-all flex items-center justify-center gap-2 focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:outline-none"
-                >
-                  <LogOut className="w-4 h-4" />
-                  <span>Keluar dari Akun</span>
-                </button>
-              </div>
-            </div>
-
+                <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
+              </button>
+            ))}
           </div>
 
+          {/* Quick Actions - Value Prop */}
+          <div className="pt-2 space-y-2 border-t border-slate-100">
+            <p className="text-[10px] text-slate-500 font-medium">Lanjutkan perjalananmu:</p>
+            <div className="grid grid-cols-2 gap-2">
+              <Link
+                to="/planner"
+                className="flex items-center justify-center gap-2 p-3 min-h-[44px] rounded-2xl bg-[#0D9488] text-white text-xs font-bold shadow-md hover:bg-[#0F766E] transition-all focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
+              >
+                <Compass className="w-3.5 h-3.5" />
+                <span>Buat Itinerary</span>
+              </Link>
+              <Link
+                to="/explore"
+                className="flex items-center justify-center gap-2 p-3 min-h-[44px] rounded-2xl bg-white border border-slate-200 text-slate-700 text-xs font-bold hover:bg-slate-50 transition-all focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
+              >
+                <MapPin className="w-3.5 h-3.5 text-[#0D9488]" />
+                <span>Jelajahi Tempat</span>
+              </Link>
+            </div>
+          </div>
+
+          {/* Logout Button */}
+          <div className="pt-2">
+            <button
+              onClick={handleLogout}
+              className="w-full py-2.5 min-h-[44px] rounded-2xl bg-red-50 hover:bg-red-100 text-red-600 text-xs font-bold transition-all flex items-center justify-center gap-2 focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:outline-none"
+            >
+              <LogOut className="w-4 h-4" />
+              <span>Keluar dari Akun</span>
+            </button>
+          </div>
         </div>
 
       </div>
@@ -866,7 +614,7 @@ export const ProfilePage: React.FC = () => {
           ================================================================ */}
       {isEditModalOpen && (
         <div
-          className="fixed inset-0 z-50 glass-modal-backdrop flex items-center justify-center p-4 overflow-y-auto"
+          className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4 overflow-y-auto"
           onClick={() => setIsEditModalOpen(false)}
         >
           <div
@@ -881,133 +629,98 @@ export const ProfilePage: React.FC = () => {
               </div>
               <button
                 onClick={() => setIsEditModalOpen(false)}
-                className="w-11 h-11 min-w-[44px] min-h-[44px] rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 flex items-center justify-center transition-colors focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
-                 aria-label="Tutup modal edit profil"
+                className="p-2 min-w-[44px] min-h-[44px] rounded-xl hover:bg-slate-100 text-slate-500 transition-colors focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
               >
-                <X className="w-4 h-4" />
+                <X className="w-5 h-5" />
               </button>
             </div>
 
-            {/* Form Content */}
             <form onSubmit={handleSaveProfile} className="space-y-5">
-              {/* Avatar Upload Preview */}
-              <div className="flex flex-col items-center justify-center space-y-3">
-                <div className="relative group cursor-pointer" onClick={() => fileInputRef.current?.click()}>
-                  <div className="w-24 h-24 rounded-full overflow-hidden border-4 border-slate-100 shadow-md bg-[#0D9488] text-white flex items-center justify-center font-display font-extrabold text-3xl">
-                    {editAvatarUrl ? (
-                      <SafeImage
-                        key={editAvatarUrl}
-                        src={editAvatarUrl}
-                        alt={`Avatar preview ${editFullName}`}
-                        className="w-full h-full object-cover"
-                        fallbackSrc="/assets/images/mascot/muli-avatar-face.png"
-                      />
-                    ) : null}
-                    <span className="uppercase">{editFullName ? editFullName.charAt(0) : 'U'}</span>
-                  </div>
-                  <div className="absolute inset-0 rounded-full bg-slate-950/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-xs font-bold gap-1">
-                    <Upload className="w-4 h-4" />
-                    <span>Ubah</span>
-                  </div>
+              {/* Avatar Upload */}
+              <div className="flex flex-col items-center space-y-3">
+                <div className="relative">
+                  {editAvatarUrl ? (
+                    <img
+                      src={editAvatarUrl}
+                      alt="Preview Avatar"
+                      className="w-24 h-24 rounded-full object-cover border-4 border-white shadow-lg"
+                    />
+                  ) : (
+                    <div className="w-24 h-24 rounded-full bg-[#0D9488] text-white flex items-center justify-center font-display font-extrabold text-3xl border-4 border-white shadow-lg">
+                      {editFullName ? editFullName.charAt(0).toUpperCase() : 'U'}
+                    </div>
+                  )}
+                  <label
+                    htmlFor="avatar-upload"
+                    className="absolute bottom-0 right-0 w-10 h-10 min-w-[44px] min-h-[44px] rounded-full bg-[#0D9488] hover:bg-[#0F766E] text-white flex items-center justify-center shadow-md hover:scale-110 transition-transform border border-white cursor-pointer focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
+                  >
+                    <Camera className="w-4 h-4" />
+                    <input
+                      id="avatar-upload"
+                      type="file"
+                      accept="image/*"
+                      onChange={handleFileChange}
+                      className="sr-only"
+                      ref={fileInputRef}
+                    />
+                  </label>
                 </div>
+                <p className="text-[10px] text-slate-500 text-center max-w-xs">Klik ikon kamera untuk ganti foto (max 4MB)</p>
+              </div>
 
+              {/* Full Name */}
+              <div className="space-y-1.5">
+                <label htmlFor="fullName" className="text-xs font-bold text-slate-700">Nama Lengkap</label>
                 <input
-                  type="file"
-                  ref={fileInputRef}
-                  onChange={handleFileChange}
-                  accept="image/*"
-                  className="hidden"
+                  id="fullName"
+                  type="text"
+                  value={editFullName}
+                  onChange={(e) => setEditFullName(e.target.value)}
+                  className="w-full px-4 py-3 min-h-[44px] rounded-xl border border-slate-200 text-sm focus:border-[#0D9488] focus:ring-2 focus:ring-[#0D9488]/20 focus-visible:outline-none transition-all"
+                  placeholder="Nama lengkap"
+                  required
                 />
-
-                <button
-                  type="button"
-                  onClick={() => fileInputRef.current?.click()}
-                  className="px-4 py-1.5 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition-all flex items-center gap-1.5"
-                >
-                  <Upload className="w-3.5 h-3.5 text-[#0D9488]" />
-                  <span>Unggah Foto Komputer</span>
-                </button>
-
-                {/* Preset Avatars Selection */}
-                <div className="space-y-1 text-center pt-1">
-                  <p className="text-[10px] text-slate-400 font-semibold">Atau pilih avatar default:</p>
-                  <div className="flex items-center gap-2 justify-center">
-                    {[
-                      'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80',
-                      'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=400&q=80',
-                      'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=400&q=80',
-                      'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=400&q=80',
-                    ].map((presetUrl, idx) => (
-                      <button
-                        type="button"
-                        key={idx}
-                        onClick={() => setEditAvatarUrl(presetUrl)}
-                        className={`w-9 h-9 rounded-full overflow-hidden border-2 transition-all ${
-                          editAvatarUrl === presetUrl ? 'border-[#0D9488] ring-2 ring-[#0D9488]/30 scale-110' : 'border-white opacity-70 hover:opacity-100'
-                        }`}
-                      >
-                        <SafeImage
-                          src={presetUrl}
-                          alt={`Preset avatar ${idx + 1}`}
-                          className="w-full h-full object-cover"
-                          fallbackSrc="/assets/images/mascot/muli-avatar-face.png"
-                        />
-                      </button>
-                    ))}
-                  </div>
-                </div>
               </div>
 
-              {/* Form Input Fields */}
-              <div className="space-y-4">
-                <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-800">Nama Lengkap</label>
-                  <input
-                    type="text"
-                    value={editFullName}
-                    onChange={(e) => setEditFullName(e.target.value)}
-                    required
-                    placeholder="Nama lengkap kamu..."
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 min-h-[44px] text-xs text-slate-900 font-semibold focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none focus:border-[#0D9488]"
-                  />
-                </div>
-
-                <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-800">Bio / Tagline Minat</label>
-                  <input
-                    type="text"
-                    value={editBio}
-                    onChange={(e) => setEditBio(e.target.value)}
-                    placeholder="Misal: Pecinta pantai & wisata budaya Lampung 🌴"
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 min-h-[44px] text-xs text-slate-900 font-semibold focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none focus:border-[#0D9488]"
-                  />
-                </div>
-
-                <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-800">Lokasi / Asal Kota</label>
-                  <input
-                    type="text"
-                    value={editLocation}
-                    onChange={(e) => setEditLocation(e.target.value)}
-                    placeholder="Misal: Bandar Lampung, Indonesia"
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 min-h-[44px] text-xs text-slate-900 font-semibold focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none focus:border-[#0D9488]"
-                  />
-                </div>
+              {/* Bio */}
+              <div className="space-y-1.5">
+                <label htmlFor="bio" className="text-xs font-bold text-slate-700">Bio</label>
+                <textarea
+                  id="bio"
+                  value={editBio}
+                  onChange={(e) => setEditBio(e.target.value)}
+                  rows={3}
+                  className="w-full px-4 py-3 min-h-[44px] rounded-xl border border-slate-200 text-sm focus:border-[#0D9488] focus:ring-2 focus:ring-[#0D9488]/20 focus-visible:outline-none transition-all resize-none"
+                  placeholder="Tulis bio singkat tentang dirimu..."
+                />
               </div>
 
-              {/* Modal Buttons */}
-              <div className="pt-2 flex items-center justify-end gap-3">
+              {/* Location */}
+              <div className="space-y-1.5">
+                <label htmlFor="location" className="text-xs font-bold text-slate-700">Lokasi</label>
+                <input
+                  id="location"
+                  type="text"
+                  value={editLocation}
+                  onChange={(e) => setEditLocation(e.target.value)}
+                  className="w-full px-4 py-3 min-h-[44px] rounded-xl border border-slate-200 text-sm focus:border-[#0D9488] focus:ring-2 focus:ring-[#0D9488]/20 focus-visible:outline-none transition-all"
+                  placeholder="Kota, Provinsi"
+                />
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex items-center justify-end gap-3 pt-2">
                 <button
                   type="button"
                   onClick={() => setIsEditModalOpen(false)}
-                  className="px-5 py-2.5 min-h-[44px] rounded-full border border-slate-300 text-slate-700 text-xs font-bold hover:bg-slate-50 transition-all focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
+                  className="px-5 py-2.5 min-h-[44px] rounded-xl border border-slate-200 text-sm font-bold text-slate-700 hover:bg-slate-100 transition-all focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
                 >
                   Batal
                 </button>
                 <button
                   type="submit"
                   disabled={isSavingProfile}
-                  className="px-6 py-2.5 min-h-[44px] rounded-full bg-[#0D9488] hover:bg-[#0F766E] text-white text-xs font-bold shadow-md shadow-[#0D9488]/20 transition-all flex items-center gap-2 disabled:opacity-50 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
+                  className="px-6 py-2.5 min-h-[44px] rounded-xl bg-[#0D9488] text-white text-sm font-bold shadow-md hover:bg-[#0F766E] disabled:opacity-50 disabled:cursor-not-allowed transition-all focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none flex items-center gap-2"
                 >
                   {isSavingProfile ? (
                     <>
@@ -1015,7 +728,10 @@ export const ProfilePage: React.FC = () => {
                       <span>Menyimpan...</span>
                     </>
                   ) : (
-                    <span>Simpan Perubahan</span>
+                    <>
+                      <Upload className="w-4 h-4" />
+                      <span>Simpan Perubahan</span>
+                    </>
                   )}
                 </button>
               </div>
@@ -1025,112 +741,92 @@ export const ProfilePage: React.FC = () => {
       )}
 
       {/* ================================================================
-          10 AKTIVITAS TERBARU MODAL
+          TRIP DETAIL MODAL
           ================================================================ */}
-      {isActivitiesModalOpen && (
+      {isTripDetailModalOpen && selectedTripForModal && (
         <div
-          className="fixed inset-0 z-50 glass-modal-backdrop flex items-center justify-center p-4 overflow-y-auto"
-          onClick={() => setIsActivitiesModalOpen(false)}
+          className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4 overflow-y-auto"
+          onClick={() => setIsTripDetailModalOpen(false)}
         >
           <div
-            className="bg-white rounded-3xl p-6 sm:p-8 max-w-lg w-full shadow-2xl border border-slate-200 my-auto relative animate-in fade-in zoom-in-95 duration-200 space-y-6"
+            className="bg-white rounded-3xl p-6 sm:p-8 max-w-2xl w-full max-h-[85vh] shadow-2xl border border-slate-200 my-auto relative animate-in fade-in zoom-in-95 duration-200 overflow-y-auto"
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Modal Header */}
-            <div className="flex items-center justify-between border-b border-slate-100 pb-4">
-              <div className="flex items-center gap-2">
-                <Sparkles className="w-5 h-5 text-[#0D9488]" />
-                <div>
-                  <h3 className="text-lg font-extrabold font-display text-slate-900">Riwayat 10 Aktivitas Terbaru</h3>
-                  <p className="text-xs text-slate-500 font-sans">Aktivitas penjelajahan & perolehan XP kamu</p>
+            <div className="flex items-start justify-between border-b border-slate-100 pb-4 mb-4">
+              <div className="space-y-1">
+                <h3 className="text-lg font-extrabold font-display text-slate-900">{selectedTripForModal.title}</h3>
+                <div className="flex items-center gap-3 text-[11px] text-slate-500 font-sans">
+                  <span className="flex items-center gap-1">
+                    <MapPin className="w-3 h-3 text-[#0D9488]" />
+                    <span>Lampung</span>
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <Calendar className="w-3 h-3 text-slate-400" />
+                    <span>{Array.isArray(selectedTripForModal.daysJson) ? `${selectedTripForModal.daysJson.length} Hari` : '3 Hari'}</span>
+                  </span>
                 </div>
               </div>
               <button
-                onClick={() => setIsActivitiesModalOpen(false)}
-                className="w-11 h-11 min-w-[44px] min-h-[44px] rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center transition-colors focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
+                onClick={() => setIsTripDetailModalOpen(false)}
+                className="p-2 min-w-[44px] min-h-[44px] rounded-xl hover:bg-slate-100 text-slate-500 transition-colors focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none shrink-0"
               >
-                <X className="w-4 h-4" />
+                <X className="w-5 h-5" />
               </button>
             </div>
 
-            {/* Activities List (Max 10) */}
-            <div className="space-y-3.5 max-h-[60vh] overflow-y-auto pr-1">
-              {(userActivities.length > 0
-                ? userActivities
-                : [
-                    {
-                      id: 'act-1',
-                      title: 'Menyimpan destinasi Pulau Pahawang ke wishlist',
-                      subtitle: '+15 XP',
-                      iconType: 'heart',
-                      createdAt: new Date().toISOString(),
-                    },
-                    {
-                      id: 'act-2',
-                      title: 'Membuat Rute Perjalanan AI Lampung',
-                      subtitle: '+50 XP',
-                      iconType: 'map',
-                      createdAt: new Date(Date.now() - 3600000 * 2).toISOString(),
-                    },
-                    {
-                      id: 'act-3',
-                      title: 'Memperbarui Foto & Biodata Profil',
-                      subtitle: '+20 XP',
-                      iconType: 'user',
-                      createdAt: new Date(Date.now() - 3600000 * 24).toISOString(),
-                    },
-                    {
-                      id: 'act-4',
-                      title: 'Memberi ulasan destinasi Seruit Lampung',
-                      subtitle: '+30 XP',
-                      iconType: 'star',
-                      createdAt: new Date(Date.now() - 3600000 * 48).toISOString(),
-                    },
-                  ]
-              ).map((act, i) => {
-                let IconComp = Star;
-                let colorClass = 'text-amber-500 bg-amber-50';
-                if (act.iconType === 'heart') {
-                  IconComp = Heart;
-                  colorClass = 'text-red-500 bg-red-50';
-                } else if (act.iconType === 'map') {
-                  IconComp = Compass;
-                  colorClass = 'text-teal-800 bg-teal-50';
-                } else if (act.iconType === 'user') {
-                  IconComp = UserIcon;
-                  colorClass = 'text-blue-500 bg-blue-50';
-                }
-
-                return (
-                  <div key={act.id || i} className="flex items-start gap-3 p-3 rounded-2xl bg-slate-50 border border-slate-100">
-                    <div className={`w-9 h-9 rounded-full flex items-center justify-center shrink-0 ${colorClass}`}>
-                      <IconComp className="w-4 h-4" />
-                    </div>
-                    <div className="flex-1 space-y-0.5">
-                      <p className="text-xs font-bold text-slate-800 leading-snug">{act.title}</p>
-                      <div className="flex items-center justify-between text-[10px] text-slate-400 font-sans">
-                        <span className="font-semibold text-teal-700">{act.subtitle || 'Aktivitas Explorer'}</span>
-                        <span>
-                          {new Date(act.createdAt).toLocaleString('id-ID', {
-                            day: 'numeric',
-                            month: 'short',
-                            hour: '2-digit',
-                            minute: '2-digit',
-                          })}
-                        </span>
-                      </div>
+            <div className="space-y-4">
+              {Array.isArray(selectedTripForModal.daysJson) ? (
+                selectedTripForModal.daysJson.map((day: any, dayIndex: number) => (
+                  <div key={dayIndex} className="space-y-3 border border-slate-200 rounded-2xl p-4">
+                    <h4 className="text-sm font-bold font-display text-slate-900 flex items-center gap-2">
+                      <span className="w-6 h-6 rounded-full bg-[#0D9488]/10 text-[#0D9488] text-[11px] font-extrabold flex items-center justify-center">
+                        {dayIndex + 1}
+                      </span>
+                      Hari {dayIndex + 1}: {day.title || 'Jelajahi Lampung'}
+                    </h4>
+                    <div className="space-y-2 pl-7 border-l border-slate-200/50">
+                      {day.activities?.map((activity: any, actIndex: number) => (
+                        <div key={actIndex} className="flex items-start gap-3 pb-2 last:pb-0">
+                          <div className="w-1.5 h-1.5 rounded-full bg-[#0D9488] mt-2 shrink-0" />
+                          <div className="space-y-0.5 flex-1">
+                            <p className="text-sm font-medium text-slate-800">{activity.name || activity}</p>
+                            <p className="text-[10px] text-slate-400 flex items-center gap-1">
+                              <span>{activity.startTime || '08:00'} - {activity.endTime || '10:00'}</span>
+                              {activity.location && (
+                                <>
+                                  <MapPin className="w-2.5 h-2.5" />
+                                  <span>{activity.location}</span>
+                                </>
+                              )}
+                            </p>
+                          </div>
+                        </div>
+                      ))}
                     </div>
                   </div>
-                );
-              })}
+                ))
+              ) : (
+                <p className="text-sm text-slate-500 text-center py-8">Detail itinerary tidak tersedia</p>
+              )}
             </div>
 
-            <div className="pt-2 border-t border-slate-100 flex justify-end">
+            <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-100">
               <button
-                onClick={() => setIsActivitiesModalOpen(false)}
-                className="px-5 py-2.5 min-h-[44px] rounded-full bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold transition-all focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
+                onClick={() => {
+                  navigator.clipboard.writeText(`${window.location.origin}/share/${selectedTripForModal.shareToken}`);
+                  triggerToast('Link rute perjalanan berhasil disalin!');
+                }}
+                className="px-4 py-2.5 min-h-[44px] rounded-xl border border-slate-200 text-sm font-bold text-slate-700 hover:bg-slate-100 transition-all focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none flex items-center gap-2"
               >
-                Tutup
+                <Share2 className="w-4 h-4" />
+                <span>Bagikan Link</span>
+              </button>
+              <button
+                onClick={() => handleDeleteTrip(selectedTripForModal.id, selectedTripForModal.title)}
+                className="px-4 py-2.5 min-h-[44px] rounded-xl bg-red-50 text-red-600 text-sm font-bold hover:bg-red-100 transition-all focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:outline-none flex items-center gap-2"
+              >
+                <Trash2 className="w-4 h-4" />
+                <span>Hapus</span>
               </button>
             </div>
           </div>
@@ -1138,104 +834,76 @@ export const ProfilePage: React.FC = () => {
       )}
 
       {/* ================================================================
-          FULL ITINERARY ROUTE DETAIL MODAL
+          ACTIVITIES MODAL
           ================================================================ */}
-      {isTripDetailModalOpen && selectedTripForModal && (
+      {isActivitiesModalOpen && (
         <div
-          className="fixed inset-0 z-50 glass-modal-backdrop flex items-center justify-center p-4 overflow-y-auto"
-          onClick={() => setIsTripDetailModalOpen(false)}
+          className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4 overflow-y-auto"
+          onClick={() => setIsActivitiesModalOpen(false)}
         >
           <div
-            className="bg-white rounded-3xl p-6 sm:p-8 max-w-2xl w-full shadow-2xl border border-slate-200 my-auto relative animate-in fade-in zoom-in-95 duration-200 space-y-6"
+            className="bg-white rounded-3xl p-6 sm:p-8 max-w-lg w-full max-h-[85vh] shadow-2xl border border-slate-200 my-auto relative animate-in fade-in zoom-in-95 duration-200 overflow-y-auto"
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Modal Header */}
-            <div className="flex items-center justify-between border-b border-slate-100 pb-4">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-teal-50 text-[#0D9488] flex items-center justify-center font-bold">
-                  <Compass className="w-5 h-5" />
-                </div>
-                <div>
-                  <h3 className="text-lg font-extrabold font-display text-slate-900">{selectedTripForModal.title}</h3>
-                  <p className="text-xs text-slate-500 font-sans">
-                    Dibuat pada {new Date(selectedTripForModal.createdAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}
-                  </p>
-                </div>
+            <div className="flex items-center justify-between border-b border-slate-100 pb-4 mb-4">
+              <div className="flex items-center gap-2">
+                <MessageSquare className="w-5 h-5 text-[#0D9488]" />
+                <h3 className="text-lg font-extrabold font-display text-slate-900">Semua Aktivitas</h3>
               </div>
               <button
-                onClick={() => setIsTripDetailModalOpen(false)}
-                className="w-11 h-11 min-w-[44px] min-h-[44px] rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center transition-colors focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
+                onClick={() => setIsActivitiesModalOpen(false)}
+                className="p-2 min-w-[44px] min-h-[44px] rounded-xl hover:bg-slate-100 text-slate-500 transition-colors focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
               >
-                <X className="w-4 h-4" />
+                <X className="w-5 h-5" />
               </button>
             </div>
 
-            {/* Days Schedule List */}
-            <div className="space-y-6 max-h-[60vh] overflow-y-auto pr-2">
-              {Array.isArray(selectedTripForModal.daysJson) && selectedTripForModal.daysJson.length > 0 ? (
-                selectedTripForModal.daysJson.map((dayData: any, dayIdx: number) => (
-                  <div key={dayIdx} className="space-y-3">
-                    <div className="flex items-center gap-2 pb-1 border-b border-teal-100">
-                      <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-[#0D9488] text-white">
-                        Hari {dayData.day || dayIdx + 1}
-                      </span>
-                      <h4 className="text-xs font-bold text-slate-800">
-                        {dayData.title || `Jadwal Hari Ke-${dayIdx + 1}`}
-                      </h4>
-                    </div>
+            {userActivities.length === 0 ? (
+              <div className="text-center py-12 text-slate-400 text-sm">
+                Belum ada aktivitas tercatat.
+              </div>
+            ) : (
+              <div className="space-y-3 max-h-[60vh] overflow-y-auto pr-2">
+                {userActivities.map((act, i) => {
+                  let IconComp = Compass;
+                  let colorClass = 'text-teal-800 bg-teal-50';
+                  if (act.iconType === 'heart') {
+                    IconComp = Heart;
+                    colorClass = 'text-red-500 bg-red-50';
+                  } else if (act.iconType === 'star') {
+                    IconComp = MessageSquare;
+                    colorClass = 'text-amber-500 bg-amber-50';
+                  } else if (act.iconType === 'user') {
+                    IconComp = UserIcon;
+                    colorClass = 'text-blue-500 bg-blue-50';
+                  }
 
-                    <div className="space-y-2 pl-2 border-l-2 border-teal-200">
-                      {(dayData.slots || dayData.destinations || []).map((slot: any, slotIdx: number) => (
-                        <div key={slotIdx} className="p-3 rounded-2xl bg-slate-50 border border-slate-100 space-y-1">
-                          <div className="flex items-center justify-between">
-                            <h5 className="text-xs font-bold text-slate-900">{slot.name || slot.title || `Destinasi ${slotIdx + 1}`}</h5>
-                            {slot.time && (
-                              <span className="text-[10px] font-mono font-semibold text-teal-700 bg-teal-50 px-2 py-0.5 rounded-full">
-                                ⏱ {slot.time}
-                              </span>
-                            )}
-                          </div>
-                          {slot.description && (
-                            <p className="text-[11px] text-slate-600 font-sans leading-relaxed">{slot.description}</p>
-                          )}
-                          {slot.estimated_cost && (
-                            <p className="text-[10px] text-amber-700 font-bold">Estimasi Tiket: {slot.estimated_cost}</p>
-                          )}
+                  return (
+                    <div key={act.id || i} className="flex items-start gap-3 p-3 rounded-xl hover:bg-slate-50 transition-colors">
+                      <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${colorClass}`}>
+                        <IconComp className="w-5 h-5" />
+                      </div>
+                      <div className="flex-1 space-y-1">
+                        <p className="text-sm font-semibold text-slate-800 leading-snug">{act.title}</p>
+                        <p className="text-xs text-slate-500">{act.subtitle || 'Aktivitas Explorer'}</p>
+                        <div className="flex items-center gap-2 text-[10px] text-slate-400">
+                          <span>{new Date(act.createdAt).toLocaleDateString('id-ID', {
+                            day: 'numeric',
+                            month: 'short',
+                            year: 'numeric',
+                          })}</span>
                         </div>
-                      ))}
+                      </div>
                     </div>
-                  </div>
-                ))
-              ) : (
-                <div className="p-6 text-center text-xs text-slate-500">
-                  Detail rute itinerary tersedia di link bagikan.
-                </div>
-              )}
-            </div>
-
-            {/* Modal Actions */}
-            <div className="pt-3 border-t border-slate-100 flex items-center justify-between">
-              <button
-                onClick={() => {
-                  navigator.clipboard.writeText(`${window.location.origin}/share/${selectedTripForModal.shareToken}`);
-                  triggerToast('Link rute perjalanan berhasil disalin!');
-                }}
-                className="px-4 py-2.5 min-h-[44px] rounded-full border border-teal-300 text-[#0D9488] hover:bg-teal-50 text-xs font-bold transition-all flex items-center gap-1.5 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
-              >
-                <Share2 className="w-3.5 h-3.5" />
-                <span>Bagikan Rute</span>
-              </button>
-
-              <button
-                onClick={() => setIsTripDetailModalOpen(false)}
-                className="px-5 py-2.5 min-h-[44px] rounded-full bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold transition-all focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
-              >
-                Tutup
-              </button>
-            </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
         </div>
       )}
     </div>
   );
 };
+
+export default ProfilePage;
