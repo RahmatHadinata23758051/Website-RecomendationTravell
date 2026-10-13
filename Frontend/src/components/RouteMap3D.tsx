@@ -1,7 +1,8 @@
 import React, { useEffect, useRef, useState } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import { MapPin, Layers, Maximize2, Car } from 'lucide-react';
+import { MapPin, Layers, Maximize2, Car, Route as RouteIcon } from 'lucide-react';
+import { fetchRealRoadRoute, FullRouteResult } from '../services/osrmRouting';
 
 export interface RouteSlot {
   time: string;
@@ -32,7 +33,6 @@ const applyJitter = (coords: [number, number][], minDist = 0.0008): [number, num
       const [lat2, lng2] = result[j];
       const dist = Math.sqrt((lat1 - lat2) ** 2 + (lng1 - lng2) ** 2);
       if (dist < minDist) {
-        // Geser j secara halus
         const angle = Math.atan2(lng2 - lng1, lat2 - lat1);
         result[j] = [
           lat2 + Math.cos(angle) * minDist * 1.5,
@@ -44,27 +44,13 @@ const applyJitter = (coords: [number, number][], minDist = 0.0008): [number, num
   return result;
 };
 
-// Hitung jarak haversine (km) antara dua titik
-const haversineKm = (a: [number, number], b: [number, number]): number => {
-  const R = 6371;
-  const [lat1, lon1] = a.map((x) => (x * Math.PI) / 180);
-  const [lat2, lon2] = b.map((x) => (x * Math.PI) / 180);
-  const dLat = lat2 - lat1;
-  const dLon = lon2 - lon1;
-  const h = Math.sin(dLat / 2) ** 2 + Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLon / 2) ** 2;
-  return R * 2 * Math.asin(Math.sqrt(h));
-};
-
-// Format estimasi perjalanan motor/mobil (avg 40 km/jam di jalan kota/desa)
-const formatTravel = (km: number): string => {
-  const minutes = Math.round((km / 40) * 60);
+const formatMinutes = (minutes: number): string => {
   if (minutes < 60) return `${minutes} min`;
   const h = Math.floor(minutes / 60);
   const m = minutes % 60;
   return m > 0 ? `${h} j ${m} min` : `${h} jam`;
 };
 
-// Warna per kategori untuk pin & badge popup
 const categoryColors: Record<string, { bg: string; text: string; ring: string }> = {
   Pantai: { bg: '#0ea5e9', text: '#fff', ring: '#38bdf8' },
   Alam: { bg: '#22c55e', text: '#fff', ring: '#4ade80' },
@@ -90,6 +76,8 @@ export const RouteMap3D: React.FC<RouteMap3DProps> = ({
 
   const [activeLayer, setActiveLayer] = useState<'street' | 'satellite'>('street');
   const [showDistanceLabels, setShowDistanceLabels] = useState(true);
+  const [routeResult, setRouteResult] = useState<FullRouteResult | null>(null);
+  const [isLoadingRoute, setIsLoadingRoute] = useState(false);
 
   const fitBoundsToSlots = () => {
     const map = leafletMapRef.current;
@@ -126,38 +114,56 @@ export const RouteMap3D: React.FC<RouteMap3DProps> = ({
         zoomControl: false,
       });
 
-      // Street layer (OSM)
       const streetLayer = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
         maxZoom: 19,
       });
 
-      // Satellite layer (ESRI World Imagery - free, no key)
       const satelliteLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-        attribution: '&copy; Esri &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+        attribution: '&copy; Esri',
         maxZoom: 19,
       });
 
-      // Default to street
       streetLayer.addTo(map);
 
       L.control.zoom({ position: 'topright' }).addTo(map);
       leafletMapRef.current = map;
 
-      // Store layers on map for toggling
       (map as any)._streetLayer = streetLayer;
       (map as any)._satelliteLayer = satelliteLayer;
     }
   }, []);
 
-  // Update Markers, Polyline & Distance Labels when slots or regency change
+  // Fetch real road route from OSRM whenever valid slots change
+  useEffect(() => {
+    let cancelled = false;
+    const validSlots = slots.filter(
+      (s) => s.coords && Array.isArray(s.coords) && s.coords.length === 2 && !isNaN(s.coords[0]) && !isNaN(s.coords[1])
+    );
+    if (validSlots.length < 2) {
+      setRouteResult(null);
+      return;
+    }
+    const originalCoords = validSlots.map((s) => s.coords);
+    setIsLoadingRoute(true);
+    fetchRealRoadRoute(originalCoords).then((result) => {
+      if (!cancelled) {
+        setRouteResult(result);
+        setIsLoadingRoute(false);
+      }
+    }).catch(() => {
+      if (!cancelled) setIsLoadingRoute(false);
+    });
+    return () => { cancelled = true; };
+  }, [slots]);
+
+  // Update Markers, Polyline & Distance Labels
   useEffect(() => {
     const map = leafletMapRef.current;
     if (!map) return;
 
     setTimeout(() => map.invalidateSize(), 100);
 
-    // Clear old markers, polyline & distance labels
     markersRef.current.forEach((m) => m.remove());
     markersRef.current = [];
 
@@ -174,16 +180,17 @@ export const RouteMap3D: React.FC<RouteMap3DProps> = ({
 
     if (validSlots.length === 0) return;
 
-    // Apply jitter to prevent overlapping pins
     const originalCoords = validSlots.map((s) => s.coords);
     const jitteredCoords = applyJitter(originalCoords);
 
-    // Draw Polyline Route Line (using original coords for accuracy)
-    const routeLine = L.polyline(originalCoords, {
+    // Draw Polyline (real road geometry if available from OSRM, else fallback)
+    const geometry = routeResult?.fullGeometry?.length ? routeResult.fullGeometry : originalCoords;
+    const isReal = Boolean(routeResult?.isRealRoad);
+    const routeLine = L.polyline(geometry, {
       color: '#0D9488',
-      weight: 4,
-      opacity: 0.85,
-      dashArray: '10, 6',
+      weight: isReal ? 5 : 4,
+      opacity: 0.9,
+      dashArray: isReal ? undefined : '10, 6', // Solid line for real roads, dashed for haversine
       lineCap: 'round',
       lineJoin: 'round',
     }).addTo(map);
@@ -191,14 +198,12 @@ export const RouteMap3D: React.FC<RouteMap3DProps> = ({
     polylineRef.current = routeLine;
 
     // Add Distance Labels on each segment
-    if (showDistanceLabels && originalCoords.length >= 2) {
-      originalCoords.forEach((coord, i) => {
-        if (i === originalCoords.length - 1) return;
-        const next = originalCoords[i + 1];
-        const midLat = (coord[0] + next[0]) / 2;
-        const midLng = (coord[1] + next[1]) / 2;
-        const km = haversineKm(coord, next);
-        const label = formatTravel(km);
+    if (showDistanceLabels && routeResult?.segments && routeResult.segments.length > 0) {
+      routeResult.segments.forEach((seg, i) => {
+        const segPoints = seg.coordinates.length > 0 ? seg.coordinates : [originalCoords[i], originalCoords[i + 1]];
+        const midIdx = Math.floor(segPoints.length / 2);
+        const midPoint = segPoints[midIdx] || segPoints[0];
+        const label = `${formatMinutes(seg.durationMinutes)} · ${seg.distanceKm.toFixed(1)} km`;
 
         const labelIcon = L.divIcon({
           className: 'route-distance-label',
@@ -206,23 +211,24 @@ export const RouteMap3D: React.FC<RouteMap3DProps> = ({
             <div style="
               background: rgba(13, 148, 136, 0.95);
               color: white;
-              padding: 2px 6px;
+              padding: 2px 7px;
               border-radius: 999px;
               font-size: 10px;
-              font-weight: 700;
+              font-weight: 800;
               font-family: system-ui, sans-serif;
               white-space: nowrap;
               box-shadow: 0 2px 8px rgba(13, 148, 136, 0.35);
               border: 1px solid rgba(255,255,255,0.3);
+              backdrop-filter: blur(4px);
             ">
-              ${label} · ${km.toFixed(1)} km
+              ${label}
             </div>
           `,
           iconSize: [80, 20],
           iconAnchor: [40, 10],
         });
 
-        const labelMarker = L.marker([midLat, midLng], { icon: labelIcon, interactive: false }).addTo(map);
+        const labelMarker = L.marker(midPoint, { icon: labelIcon, interactive: false }).addTo(map);
         distanceLabelsRef.current.push(labelMarker);
       });
     }
@@ -232,8 +238,6 @@ export const RouteMap3D: React.FC<RouteMap3DProps> = ({
       const isSelected = selectedSlotIndex === index;
       const waypointNumber = index + 1;
       const catColor = getCatColor(slot.category);
-
-      // Use jittered coords for marker position
       const [markerLat, markerLng] = jitteredCoords[index];
 
       const customIcon = L.divIcon({
@@ -278,33 +282,12 @@ export const RouteMap3D: React.FC<RouteMap3DProps> = ({
               margin-top: -3px;
               filter: drop-shadow(0 2px 2px rgba(0,0,0,0.15));
             "></div>
-            ${isSelected ? `
-              <div style="
-                position: absolute;
-                top: -4px;
-                left: 50%;
-                transform: translateX(-50%);
-                width: 14px;
-                height: 14px;
-                border-radius: 50%;
-                background: ${catColor.bg};
-                border: 2px solid white;
-                animation: pulse-ring 1.5s ease-out infinite;
-              "></div>
-            ` : ''}
           </div>
-          <style>
-            @keyframes pulse-ring {
-              0% { transform: translateX(-50%) scale(1); opacity: 0.6; }
-              100% { transform: translateX(-50%) scale(2.5); opacity: 0; }
-            }
-          </style>
         `,
         iconSize: [36, 44],
         iconAnchor: [18, 44],
       });
 
-      // Build rich popup content with fallback image
       const popupContent = buildPopupContent(slot, waypointNumber, catColor);
 
       const marker = L.marker([markerLat, markerLng], { icon: customIcon })
@@ -324,12 +307,11 @@ export const RouteMap3D: React.FC<RouteMap3DProps> = ({
       markersRef.current.push(marker);
     });
 
-    // Fit bounds using jittered coords so all pins visible
     const bounds = L.latLngBounds(jitteredCoords);
     if (bounds.isValid()) {
       map.fitBounds(bounds, { padding: [60, 60], maxZoom: 14 });
     }
-  }, [slots, regencyName, showDistanceLabels]);
+  }, [slots, regencyName, showDistanceLabels, routeResult]);
 
   // Smooth FlyTo animation when selectedSlotIndex changes
   useEffect(() => {
@@ -345,7 +327,6 @@ export const RouteMap3D: React.FC<RouteMap3DProps> = ({
     }
   }, [selectedSlotIndex, slots]);
 
-  // Layer toggle handler
   const toggleLayer = (layer: 'street' | 'satellite') => {
     const map = leafletMapRef.current;
     if (!map) return;
@@ -365,15 +346,26 @@ export const RouteMap3D: React.FC<RouteMap3DProps> = ({
       {/* Header Controls */}
       <div className="absolute top-3 left-3 right-3 z-20 flex items-center justify-between gap-2 pointer-events-none">
         
-        {/* Left: Regency Badge */}
-        <div className="pointer-events-auto flex items-center gap-1.5 bg-white/95 backdrop-blur-md px-3 py-1.5 rounded-full shadow-md border border-slate-200/80 text-xs font-bold text-slate-800 truncate max-w-[200px] sm:max-w-none">
-          <MapPin className="w-3.5 h-3.5 text-[#0D9488] shrink-0" />
-          <span className="truncate">{regencyName}</span>
+        {/* Left: Regency Badge + Route Summary */}
+        <div className="pointer-events-auto flex items-center gap-2">
+          <div className="flex items-center gap-1.5 bg-white/95 backdrop-blur-md px-3 py-1.5 rounded-full shadow-md border border-slate-200/80 text-xs font-bold text-slate-800 truncate max-w-[180px] sm:max-w-none">
+            <MapPin className="w-3.5 h-3.5 text-[#0D9488] shrink-0" />
+            <span className="truncate">{regencyName}</span>
+          </div>
+
+          {routeResult && routeResult.totalDistanceKm > 0 && (
+            <div className="hidden sm:flex items-center gap-1.5 bg-white/95 backdrop-blur-md px-3 py-1.5 rounded-full shadow-md border border-slate-200/80 text-xs font-bold text-teal-800">
+              <RouteIcon className="w-3.5 h-3.5 text-[#0D9488]" />
+              <span>{routeResult.totalDistanceKm} km · ~{formatMinutes(routeResult.totalDurationMinutes)}</span>
+              {routeResult.isRealRoad && (
+                <span className="ml-1 text-[10px] font-extrabold uppercase bg-teal-100 text-[#0D9488] px-1.5 py-0.2 rounded">Jalan</span>
+              )}
+            </div>
+          )}
         </div>
 
-        {/* Right: Layer Toggle + Recenter */}
+        {/* Right: Layer Toggle + Distance Toggle + Recenter */}
         <div className="pointer-events-auto flex items-center gap-1.5">
-          {/* Map Layer Selector */}
           <div className="flex items-center gap-1 bg-white/95 backdrop-blur-md p-1 rounded-full shadow-md border border-slate-200">
             <button
               type="button"
@@ -403,7 +395,6 @@ export const RouteMap3D: React.FC<RouteMap3DProps> = ({
             </button>
           </div>
 
-          {/* Distance Labels Toggle */}
           <button
             type="button"
             onClick={() => setShowDistanceLabels((p) => !p)}
@@ -417,7 +408,6 @@ export const RouteMap3D: React.FC<RouteMap3DProps> = ({
             <Car className="w-4 h-4" />
           </button>
 
-          {/* Recenter Button */}
           <button
             type="button"
             onClick={fitBoundsToSlots}
@@ -430,22 +420,22 @@ export const RouteMap3D: React.FC<RouteMap3DProps> = ({
       </div>
 
       {/* Map Canvas */}
-      <div
-        ref={mapRef}
-        className="w-full h-full z-10"
-      />
+      <div ref={mapRef} className="w-full h-full z-10" />
 
       {/* Subtle Legend Hint */}
       <div className="absolute bottom-3 left-3 right-3 z-20 pointer-events-none">
-        <div className="pointer-events-auto mx-auto max-w-xs bg-white/90 backdrop-blur-md rounded-full px-3 py-1.5 shadow-md border border-slate-200/80 text-[10px] font-medium text-slate-600 text-center">
-          Klik pin untuk detail · Pin warna = kategori wisata
+        <div className="pointer-events-auto mx-auto max-w-sm bg-white/90 backdrop-blur-md rounded-full px-3 py-1.5 shadow-md border border-slate-200/80 text-[10px] font-medium text-slate-600 text-center flex items-center justify-center gap-2">
+          <span>Klik pin untuk detail</span>
+          <span>&bull;</span>
+          <span className="font-semibold text-teal-800">
+            {isLoadingRoute ? 'Menghitung rute jalan...' : routeResult?.isRealRoad ? 'Rute mengikuti jalan raya nyata' : 'Rute lurus langsung'}
+          </span>
         </div>
       </div>
     </div>
   );
 };
 
-// Build rich popup with image fallback, category badge, location, time, cost
 function buildPopupContent(slot: RouteSlot, waypointNumber: number, catColor: { bg: string; text: string; ring: string }): string {
   const fallbackImg = '/assets/images/heroes/hero-pahawang-bg.png';
   const safeImage = slot.image && slot.image.trim() !== '' ? slot.image : fallbackImg;
@@ -461,7 +451,6 @@ function buildPopupContent(slot: RouteSlot, waypointNumber: number, catColor: { 
       overflow: hidden;
       box-shadow: 0 12px 32px rgba(15, 23, 42, 0.18);
     ">
-      <!-- Image with error fallback -->
       <div style="
         position: relative;
         width: 100%;
@@ -480,7 +469,6 @@ function buildPopupContent(slot: RouteSlot, waypointNumber: number, catColor: { 
           "
           onerror="this.onerror=null; this.src='${fallbackImg}'; this.style.filter='grayscale(0.3)';"
         />
-        <!-- Category badge on image -->
         <div style="
           position: absolute;
           top: 10px;
@@ -497,7 +485,6 @@ function buildPopupContent(slot: RouteSlot, waypointNumber: number, catColor: { 
         ">
           ${slot.category}
         </div>
-        <!-- Stop number badge -->
         <div style="
           position: absolute;
           top: 10px;
@@ -519,7 +506,6 @@ function buildPopupContent(slot: RouteSlot, waypointNumber: number, catColor: { 
         </div>
       </div>
       
-      <!-- Content -->
       <div style="padding: 14px 14px 12px; display: flex; flex-direction: column; gap: 8px;">
         <div style="font-size: 13px; font-weight: 800; color: #0F172A; line-height: 1.3;">
           ${slot.activityTitle}
