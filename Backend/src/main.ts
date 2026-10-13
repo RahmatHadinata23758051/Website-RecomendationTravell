@@ -25,13 +25,23 @@ async function bootstrap() {
       ? process.env.ALLOWED_ORIGINS.split(',')
       : [
           'http://localhost:3000',
+          'http://localhost:3001',
           'http://localhost:5173',
           'http://127.0.0.1:3000',
+          'http://127.0.0.1:3001',
           'http://127.0.0.1:5173',
         ],
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Access-Control-Request-Private-Network'],
+  });
+
+  // Handle Chrome Local Network Access (PNA) preflight
+  app.use((req, res, next) => {
+    if (req.headers['access-control-request-private-network']) {
+      res.setHeader('Access-Control-Allow-Private-Network', 'true');
+    }
+    next();
   });
 
   // Global Input Validation Pipe

@@ -47,4 +47,27 @@
     -webkit-backdrop-filter: blur(12px);
     background: rgba(15, 23, 42, 0.55);
   }
+
+  /* Leaflet route map: let the popup content own its visual treatment. */
+  .custom-route-popup .leaflet-popup-content-wrapper {
+    padding: 0;
+    overflow: hidden;
+    border: 1px solid rgba(226, 232, 240, 0.95);
+    border-radius: 16px;
+    box-shadow: 0 16px 40px rgba(15, 23, 42, 0.2);
+  }
+
+  .custom-route-popup .leaflet-popup-content {
+    width: auto !important;
+    margin: 0;
+  }
+
+  .custom-route-popup .leaflet-popup-tip {
+    box-shadow: 4px 4px 12px rgba(15, 23, 42, 0.12);
+  }
+
+  .route-distance-label {
+    background: transparent;
+    border: 0;
+  }
 }
