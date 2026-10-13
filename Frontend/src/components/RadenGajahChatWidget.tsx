@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import {
   X,
   Send,
-  Sparkles,
+  RefreshCw,
   RotateCcw,
   ExternalLink,
   MapPin,
@@ -48,8 +48,8 @@ export const RadenGajahChatWidget: React.FC = () => {
     id: 'msg-welcome',
     sender: 'bot',
     text: isAuthenticated
-      ? 'Tabik Pun! Selamat datang kembali. Saya Muli, AI Concierge Kelana Lampung. Dengan login, Muli akses preferensi & itinerary tersimpan untuk saran lebih personal. Ada yang bisa dibantu?'
-      : 'Tabik Pun! Saya Muli, AI Concierge Wisata Lampung. Mode Publik — tanya pantai, kuliner, estimasi biaya, atau tips liburan. Login untuk fitur perencanaan personal & itinerary tersimpan.',
+      ? 'Tabik Pun! Selamat datang kembali. Saya asisten KelanaLampung. Dengan login, saya akses preferensi dan itinerary tersimpan kamu untuk saran lebih personal. Ada yang bisa dibantu?'
+      : 'Tabik Pun! Saya asisten wisata KelanaLampung. Mode Publik — tanya pantai, kuliner, estimasi biaya, atau tips liburan. Login untuk perencanaan personal dan itinerary tersimpan.',
     timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
   };
 
@@ -130,7 +130,7 @@ export const RadenGajahChatWidget: React.FC = () => {
       setMessages((prev) => [...prev, botMsg]);
     } catch (err) {
       setErrorMessage(
-        getApiErrorMessage(err, 'Layanan AI Muli sedang tidak tersedia. Silakan coba lagi.'),
+        getApiErrorMessage(err, 'Layanan asisten wisata sedang tidak tersedia. Silakan coba lagi.'),
       );
     } finally {
       setIsLoading(false);
@@ -144,12 +144,12 @@ export const RadenGajahChatWidget: React.FC = () => {
 
   return (
     <div className="fixed bottom-3 right-3 z-50 max-w-[calc(100vw-1.5rem)] font-sans sm:bottom-6 sm:right-6">
-      {/* ------------------ PREMIUM CS FLOATING TOGGLE BUTTON ------------------ */}
+      {/* ------------------ FLOATING CHAT BUTTON ------------------ */}
       {!isOpen && (
         <button
           onClick={() => setIsOpen(true)}
-          className="group relative flex items-center gap-3 rounded-full bg-gradient-to-r from-[#0F766E] via-[#0D9488] to-[#047857] p-2 pr-4 text-white shadow-2xl transition-all duration-300 hover:scale-105 hover:shadow-teal-900/40 active:scale-95"
-          aria-label="Buka Chatbot Muli AI Concierge Lampung"
+          className="group relative flex items-center gap-3 rounded-full bg-[#0F766E] p-2 pr-4 text-white shadow-xl transition-all duration-300 hover:scale-105 hover:shadow-teal-900/40 active:scale-95"
+          aria-label="Buka Asisten Wisata KelanaLampung"
         >
           {/* Online Pulsing Indicator */}
           <span className="absolute -left-1 -top-1 flex h-4 w-4">
@@ -157,17 +157,17 @@ export const RadenGajahChatWidget: React.FC = () => {
             <span className="relative inline-flex h-4 w-4 rounded-full bg-emerald-500 border-2 border-white"></span>
           </span>
 
-          {/* Muli Mascot CS Avatar Badge (Ultra HD Face Crop) */}
+          {/* Chatbot avatar badge */}
           <div className="relative flex h-11 w-11 items-center justify-center overflow-hidden rounded-full border-2 border-amber-300 bg-[#FFFDF8] shadow-md">
             <img
               src="/assets/images/mascot/muli-avatar-face.png"
-              alt="Muli AI CS Lampung"
+              alt="Asisten Wisata Lampung"
               className="h-full w-full object-cover"
             />
           </div>
 
           <span className="font-display text-sm font-extrabold text-white leading-tight hidden sm:block">
-            Tanya Muli AI
+            Tanya Asisten
           </span>
         </button>
       )}
@@ -176,19 +176,19 @@ export const RadenGajahChatWidget: React.FC = () => {
       {isOpen && (
         <div className="flex h-[min(580px,85vh)] w-[calc(100vw-1.5rem)] sm:w-[380px] max-w-[420px] flex-col overflow-hidden rounded-3xl border border-slate-200/80 bg-white shadow-2xl transition-all duration-300">
           {/* CS HEADER - Clean & Minimal */}
-          <div className="flex items-center justify-between border-b border-slate-200/80 bg-gradient-to-r from-[#0F766E] via-[#0D9488] to-[#047857] px-4 py-3 text-white shadow-sm">
+          <div className="flex items-center justify-between border-b border-slate-200/80 bg-[#0F766E] px-4 py-3 text-white shadow-sm">
             <div className="flex items-center gap-2.5">
               <div className="relative flex h-9 w-9 items-center justify-center overflow-hidden rounded-full border-2 border-amber-300 bg-[#FFFDF8] shadow-md">
                 <img
                   src="/assets/images/mascot/muli-avatar-face.png"
-                  alt="Muli AI CS"
+                  alt="Asisten Wisata Lampung"
                   className="h-full w-full object-cover"
                 />
                 <span className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full border-2 border-white bg-emerald-500"></span>
               </div>
               <div>
                 <h3 className="font-display text-sm font-extrabold text-white leading-tight">
-                  Muli AI Concierge
+                  Asisten KelanaLampung
                 </h3>
                 <p className="text-[10px] font-medium text-emerald-100 flex items-center gap-1">
                   <Headphones className="h-2.5 w-2.5 text-amber-300 inline" />
@@ -227,7 +227,7 @@ export const RadenGajahChatWidget: React.FC = () => {
                   <div className="h-9 w-9 shrink-0 overflow-hidden rounded-full border-2 border-amber-300 bg-[#FFFDF8] shadow-sm mt-0.5">
                     <img
                       src="/assets/images/mascot/muli-avatar-face.png"
-                      alt="Muli"
+                      alt="Asisten Wisata Lampung"
                       className="h-full w-full object-cover"
                     />
                   </div>
@@ -283,13 +283,13 @@ export const RadenGajahChatWidget: React.FC = () => {
                 <div className="h-9 w-9 shrink-0 overflow-hidden rounded-full border-2 border-amber-300 bg-[#FFFDF8] shadow-sm mt-0.5">
                   <img
                     src="/assets/images/mascot/muli-avatar-face.png"
-                    alt="Muli"
+                    alt="Asisten Wisata Lampung"
                     className="h-full w-full object-cover"
                   />
                 </div>
                 <div className="flex items-center gap-2 rounded-2xl rounded-tl-none border border-[#E2D6BE] bg-white px-4 py-3 text-xs text-slate-600 shadow-sm">
-                  <Sparkles className="h-4 w-4 animate-spin text-[#0F766E]" />
-                  <span>Muli sedang meracik fakta pariwisata...</span>
+                  <RefreshCw className="h-4 w-4 animate-spin text-[#0F766E]" />
+                  <span>Menyiapkan informasi wisata...</span>
                 </div>
               </div>
             )}
@@ -348,7 +348,7 @@ export const RadenGajahChatWidget: React.FC = () => {
 
             <button
               type="submit"
-              aria-label="Kirim pesan ke Muli"
+              aria-label="Kirim pesan ke Asisten Wisata"
               disabled={!inputMessage.trim() || isLoading}
               className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#0F766E] text-white transition-all hover:bg-[#0D9488] disabled:opacity-40 disabled:hover:bg-[#0F766E]"
             >
