@@ -57,6 +57,8 @@ export const PlannerPage: React.FC = () => {
   // Toast & Share State
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [copiedLink, setCopiedLink] = useState<boolean>(false);
+  const [shareToken, setShareToken] = useState<string | null>(null);
+  const [isSharingItinerary, setIsSharingItinerary] = useState<boolean>(false);
 
   // Spot Swap Modal State
   const [swapModalOpen, setSwapModalOpen] = useState<boolean>(false);
@@ -79,10 +81,12 @@ export const PlannerPage: React.FC = () => {
 
     setIsSavingItinerary(true);
     try {
-      await apiClient.post('/itineraries', {
+      const res = await apiClient.post('/itineraries', {
         title: `Liburan ${selectedRegency} (${durationDays} Hari)`,
         daysJson: generatedItinerary,
       });
+      const saved = res.data?.data?.itinerary;
+      if (saved?.shareToken) setShareToken(saved.shareToken);
       await logUserActivity(
         'CREATE_ROUTE',
         `Membuat Rute ${selectedRegency} (${durationDays} Hari)`,
@@ -152,6 +156,7 @@ export const PlannerPage: React.FC = () => {
     setGeneratedItinerary(null);
     setGenerateError(null);
     setSelectedSlotIndex(null);
+    setShareToken(null); // reset token on new generation
 
     const catsPayload = selectedCategories.includes('Semua')
       ? []
@@ -247,10 +252,50 @@ export const PlannerPage: React.FC = () => {
     }, 0);
   };
 
-  const handleCopyShareLink = () => {
-    navigator.clipboard.writeText(window.location.origin + '/share/lampung-itinerary-9842');
-    setCopiedLink(true);
-    setTimeout(() => setCopiedLink(false), 2500);
+  const handleCopyShareLink = async () => {
+    if (!generatedItinerary) return;
+
+    // Jika sudah ada shareToken dari simpan sebelumnya, langsung salin
+    if (shareToken) {
+      const fullUrl = `${window.location.origin}/share/${shareToken}`;
+      await navigator.clipboard.writeText(fullUrl);
+      setCopiedLink(true);
+      triggerToast('Link publik berhasil disalin!');
+      setTimeout(() => setCopiedLink(false), 2500);
+      return;
+    }
+
+    // Jika belum login, minta login agar itinerary bisa disimpan dan dapat token permanen
+    if (!isAuthenticated) {
+      triggerToast('Silakan masuk terlebih dahulu untuk membuat tautan publik!');
+      openAuthModal('login');
+      return;
+    }
+
+    // Simpan otomatis ke backend untuk generate shareToken unik
+    setIsSharingItinerary(true);
+    try {
+      const res = await apiClient.post('/itineraries', {
+        title: `Liburan ${selectedRegency} (${durationDays} Hari)`,
+        daysJson: generatedItinerary,
+      });
+      const saved = res.data?.data?.itinerary;
+      if (saved?.shareToken) {
+        setShareToken(saved.shareToken);
+        const fullUrl = `${window.location.origin}/share/${saved.shareToken}`;
+        await navigator.clipboard.writeText(fullUrl);
+        setCopiedLink(true);
+        triggerToast('Itinerary disimpan & tautan publik disalin!');
+        setTimeout(() => setCopiedLink(false), 2500);
+      } else {
+        triggerToast('Gagal membuat tautan publik');
+      }
+    } catch (err: any) {
+      const msg = err.response?.data?.message || 'Gagal membuat tautan publik';
+      triggerToast(msg);
+    } finally {
+      setIsSharingItinerary(false);
+    }
   };
 
   const activeDaySlots =
@@ -494,7 +539,7 @@ export const PlannerPage: React.FC = () => {
                   className="bg-white border border-slate-200 text-slate-700 hover:text-[#0D9488] px-4 py-2.5 min-h-[44px] rounded-xl text-xs font-bold transition-all shadow-sm flex items-center gap-1.5 active:scale-95 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
                 >
                   {copiedLink ? <CheckCircle2 className="w-4 h-4 text-emerald-500" /> : <Share2 className="w-4 h-4" />}
-                  <span>{copiedLink ? 'Tersalin!' : 'Bagikan Link'}</span>
+                  <span>{isSharingItinerary ? 'Membuat link...' : copiedLink ? 'Tersalin!' : 'Bagikan Link'}</span>
                 </button>
                 <button
                   type="button"
