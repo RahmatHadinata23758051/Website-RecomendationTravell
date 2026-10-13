@@ -5,23 +5,9 @@ export interface ChatHistoryItem {
   text: string;
 }
 
-export interface RecommendedDestinationFact {
-  id: string;
-  name: string;
-  location: string;
-  regency: string;
-  price: string;
-  rating: number;
-  numericPrice?: number;
-  category?: string;
-  hours?: string;
-  highlight?: string;
-}
-
 export interface ChatbotResponseData {
   reply: string;
   suggested_queries: string[];
-  destinations?: RecommendedDestinationFact[];
 }
 
 export interface AskChatbotPayload {

@@ -4,10 +4,6 @@ import {
   Send,
   RefreshCw,
   RotateCcw,
-  ExternalLink,
-  MapPin,
-  Star,
-  Compass,
   Palmtree,
   Utensils,
   Sun,
@@ -18,7 +14,6 @@ import {
 import {
   askRadenGajahChatbot,
   ChatHistoryItem,
-  RecommendedDestinationFact,
 } from '../services/chatbotApi';
 import { useAuth } from '../context/AuthContext';
 import { getApiErrorMessage } from '../lib/api';
@@ -28,7 +23,6 @@ interface ChatMessage {
   sender: 'user' | 'bot';
   text: string;
   timestamp: string;
-  destinations?: RecommendedDestinationFact[];
 }
 
 interface QuickPillItem {
@@ -124,7 +118,6 @@ export const RadenGajahChatWidget: React.FC = () => {
         sender: 'bot',
         text: responseData.reply,
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        destinations: responseData.destinations,
       };
 
       setMessages((prev) => [...prev, botMsg]);
@@ -242,33 +235,6 @@ export const RadenGajahChatWidget: React.FC = () => {
                 >
                   <div className="whitespace-pre-line">{msg.text}</div>
 
-                  {/* Recommended Destinations Cards in Chat Bubble */}
-                  {msg.destinations && msg.destinations.length > 0 && (
-                    <div className="mt-3 space-y-2 border-t border-slate-100 pt-2.5">
-                      <p className="text-[10px] font-bold uppercase tracking-wider text-[#0F766E] flex items-center gap-1">
-                        <Compass className="h-3 w-3" /> Spot Terkait Terverifikasi:
-                      </p>
-                      {msg.destinations.map((spot) => (
-                        <a
-                          key={spot.id}
-                          href={`/explore?search=${encodeURIComponent(spot.name)}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="flex items-center justify-between gap-2 rounded-xl border border-teal-100 bg-[#F0FDF4] p-2 text-[11px] font-semibold text-teal-900 transition-colors hover:bg-teal-100/80"
-                        >
-                          <div className="flex items-center gap-1.5 truncate">
-                            <MapPin className="h-3.5 w-3.5 shrink-0 text-[#0F766E]" />
-                            <span className="truncate">{spot.name}</span>
-                          </div>
-                          <div className="flex items-center gap-1 shrink-0 text-amber-700">
-                            <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
-                            <span>{spot.rating}</span>
-                            <ExternalLink className="h-3 w-3 ml-1 text-slate-400" />
-                          </div>
-                        </a>
-                      ))}
-                    </div>
-                  )}
 
                   <div className="mt-1 text-[9px] font-medium text-slate-400 text-right">
                     {msg.timestamp}

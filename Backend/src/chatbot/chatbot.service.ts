@@ -119,7 +119,6 @@ export class ChatbotService {
             'Tempat makan Seruit khas Lampung',
             'Wisata populer di Bandar Lampung',
           ],
-          destinations: [],
         },
       };
     }
@@ -153,7 +152,6 @@ export class ChatbotService {
             'Tempat makan Seruit khas Lampung',
             'Wisata lumba-lumba Teluk Kiluan',
           ],
-          destinations: [],
         },
       };
     }
@@ -171,7 +169,6 @@ export class ChatbotService {
             'Tempat makan Seruit khas Lampung',
             'Wisata populer di Bandar Lampung',
           ],
-          destinations: [],
         },
       };
     }
@@ -264,18 +261,6 @@ ${personalContext ? `\n${personalContext}` : ''}
             'Kuliner Seruit khas Lampung',
             'Estimasi biaya liburan 2 hari',
           ],
-          destinations: relevantFacts.slice(0, 3).map((f) => ({
-            id: f.id,
-            name: f.name,
-            location: f.location,
-            regency: f.regency,
-            price: f.price,
-            rating: f.rating,
-            numericPrice: f.numericPrice || 0,
-            category: f.category || 'Kategori belum tersedia',
-            hours: f.hours || 'Jam buka tidak tersedia',
-            highlight: f.highlight || 'Highlight belum tersedia.',
-          })),
         },
       };
     } catch (err) {
