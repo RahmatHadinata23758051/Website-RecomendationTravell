@@ -3,7 +3,6 @@ import { useSearchParams } from 'react-router-dom';
 import {
   Search,
   MapPin,
-  Sparkles,
   Heart,
   Filter,
   X,
@@ -17,6 +16,7 @@ import {
   Landmark,
   Utensils,
   Footprints,
+  RefreshCw,
   SlidersHorizontal,
   Compass,
   CheckCircle2,
@@ -137,7 +137,7 @@ const REGENCY_CARDS: RegencyCardInfo[] = [
 ];
 
 export const ExplorePage: React.FC = () => {
-  const { user, isAuthenticated, openAuthModal, addXp } = useAuth();
+  const { user, isAuthenticated, openAuthModal } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
   const [searchKeyword, setSearchKeyword] = useState<string>(searchParams.get('search') || '');
   const [selectedCategory, setSelectedCategory] = useState<string>('Semua');
@@ -154,7 +154,6 @@ export const ExplorePage: React.FC = () => {
   const [minPrice, setMinPrice] = useState<string>('');
   const [maxPrice, setMaxPrice] = useState<string>('');
   const [priceStatus, setPriceStatus] = useState<'all' | 'free' | 'paid'>('all');
-  const [loadingProgress, setLoadingProgress] = useState<number>(0);
 
   // Reviews State
   const [reviewsData, setReviewsData] = useState<ReviewSummary | null>(null);
@@ -187,14 +186,13 @@ export const ExplorePage: React.FC = () => {
     setIsSubmittingReview(true);
     try {
       await createDestinationReview(selectedDestination.id, reviewRating, reviewText);
-      await addXp(30, 'write_review');
       await logUserActivity(
         'WRITE_REVIEW',
         `Memberi ulasan ${reviewRating}★ untuk ${selectedDestination.name}`,
-        '+30 XP',
+        undefined,
         'star',
       );
-      triggerToast('Ulasan berhasil dikirim! (+30 XP 🎉)');
+      triggerToast('Ulasan berhasil dikirim!');
 
       // Refresh reviews
       const updated = await fetchDestinationReviews(selectedDestination.id);
@@ -268,14 +266,6 @@ export const ExplorePage: React.FC = () => {
 
     let isMounted = true;
     setIsLoadingRealData(true);
-    setLoadingProgress(15);
-
-    const progressInterval = setInterval(() => {
-      setLoadingProgress((prev) => {
-        if (prev >= 92) return Math.max(prev, 92);
-        return Math.min(92, prev + 8);
-      });
-    }, 100);
 
     const timer = setTimeout(() => {
       fetchRealDestinationsWithDetails({
@@ -290,16 +280,10 @@ export const ExplorePage: React.FC = () => {
         limit: 100,
       }).then((result) => {
         if (isMounted) {
-          clearInterval(progressInterval);
-          setLoadingProgress(100);
-          setTimeout(() => {
-            if (isMounted) {
-              setRealDestinations(result.destinations || []);
-              setSearchSuggestions(result.fallbackSuggestions || []);
-              setTotalItems(result.totalItems || 0);
-              setIsLoadingRealData(false);
-            }
-          }, 200);
+            setRealDestinations(result.destinations || []);
+            setSearchSuggestions(result.fallbackSuggestions || []);
+            setTotalItems(result.totalItems || 0);
+            setIsLoadingRealData(false);
         }
       });
     }, 250);
@@ -307,7 +291,6 @@ export const ExplorePage: React.FC = () => {
     return () => {
       isMounted = false;
       clearTimeout(timer);
-      clearInterval(progressInterval);
     };
   }, [selectedCategory, selectedRegency, searchKeyword, minPrice, maxPrice, priceStatus, sortBy]);
 
@@ -468,12 +451,11 @@ export const ExplorePage: React.FC = () => {
     } else {
       const updated = [...favorites, id];
       setFavorites(updated);
-      triggerToast('Ditambahkan ke daftar favorit! (+15 XP 🎉)');
+      triggerToast('Ditambahkan ke daftar favorit');
       try {
         await apiClient.post('/favorites', { canonicalId: id });
-        await addXp(15, 'save_favorite');
         const destName = filteredDestinations.find((d) => d.id === id)?.name || 'destinasi';
-        await logUserActivity('SAVE_FAVORITE', `Menyimpan ${destName} ke wishlist`, '+15 XP', 'heart');
+        await logUserActivity('SAVE_FAVORITE', `Menyimpan ${destName} ke wishlist`, undefined, 'heart');
       } catch (err) {
         // Fallback
       }
@@ -482,83 +464,25 @@ export const ExplorePage: React.FC = () => {
 
   return (
     <div className="flex flex-col min-h-[100dvh] pt-24 pb-12">
-      {/* Toast Notification */}
+      {/* Toast Notification - clean, no bounce */}
       {toastMessage && (
-        <div className="fixed bottom-6 right-6 z-50 bg-[#0F2937] text-white px-5 py-3 rounded-2xl shadow-2xl border border-siger-400/30 flex items-center gap-3 transition-all animate-bounce">
+        <div className="fixed bottom-6 right-6 z-50 bg-[#0F2937] text-white px-5 py-3 rounded-2xl shadow-xl border border-slate-200/50 flex items-center gap-3 transition-all">
           <CheckCircle2 className="w-5 h-5 text-[#2DD4BF]" />
           <span className="text-xs font-semibold">{toastMessage}</span>
         </div>
       )}
 
-      {/* Mascot Loading Overlay (Matching Mockup Screenshot) */}
+      {/* CLEAN LOADING STATE - inline, no mascot theater, no bouncing dots */}
       {isLoadingRealData && (
-        <div className="fixed inset-0 z-50 bg-slate-950/40 backdrop-blur-md flex items-center justify-center p-4 sm:p-6 animate-in fade-in duration-200">
-          <div className="bg-white rounded-[32px] p-8 sm:p-10 max-w-md w-full shadow-[0_20px_60px_-15px_rgba(13,148,136,0.25)] border border-slate-100/80 relative flex flex-col items-center text-center space-y-5 overflow-hidden">
-
-            {/* Mascot Container with Circular Aura & Sparkles */}
-            <div className="relative w-44 h-44 flex items-center justify-center">
-              {/* Circular Aura Layers */}
-              <div className="absolute inset-2 rounded-full border border-teal-100 bg-gradient-to-b from-teal-50/80 to-teal-100/30 animate-pulse" />
-              <div className="absolute inset-6 rounded-full border border-teal-200/60 bg-teal-50/40" />
-
-              {/* Sparkle Stars around mascot */}
-              <span className="absolute top-2 right-6 text-teal-400 text-lg animate-pulse">✦</span>
-              <span className="absolute bottom-4 left-4 text-amber-400 text-base animate-ping" style={{ animationDuration: '3s' }}>✦</span>
-              <span className="absolute top-8 left-6 text-teal-300 text-xs">✨</span>
-              <span className="absolute bottom-8 right-6 text-teal-400 text-sm">✨</span>
-
-              {/* Mascot Image */}
-              <img
-                src="/assets/images/mascot/muli-lampung-mascot.png"
-                alt="Muli Lampung Mascot"
-                className="w-36 h-36 object-contain relative z-10 filter drop-shadow-md transition-transform duration-300 hover:scale-105"
-              />
-              {/* Mascot Ground Shadow */}
-              <div className="absolute bottom-1 w-20 h-2.5 rounded-full bg-teal-900/10 blur-sm" />
-            </div>
-
-            {/* Title with Animated Teal Dots */}
-            <div className="space-y-2">
-              <h3 className="text-xl sm:text-2xl font-extrabold text-slate-900 font-display flex items-center justify-center gap-1">
-                <span>Memuat Destinasi {selectedRegency !== 'PILIH' ? selectedRegency : 'Wisata'}</span>
-                <span className="inline-flex gap-1 ml-1 text-[#0D9488]">
-                  <span className="animate-bounce font-bold" style={{ animationDelay: '0ms' }}>.</span>
-                  <span className="animate-bounce font-bold" style={{ animationDelay: '150ms' }}>.</span>
-                  <span className="animate-bounce font-bold" style={{ animationDelay: '300ms' }}>.</span>
-                </span>
-              </h3>
-              <p className="text-xs text-slate-500 font-sans max-w-xs leading-relaxed mx-auto">
-                Muli Lampung sedang menyiapkan tempat wisata terbaik & lokasi peta spasial untukmu.
-              </p>
-            </div>
-
-            {/* Badge Pill */}
-            <div className="inline-flex items-center gap-2 px-5 py-2 rounded-full bg-teal-50/90 border border-teal-200/80 text-[#0D9488] text-xs font-bold shadow-sm">
-              <Compass className="w-4 h-4 animate-spin text-[#0D9488]" />
-              <span>Menyusun Peta Spasial Lampung</span>
-            </div>
-
-            {/* Animated Progress Bar & Percentage */}
-            <div className="w-full max-w-xs space-y-1.5 pt-1">
-              <div className="flex items-center justify-between gap-3">
-                <div className="flex-1 h-3 rounded-full bg-teal-50 border border-teal-100 overflow-hidden relative">
-                  <div
-                    className="h-full rounded-full bg-gradient-to-r from-[#0D9488] via-[#2DD4BF] to-[#0D9488] transition-all duration-300 shadow-sm"
-                    style={{ width: `${loadingProgress}%` }}
-                  />
-                </div>
-                <span className="text-xs font-extrabold text-[#0D9488] min-w-[32px] text-right font-mono">
-                  {loadingProgress}%
-                </span>
-              </div>
-            </div>
-
-            {/* Footer Quote */}
-            <div className="flex items-center gap-1.5 text-[11px] text-slate-400 font-medium pt-1">
-              <MapPin className="w-3.5 h-3.5 text-amber-500 shrink-0" />
-              <span>Menjelajahi keindahan Lampung untukmu...</span>
-            </div>
-
+        <div className="w-full max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-10">
+          <div className="bg-white rounded-[24px] border border-slate-200 p-8 text-center space-y-3 shadow-sm">
+            <RefreshCw className="w-6 h-6 text-[#0D9488] animate-spin mx-auto" />
+            <h3 className="text-sm font-bold text-slate-900">
+              Memuat Destinasi {selectedRegency !== 'PILIH' ? selectedRegency : 'Wisata'}
+            </h3>
+            <p className="text-xs text-slate-500">
+              Menyiapkan daftar destinasi dan lokasi peta.
+            </p>
           </div>
         </div>
       )}
@@ -664,7 +588,7 @@ export const ExplorePage: React.FC = () => {
             {/* Category Filter Pills */}
             <div className="flex flex-wrap items-center gap-2">
               {[
-                { label: 'Semua', icon: Sparkles },
+                { label: 'Semua', icon: SlidersHorizontal },
                 { label: 'Pantai', icon: Palmtree },
                 { label: 'Alam', icon: Mountain },
                 { label: 'Budaya', icon: Landmark },
@@ -912,8 +836,7 @@ export const ExplorePage: React.FC = () => {
                                 {item.category}
                               </span>
                               {(user?.preferences || []).includes(item.category) && (
-                                <span className="px-2 py-0.5 rounded-full text-[9px] font-extrabold bg-amber-500 text-white shadow-md flex items-center gap-0.5 animate-pulse">
-                                  <Sparkles className="w-2.5 h-2.5" />
+                                <span className="px-2 py-0.5 rounded-full text-[9px] font-extrabold bg-amber-500 text-white shadow-md flex items-center gap-0.5">
                                   <span>Sesuai Minatmu</span>
                                 </span>
                               )}
@@ -1093,12 +1016,12 @@ export const ExplorePage: React.FC = () => {
                 </p>
               </div>
 
-              {/* AI Recommendation Reason (Only shown when genuine reason exists) */}
+              {/* Kurasi Lokal - catatan tim editor (Only shown when genuine reason exists) */}
               {selectedDestination.aiReason?.trim() ? (
                 <div className="bg-teal-50/70 border border-teal-200/80 rounded-2xl p-4 space-y-1">
                   <div className="flex items-center gap-2">
-                    <Sparkles className="w-4 h-4 text-siger-500" />
-                    <h4 className="text-xs font-bold text-slate-900">Rekomendasi AI Raden Gajah</h4>
+                    <Compass className="w-4 h-4 text-[#0D9488]" />
+                    <h4 className="text-xs font-bold text-slate-900">Catatan Kurasi Tim KelanaLampung</h4>
                   </div>
                   <p className="text-xs text-slate-700 font-sans leading-relaxed">{selectedDestination.aiReason}</p>
                 </div>
@@ -1122,14 +1045,14 @@ export const ExplorePage: React.FC = () => {
                 <div className="flex items-center justify-between">
                   <div>
                     <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider">Ulasan & Rating Penjelajah</h4>
-                    <p className="text-[10px] text-slate-500 font-sans">Didukung AI IndoBERT Sentiment Inferencing</p>
+                    <p className="text-[10px] text-slate-500 font-sans">Analisis sentimen ulasan pengguna</p>
                   </div>
                   <button
                     onClick={() => setIsWriteReviewModalOpen(true)}
                     className="px-3.5 py-2 min-h-[44px] rounded-full bg-[#0D9488] hover:bg-[#0F766E] text-white text-xs font-bold shadow-xs transition-all flex items-center gap-1.5 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
                   >
                     <Star className="w-3.5 h-3.5 fill-current text-amber-300" />
-                    <span>+ Tulis Ulasan (+30 XP)</span>
+                    <span>Tulis Ulasan</span>
                   </button>
                 </div>
 
@@ -1179,7 +1102,7 @@ export const ExplorePage: React.FC = () => {
                   ) : (
                     <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/60 text-center space-y-1">
                       <p className="text-xs font-semibold text-slate-700">Belum ada ulasan untuk destinasi ini</p>
-                      <p className="text-[10px] text-slate-500">Jadilah penjelajah pertama yang memberi ulasan dan dapatkan +30 XP!</p>
+                      <p className="text-[10px] text-slate-500">Jadilah penjelajah pertama yang memberi ulasan!</p>
                     </div>
                   )}
                 </div>
@@ -1271,9 +1194,9 @@ export const ExplorePage: React.FC = () => {
                 />
               </div>
 
-              <div className="bg-amber-50 rounded-xl p-3 border border-amber-200/60 flex items-center gap-2 text-[11px] text-amber-800 font-medium">
-                <Sparkles className="w-4 h-4 text-amber-600 shrink-0" />
-                <span>Kirim ulasan untuk mendapatkan +30 XP & analisis sentimen AI!</span>
+              <div className="bg-slate-50 rounded-xl p-3 border border-slate-200 flex items-center gap-2 text-[11px] text-slate-600 font-medium">
+                <Star className="w-4 h-4 text-amber-500 shrink-0" />
+                <span>Ulasan akan diproses dengan analisis sentimen otomatis.</span>
               </div>
 
               {/* Submit Buttons */}
@@ -1294,7 +1217,7 @@ export const ExplorePage: React.FC = () => {
                     <span>Mengirim...</span>
                   ) : (
                     <>
-                      <span>Kirim Ulasan (+30 XP)</span>
+                      <span>Kirim Ulasan</span>
                     </>
                   )}
                 </button>

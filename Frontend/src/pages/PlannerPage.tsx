@@ -65,7 +65,7 @@ export const PlannerPage: React.FC = () => {
   const [isLoadingSwap, setIsLoadingSwap] = useState<boolean>(false);
 
   // Auth & Saved Itinerary State
-  const { isAuthenticated, openAuthModal, addXp } = useAuth();
+  const { isAuthenticated, openAuthModal } = useAuth();
   const [isSavingItinerary, setIsSavingItinerary] = useState<boolean>(false);
 
   const handleSaveItinerary = async () => {
@@ -83,14 +83,13 @@ export const PlannerPage: React.FC = () => {
         title: `Liburan ${selectedRegency} (${durationDays} Hari)`,
         daysJson: generatedItinerary,
       });
-      await addXp(50, 'create_route');
       await logUserActivity(
         'CREATE_ROUTE',
         `Membuat Rute ${selectedRegency} (${durationDays} Hari)`,
-        '+50 XP',
+        undefined,
         'map',
       );
-      triggerToast('Itinerary berhasil disimpan ke profil Anda! (+50 XP 🎉)');
+      triggerToast('Itinerary berhasil disimpan ke profil Anda!');
     } catch (err: any) {
       const msg = err.response?.data?.message || 'Gagal menyimpan itinerary';
       triggerToast(msg);

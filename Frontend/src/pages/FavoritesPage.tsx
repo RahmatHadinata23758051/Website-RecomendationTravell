@@ -8,7 +8,6 @@ import {
   Star,
   ExternalLink,
   Clock,
-  Sparkles,
   Compass,
   CheckCircle2,
   Tag,
@@ -18,6 +17,7 @@ import {
   Landmark,
   Utensils,
   Footprints,
+  SlidersHorizontal,
 } from 'lucide-react';
 import { Destination } from './ExplorePage';
 import { useAuth } from '../context/AuthContext';
@@ -123,7 +123,7 @@ export const FavoritesPage: React.FC = () => {
     <div className="flex flex-col min-h-[100dvh] pt-24 pb-16">
       {/* Toast Notification */}
       {toastMessage && (
-        <div className="fixed bottom-6 right-6 z-50 bg-[#0F2937] text-white px-5 py-3 rounded-2xl shadow-2xl border border-siger-400/30 flex items-center gap-3 transition-all animate-bounce">
+        <div className="fixed bottom-6 right-6 z-50 bg-[#0F2937] text-white px-5 py-3 rounded-2xl shadow-xl border border-slate-200/50 flex items-center gap-3 transition-all">
           <CheckCircle2 className="w-5 h-5 text-[#2DD4BF]" />
           <span className="text-xs font-semibold">{toastMessage}</span>
         </div>
@@ -177,7 +177,7 @@ export const FavoritesPage: React.FC = () => {
             {/* Category Filter Pills */}
             <div className="flex flex-wrap items-center gap-2">
               {[
-                { label: 'Semua', icon: Sparkles },
+                { label: 'Semua', icon: SlidersHorizontal },
                 { label: 'Pantai', icon: Palmtree },
                 { label: 'Alam', icon: Mountain },
                 { label: 'Budaya', icon: Landmark },
@@ -403,12 +403,12 @@ export const FavoritesPage: React.FC = () => {
                 <p className="text-xs text-slate-600 leading-relaxed font-sans">{selectedDestination.description}</p>
               </div>
 
-              {/* AI Recommendation Reason (Only shown when genuine reason exists) */}
+              {/* Catatan Kurasi Lokal */}
               {selectedDestination.aiReason?.trim() ? (
                 <div className="bg-teal-50/70 border border-teal-200/80 rounded-2xl p-4 space-y-1">
                   <div className="flex items-center gap-2">
-                    <Sparkles className="w-4 h-4 text-siger-500" />
-                    <h4 className="text-xs font-bold text-slate-900">Rekomendasi AI Raden Gajah</h4>
+                    <Compass className="w-4 h-4 text-[#0D9488]" />
+                    <h4 className="text-xs font-bold text-slate-900">Catatan Kurasi Tim KelanaLampung</h4>
                   </div>
                   <p className="text-xs text-slate-700 font-sans leading-relaxed">{selectedDestination.aiReason}</p>
                 </div>

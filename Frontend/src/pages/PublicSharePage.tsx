@@ -47,7 +47,7 @@ interface DaySchedule {
 export const PublicSharePage: React.FC = () => {
   const { shareToken } = useParams<{ shareToken: string }>();
   const navigate = useNavigate();
-  const { isAuthenticated, openAuthModal, addXp } = useAuth();
+  const { isAuthenticated, openAuthModal } = useAuth();
   const [activeDayTab, setActiveDayTab] = useState<number>(1);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [copiedLink, setCopiedLink] = useState<boolean>(false);
@@ -145,8 +145,7 @@ export const PublicSharePage: React.FC = () => {
         daysJson: sharedDays,
       });
 
-      await addXp(50, 'clone_route');
-      triggerToast('Rute berhasil disimpan ke profil kamu! (+50 XP 🎉)');
+      triggerToast('Rute berhasil disimpan ke profil kamu!');
       setTimeout(() => navigate('/profile'), 1200);
     } catch {
       triggerToast('Gagal menyalin itinerary');
@@ -194,7 +193,7 @@ export const PublicSharePage: React.FC = () => {
     <div className="flex flex-col min-h-[100dvh] pt-24 pb-16">
       {/* Toast Notification */}
       {toastMessage && (
-        <div className="fixed bottom-6 right-6 z-50 bg-[#0F2937] text-white px-5 py-3 rounded-2xl shadow-2xl border border-siger-400/30 flex items-center gap-3 transition-all animate-bounce">
+        <div className="fixed bottom-6 right-6 z-50 bg-[#0F2937] text-white px-5 py-3 rounded-2xl shadow-xl border border-slate-200/50 flex items-center gap-3 transition-all">
           <CheckCircle2 className="w-5 h-5 text-[#2DD4BF]" />
           <span className="text-xs font-semibold">{toastMessage}</span>
         </div>
