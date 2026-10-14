@@ -1,6 +1,6 @@
 ![KelanaLampung Web Platform Banner](assets/banner.svg)
 
-# KelanaLampung — Web Application Platform
+<h1 align="center">KelanaLampung — Web Application Platform</h1>
 
 **Multi-tier Tourism Discovery, AI Itinerary Planner, and RAG Digital Concierge for Lampung Province, Indonesia**
 
