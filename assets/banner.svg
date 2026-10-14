@@ -1,0 +1,79 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 360" width="100%" height="100%" preserveAspectRatio="xMidYMid meet" role="img" aria-labelledby="bannerTitle bannerDesc">
+  <title id="bannerTitle">KelanaLampung Web Platform Banner</title>
+  <desc id="bannerDesc">Banner resmi platform web KelanaLampung yang memvisualisasikan arsitektur multi-tier pariwisata Provinsi Lampung.</desc>
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#04201e"/>
+      <stop offset="50%" stop-color="#08332f"/>
+      <stop offset="100%" stop-color="#0d4a44"/>
+    </linearGradient>
+    <linearGradient id="accentTeal" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#14b8a6"/>
+      <stop offset="100%" stop-color="#2dd4bf"/>
+    </linearGradient>
+    <linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#f59e0b"/>
+      <stop offset="100%" stop-color="#fbbf24"/>
+    </linearGradient>
+    <pattern id="geometricGrid" width="40" height="40" patternUnits="userSpaceOnUse">
+      <path d="M 40 0 L 0 40 M 0 0 L 40 40" fill="none" stroke="#14b8a6" stroke-width="0.75" stroke-opacity="0.12"/>
+    </pattern>
+    <filter id="subtleGlow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="16" result="blur"/>
+      <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+    </filter>
+  </defs>
+
+  <rect width="1200" height="360" rx="16" fill="url(#bgGrad)"/>
+  <rect width="1200" height="360" rx="16" fill="url(#geometricGrid)"/>
+
+  <g opacity="0.22" transform="translate(760, -40)">
+    <path d="M 200 60 L 300 220 L 260 220 L 200 120 L 140 220 L 100 220 Z" fill="url(#goldGrad)"/>
+    <path d="M 200 130 L 270 240 L 240 240 L 200 180 L 160 240 L 130 240 Z" fill="url(#accentTeal)"/>
+    <polygon points="320,80 340,120 300,120" fill="#f59e0b" opacity="0.6"/>
+    <polygon points="80,80 100,120 60,120" fill="#f59e0b" opacity="0.6"/>
+    <circle cx="200" cy="50" r="14" fill="#fbbf24"/>
+  </g>
+
+  <circle cx="180" cy="90" r="180" fill="#0d9488" opacity="0.15" filter="url(#subtleGlow)"/>
+  <circle cx="980" cy="240" r="220" fill="#f59e0b" opacity="0.10" filter="url(#subtleGlow)"/>
+
+  <g transform="translate(80, 75)">
+    <g transform="translate(0, 0)">
+      <rect width="250" height="28" rx="14" fill="#0f766e" fill-opacity="0.6" stroke="#14b8a6" stroke-width="1"/>
+      <circle cx="16" cy="14" r="5" fill="#2dd4bf"/>
+      <text x="32" y="18" fill="#ccfbf1" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="11" font-weight="600" letter-spacing="1">WEB APPLICATION PLATFORM</text>
+    </g>
+
+    <text x="0" y="78" fill="#ffffff" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="44" font-weight="800" letter-spacing="-1">
+      Kelana<tspan fill="url(#accentTeal)">Lampung</tspan>
+    </text>
+
+    <text x="0" y="114" fill="#99f6e4" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="16" font-weight="500">
+      Multi-tier Tourism Discovery, AI Itinerary Planner &amp; RAG Digital Concierge
+    </text>
+
+    <text x="0" y="138" fill="#94a3b8" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="13" font-weight="400">
+      React 18 SPA Frontend · NestJS BFF Gateway · PostgreSQL &amp; Redis · FastAPI ML Integration
+    </text>
+
+    <g transform="translate(0, 172)">
+      <g transform="translate(0, 0)">
+        <rect width="180" height="34" rx="8" fill="#134e4a" stroke="#2dd4bf" stroke-width="1"/>
+        <text x="90" y="21" fill="#f0fdfa" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="12" font-weight="600" text-anchor="middle">React 18 + Vite (:3001)</text>
+      </g>
+      <g transform="translate(192, 0)">
+        <rect width="180" height="34" rx="8" fill="#134e4a" stroke="#2dd4bf" stroke-width="1"/>
+        <text x="90" y="21" fill="#f0fdfa" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="12" font-weight="600" text-anchor="middle">NestJS BFF Gateway (:4000)</text>
+      </g>
+      <g transform="translate(384, 0)">
+        <rect width="180" height="34" rx="8" fill="#134e4a" stroke="#2dd4bf" stroke-width="1"/>
+        <text x="90" y="21" fill="#f0fdfa" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="12" font-weight="600" text-anchor="middle">PostgreSQL + Redis</text>
+      </g>
+      <g transform="translate(576, 0)">
+        <rect width="210" height="34" rx="8" fill="#78350f" stroke="#fbbf24" stroke-width="1"/>
+        <text x="105" y="21" fill="#fef3c7" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="12" font-weight="600" text-anchor="middle">OSRM Routing · 9Router RAG</text>
+      </g>
+    </g>
+  </g>
+</svg>
