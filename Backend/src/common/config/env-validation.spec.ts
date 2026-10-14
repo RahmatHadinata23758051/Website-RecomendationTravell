@@ -9,6 +9,7 @@ describe('validateEnv', () => {
     REDIS_HOST: 'localhost',
     REDIS_PORT: '6379',
     ML_ENGINE_URL: 'http://localhost:8000',
+    ML_SYNC_HMAC_SECRET: 'test-ml-sync-hmac-secret-min-32-chars-long',
     NINE_ROUTER_URL: 'http://localhost:20128/v1',
     NINE_ROUTER_API_KEY: 'test-key',
     NINE_ROUTER_MODEL: 'test-model',

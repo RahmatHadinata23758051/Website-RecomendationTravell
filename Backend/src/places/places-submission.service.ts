@@ -18,6 +18,7 @@ import { SubmitPlaceDto } from './dto/submit-place.dto';
 import { MySubmissionsDto, QuerySubmissionsDto } from './dto/query-submissions.dto';
 import { Prisma, PlaceSubmissionStatus } from '@prisma/client';
 import { RagRetrieverService } from '../chatbot/rag-retriever.service';
+import * as crypto from 'crypto';
 
 @Injectable()
 export class PlacesSubmissionService {
@@ -373,10 +374,30 @@ export class PlacesSubmissionService {
         review_rating_mean: null,
       };
 
+      const webhookSecret = this.configService.get<string>('ML_SYNC_HMAC_SECRET');
+      const isProduction = process.env.NODE_ENV === 'production';
+      if (!webhookSecret && isProduction) {
+        throw new Error('ML_SYNC_HMAC_SECRET must be configured in production.');
+      }
+
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+      const body = JSON.stringify(payload);
+      if (webhookSecret) {
+        // ponytail: HMAC-SHA256 signature with unix timestamp; upgrade to signed nonce or mTLS if clock skew or replay attacks become an issue.
+        const timestamp = Math.floor(Date.now() / 1000).toString();
+        const signature = crypto
+          .createHmac('sha256', webhookSecret)
+          .update(`${timestamp}.${body}`)
+          .digest('hex');
+        headers['x-ml-timestamp'] = timestamp;
+        headers['x-ml-signature'] = `sha256=${signature}`;
+      }
+
       try {
         await firstValueFrom(
           this.httpService.post(`${mlEngineUrl}/api/v1/catalog/submissions`, payload, {
             timeout: 5000,
+            headers,
           }),
         );
       } catch (error) {

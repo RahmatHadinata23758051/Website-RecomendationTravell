@@ -383,6 +383,45 @@ describe('PlacesSubmissionService', () => {
       );
     });
 
+    it('should include HMAC signature headers when ML_SYNC_HMAC_SECRET is configured', async () => {
+      mockConfigService.get.mockImplementation((key: string) => {
+        if (key === 'ML_ENGINE_URL') return 'http://localhost:8000';
+        if (key === 'ML_SYNC_HMAC_SECRET') return 'test-sync-secret';
+        return undefined;
+      });
+
+      const existingSubmission = {
+        id: 'sub-hmac',
+        name: 'Pantai Ber-HMAC',
+        status: 'PENDING',
+        submitterId: 'user-1',
+        category: 'beach',
+        categoryTags: [],
+        cityRegency: 'Kabupaten Pesawaran',
+      };
+      mockPrisma.placeSubmission.findUnique
+        .mockResolvedValueOnce(existingSubmission)
+        .mockResolvedValueOnce({ ...existingSubmission, status: 'APPROVED' });
+      mockPrisma.placeSubmission.update.mockResolvedValue({ ...existingSubmission, status: 'APPROVED' });
+
+      await service.moderateSubmission('sub-hmac', 'admin-1', 'APPROVE');
+
+      expect(mockHttpService.post).toHaveBeenCalledWith(
+        'http://localhost:8000/api/v1/catalog/submissions',
+        expect.objectContaining({ name: 'Pantai Ber-HMAC' }),
+        expect.objectContaining({
+          headers: expect.objectContaining({
+            'x-ml-timestamp': expect.stringMatching(/^\d+$/),
+            'x-ml-signature': expect.stringMatching(/^sha256=[0-9a-f]{64}$/),
+          }),
+        }),
+      );
+
+      mockConfigService.get.mockImplementation((key: string) =>
+        key === 'ML_ENGINE_URL' ? 'http://localhost:8000' : undefined,
+      );
+    });
+
     it('should not fail moderation when promotion side effects fail', async () => {
       const existingSubmission = {
         id: 'sub-1',

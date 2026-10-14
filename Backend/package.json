@@ -17,6 +17,7 @@
     "test:cov": "jest --coverage",
     "test:e2e": "jest --config ./test/jest-e2e.json",
     "test:eval": "jest --runInBand --testPathIgnorePatterns=/node_modules/ --testRegex=rag-golden-eval",
+    "test:hmac-contract": "node scripts/verify-hmac-contract.mjs",
     "prisma:generate": "prisma generate",
     "prisma:seed": "ts-node prisma/seed.ts"
   },

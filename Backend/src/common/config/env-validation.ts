@@ -44,7 +44,7 @@ export function validateEnv(read: Read): EnvValidationResult {
 
   // Production: additional required keys
   if (isProduction) {
-    for (const key of ['REDIS_HOST', 'REDIS_PORT', 'ML_ENGINE_URL', 'NINE_ROUTER_URL', 'NINE_ROUTER_API_KEY', 'NINE_ROUTER_MODEL', 'ALLOWED_ORIGINS']) {
+    for (const key of ['REDIS_HOST', 'REDIS_PORT', 'ML_ENGINE_URL', 'ML_SYNC_HMAC_SECRET', 'NINE_ROUTER_URL', 'NINE_ROUTER_API_KEY', 'NINE_ROUTER_MODEL', 'ALLOWED_ORIGINS']) {
       if (!get(key)) errors.push(`${key} is required in production`);
     }
     // Production JWT secrets must be long and distinct from dev defaults

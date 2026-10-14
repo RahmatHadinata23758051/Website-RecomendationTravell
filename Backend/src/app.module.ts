@@ -21,18 +21,21 @@ import { HealthModule } from './health/health.module';
 import { PerformanceInterceptor } from './common/interceptors/performance.interceptor';
 import { EnvValidationService } from './common/config/env-validation.service';
 import { APP_INTERCEPTOR } from '@nestjs/core';
+import { RedisService } from './redis/redis.service';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
     }),
-    ThrottlerModule.forRoot([
-      {
-        ttl: 60000,
-        limit: 60,
-      },
-    ]),
+    ThrottlerModule.forRootAsync({
+      imports: [RedisModule],
+      inject: [RedisService],
+      useFactory: (redisService: RedisService) => ({
+        throttlers: [{ ttl: 60000, limit: 60 }],
+        storage: redisService,
+      }),
+    }),
     PrismaModule,
     AuthModule,
     RedisModule,

@@ -1,9 +1,10 @@
 import { Injectable, Logger, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { ThrottlerStorage } from '@nestjs/throttler';
 import Redis from 'ioredis';
 
 @Injectable()
-export class RedisService implements OnModuleInit, OnModuleDestroy {
+export class RedisService implements OnModuleInit, OnModuleDestroy, ThrottlerStorage {
   private readonly logger = new Logger(RedisService.name);
   private client: Redis | null = null;
   private memoryFallback = new Map<string, { value: string; expiresAt: number }>();
@@ -65,6 +66,42 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
     if (this.isProduction) {
       throw new Error(`[REDIS] Redis is unavailable during ${operation} in production.`);
     }
+  }
+
+  // ponytail: Atomic Redis Lua script with memory fallback for dev; replace with multi-region cluster manager if scaled beyond single Redis instance.
+  async increment(key: string, ttlMs: number): Promise<{ totalHits: number; timeToExpire: number }> {
+    if (!Number.isFinite(ttlMs) || ttlMs <= 0 || !key) {
+      throw new Error('Rate limit TTL must be a positive number of milliseconds.');
+    }
+
+    if (this.client && this.client.status === 'ready') {
+      try {
+        const result = await this.client.eval(
+          "local hits = redis.call('INCR', KEYS[1]); if hits == 1 then redis.call('PEXPIRE', KEYS[1], ARGV[1]); else local pttl = redis.call('PTTL', KEYS[1]); if pttl == -1 then redis.call('PEXPIRE', KEYS[1], ARGV[1]); end; end; return {hits, redis.call('PTTL', KEYS[1])}",
+          1,
+          `throttler:${key}`,
+          ttlMs,
+        ) as [number, number];
+        return { totalHits: Number(result[0]), timeToExpire: Math.max(0, Math.ceil(Number(result[1]) / 1000)) };
+      } catch (error) {
+        this.throwIfProductionFallback('increment');
+      }
+    }
+
+    this.throwIfProductionFallback('increment');
+    const memoryKey = `throttler:${key}`;
+    const now = Date.now();
+    const current = this.memoryFallback.get(memoryKey);
+    if (current && current.expiresAt === 0) {
+      current.value = String(Number(current.value) + 1);
+      return { totalHits: Number(current.value), timeToExpire: Math.ceil(ttlMs / 1000) };
+    }
+    if (!current || current.expiresAt <= now) {
+      this.memoryFallback.set(memoryKey, { value: '1', expiresAt: now + ttlMs });
+      return { totalHits: 1, timeToExpire: Math.ceil(ttlMs / 1000) };
+    }
+    current.value = String(Number(current.value) + 1);
+    return { totalHits: Number(current.value), timeToExpire: Math.ceil((current.expiresAt - now) / 1000) };
   }
 
   async ping(): Promise<string> {

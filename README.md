@@ -336,6 +336,7 @@ Daftar seluruh parameter konfigurasi environment yang didukung sistem (hanya men
 | `JWT_REFRESH_SECRET` | Ya | dev secret | Kunci tanda tangan JWT refresh token cookie (minimal 32 karakter dan harus berbeda dari access secret). |
 | `ML_ENGINE_URL` | Ya (Prod) | `http://localhost:8000` | Base URL endpoint microservice FastAPI Machine Learning. |
 | `ML_ENGINE_HEALTH_URL` | Tidak | `http://localhost:8000/api/v1/health` | URL pemeriksaan ketersediaan service FastAPI. |
+| `ML_SYNC_HMAC_SECRET` | Wajib (Prod) | — | Secret bersama untuk menandatangani dan memverifikasi sinkronisasi katalog backend–ML dengan HMAC-SHA256. Atur nilai yang sama di kedua service. |
 | `NINE_ROUTER_URL` / `OPENAI_BASE_URL` | Ya (Prod) | `http://localhost:20128/v1` | Base URL endpoint gateway LLM OpenAI-compatible. |
 | `NINE_ROUTER_API_KEY` / `OPENAI_API_KEY` | Ya (Prod) | — | Kunci otorisasi header API gateway LLM. |
 | `NINE_ROUTER_MODEL` / `OPENAI_MODEL` | Tidak | `gemini-lampung-pool` | Model ID yang dialokasikan pada gateway LLM. |
@@ -546,7 +547,7 @@ Berdasarkan analisis ancaman pada dokumen *STRIDE Threat Model* (`Website/securi
 - **Akuntabilitas Audit Log**: Setiap mutasi status verifikasi tempat wisata dicatat ke dalam entitas relasional `PlaceSubmissionAuditLog` bersama ID moderator, status asal, status tujuan, catatan alasan, dan stempel waktu.
 
 ### Batasan Keamanan dan Risiko Residu (Residual Risks)
-- **Throttler In-Memory pada Konfigurasi Bawaan**: Jika server berjalan tanpa konfigurasi Redis cluster, pencatatan hit rate limiter disimpan di memori proses tunggal sehingga tidak terbagi otomatis pada arsitektur multi-instance horizontal.
+- **Redis-backed throttler**: Rate limit uses atomic Redis counters shared across backend instances. Local development may use the existing in-memory fallback; production fails closed if Redis is unavailable.
 - **Sifat Stateless Access Token**: Access token yang telah diterbitkan tidak dapat dibatalkan di tengah jalan (*cannot be revoked mid-flight*) sampai masa kedaluwarsa 15 menit berakhir.
 - **Kebijakan CORS Lingkungan Produksi**: Skrip startup `env-validation.ts` akan menolak booting jika parameter `ALLOWED_ORIGINS` terdeteksi masih mengandung `localhost` atau `127.0.0.1` saat `NODE_ENV=production`.
 
@@ -567,10 +568,12 @@ Hal-hal yang secara objektif belum didukung atau menjadi batasan sistem saat ini
 
 Rencana pengembangan yang diturunkan secara faktual dari issue pelacakan dan dokumen arsitektur:
 
-- [ ] **Penyimpanan Rate Limiter Berbasis Redis**: Mengalihkan storage `@nestjs/throttler` dari in-memory ke Redis cluster terdistribusi untuk mendukung penskalaan instans backend secara horizontal (`security-threat-model-placesubmit.md`).
-- [ ] **Verifikasi Webhook Berbasis HMAC**: Menambahkan mekanisme tanda tangan digital HMAC pada pertukaran payload sinkronisasi katalog antara Backend Gateway dan ML Engine.
+- [x] **Penyimpanan Rate Limiter Berbasis Redis**: Implemented atomic Redis counters shared across backend instances; production rejects requests when Redis is unavailable. Local in-memory fallback is development-only.
+- [x] **Verifikasi Webhook Berbasis HMAC**: Ditambahkan penandatanganan dan verifikasi HMAC-SHA256 bertimestamp (`x-ml-timestamp`, `x-ml-signature`) pada pertukaran payload sinkronisasi katalog antara Backend Gateway dan ML Engine.
 - [ ] **Dukungan Streaming Respons Chatbot**: Mengimplementasikan streaming Server-Sent Events (SSE) pada controller chatbot untuk mengurangi *perceived latency* bagi pengguna akhir.
 - [ ] **Mekanisme Offline Tile Caching**: Menambahkan Service Worker untuk menyimpan cache tile peta Leaflet demi menjaga pengalaman navigasi pada koneksi seluler tidak stabil.
+- [x] **Aksesibilitas gerak**: CSS `prefers-reduced-motion: reduce` sekarang mengurangi animasi, transisi, dan smooth scrolling bagi pengguna yang meminta gerakan lebih sedikit.
+- [x] **CI untuk build dan tes kritis**: GitHub Actions menjalankan build, tes backend unit, dan tes jalur kritis frontend pada push dan pull request ke `main`.
 
 ---
 

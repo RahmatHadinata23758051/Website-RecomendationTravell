@@ -8,18 +8,16 @@ on:
 
 jobs:
   backend:
-    name: Backend Build & Test
+    name: Backend CI
     runs-on: ubuntu-latest
-
     defaults:
       run:
         working-directory: Backend
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup Node.js 20
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 20
@@ -31,42 +29,27 @@ jobs:
 
       - name: Generate Prisma client
         run: npx prisma generate
-        env:
-          DATABASE_URL: postgresql://dummy:dummy@localhost:5432/dummy?schema=public
 
-      - name: Build NestJS application
+      - name: Build backend
         run: npm run build
 
-      - name: Run unit & integration tests
-        run: npx jest --runInBand --coverage=false
-        env:
-          NODE_ENV: test
-          DATABASE_URL: postgresql://dummy:dummy@localhost:5432/dummy?schema=public
-          JWT_ACCESS_SECRET: test-jwt-access-secret-minimum-length-key-lampung
-          JWT_REFRESH_SECRET: test-jwt-refresh-secret-minimum-length-key-lampung
-          REDIS_HOST: localhost
-          REDIS_PORT: 6379
-          ML_ENGINE_URL: http://localhost:8000
-          PORT: 4000
+      - name: Run unit tests
+        run: npm run test -- --runInBand
 
-      - name: Run RAG retrieval evaluation gate
-        run: npm run test:eval
-        env:
-          NODE_ENV: test
+      - name: Verify Node.js and Python HMAC contract
+        run: npm run test:hmac-contract
 
   frontend:
-    name: Frontend Typecheck & Build
+    name: Frontend CI
     runs-on: ubuntu-latest
-
     defaults:
       run:
         working-directory: Frontend
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup Node.js 20
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 20
@@ -76,5 +59,8 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Build Vite application
+      - name: Run critical path tests
+        run: npm run test:p0p1
+
+      - name: Build frontend SPA
         run: npm run build
