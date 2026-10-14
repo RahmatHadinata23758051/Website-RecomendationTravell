@@ -111,14 +111,14 @@ flowchart LR
         OSRM["OSRM Public Routing API\nrouter.project-osrm.org"]
     end
 
-    SPA -->|HTTP REST /api (Vite Proxy)| NestApp
+    SPA -->|API via Vite proxy| NestApp
     SPA -.->|Direct Driving Route Request| OSRM
     NestApp --> AuthSvc
     NestApp --> RAGSvc
     NestApp --> PlacesSvc
-    NestApp -->|Prisma Client| PG
-    NestApp -->|ioredis| RD
-    NestApp -->|HTTP POST :8000/api/v1| FastAPI
+    NestApp -->|"Prisma Client"| PG
+    NestApp -->|"ioredis"| RD
+    NestApp -->|"HTTP POST FastAPI"| FastAPI
     RAGSvc -->|Prompt Ingestion + Chat Request| Router9
     FastAPI <--> CatalogOverlay
 ```
