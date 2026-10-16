@@ -560,7 +560,7 @@ Hal-hal yang secara objektif belum didukung atau menjadi batasan sistem saat ini
 2. **Bahasa Tunggal (Indonesian Only)**: Seluruh antarmuka web, pesan sistem, dataset ulasan, dan struktur prompt RAG menggunakan Bahasa Indonesia. Belum tersedia modul internasionalisasi (i18n).
 3. **Klien Berbasis Web Saja**: Platform saat ini murni berupa Single Page Application berbasis web peramban. Belum tersedia aplikasi native mobile (Android APK / iOS IPA); adaptasi tampilan gawai mengandalkan tata letak responsif CSS.
 4. **Ketergantungan Layanan OSRM Publik**: Jalur rute jalan raya bergantung pada ketersediaan endpoint publik pihak ketiga (`router.project-osrm.org`) yang memiliki batas kuota. Jika koneksi rute gagal, antarmuka frontend beralih ke perhitungan jarak lurus Haversine.
-5. **Chatbot Belum Mendukung Streaming Respons**: Endpoint chatbot mengembalikan teks jawaban secara penuh dalam satu payload JSON (`stream: false`), belum menggunakan arsitektur Server-Sent Events (SSE).
+5. **Chatbot Streaming Bersifat Opsional**: Endpoint `POST /api/v1/chatbot/chat/stream` mengirim jawaban secara bertahap via Server-Sent Events (SSE), sementara `POST /api/v1/chatbot/chat` tetap mengembalikan satu payload JSON penuh untuk klien non-streaming.
 
 ---
 
@@ -570,7 +570,7 @@ Rencana pengembangan yang diturunkan secara faktual dari issue pelacakan dan dok
 
 - [x] **Penyimpanan Rate Limiter Berbasis Redis**: Implemented atomic Redis counters shared across backend instances; production rejects requests when Redis is unavailable. Local in-memory fallback is development-only.
 - [x] **Verifikasi Webhook Berbasis HMAC**: Ditambahkan penandatanganan dan verifikasi HMAC-SHA256 bertimestamp (`x-ml-timestamp`, `x-ml-signature`) pada pertukaran payload sinkronisasi katalog antara Backend Gateway dan ML Engine.
-- [ ] **Dukungan Streaming Respons Chatbot**: Mengimplementasikan streaming Server-Sent Events (SSE) pada controller chatbot untuk mengurangi *perceived latency* bagi pengguna akhir.
+- [x] **Dukungan Streaming Respons Chatbot**: Mengimplementasikan streaming Server-Sent Events (SSE) pada controller chatbot untuk mengurangi *perceived latency* bagi pengguna akhir.
 - [ ] **Mekanisme Offline Tile Caching**: Menambahkan Service Worker untuk menyimpan cache tile peta Leaflet demi menjaga pengalaman navigasi pada koneksi seluler tidak stabil.
 - [x] **Aksesibilitas gerak**: CSS `prefers-reduced-motion: reduce` sekarang mengurangi animasi, transisi, dan smooth scrolling bagi pengguna yang meminta gerakan lebih sedikit.
 - [x] **CI untuk build dan tes kritis**: GitHub Actions menjalankan build, tes backend unit, dan tes jalur kritis frontend pada push dan pull request ke `main`.

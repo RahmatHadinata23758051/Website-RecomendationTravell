@@ -3,6 +3,7 @@ import { ServiceUnavailableException } from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
 import { ConfigService } from '@nestjs/config';
 import { of } from 'rxjs';
+import { Readable } from 'node:stream';
 import { ChatbotService } from './chatbot.service';
 import { RagRetrieverService } from './rag-retriever.service';
 import { PrismaService } from '../prisma/prisma.service';
@@ -247,6 +248,53 @@ describe('ChatbotService', () => {
     await expect(
       freshService.askChatbot({ message: 'Rekomendasi pantai' }),
     ).rejects.toThrow(ServiceUnavailableException);
+  });
+
+  it('streams provider SSE deltas as tokens and reconstructs the completion', async () => {
+    const chunks = [
+      'data: {"choices":[{"delta":{"content":"Tabik Pun! "}}]}\n\n',
+      'data: {"choices":[{"delta":{"content":"Pantai Mutun."}}]}\n\n',
+      'data: [DONE]\n\n',
+    ];
+    const providerStream = Readable.from(chunks);
+    const tokens: string[] = [];
+    mockHttpService.post.mockReturnValueOnce(of({ data: providerStream }));
+
+    const result = await service.askChatbot({ message: 'Rekomendasi pantai di Pesawaran' }, (token) => tokens.push(token));
+
+    expect(mockHttpService.post.mock.calls.at(-1)[1].stream).toBe(true);
+    expect(tokens).toEqual(['Tabik Pun! ', 'Pantai Mutun.']);
+    expect(result.data.reply).toBe('Tabik Pun! Pantai Mutun.');
+  });
+
+  it('streamChatbot formats and flushes SSE token and done frames to Express response', async () => {
+    const chunks = [
+      'data: {"choices":[{"delta":{"content":"Halo "}}]}\n\n',
+      'data: {"choices":[{"delta":{"content":"Lampung!"}}]}\n\n',
+      'data: [DONE]\n\n',
+    ];
+    mockHttpService.post.mockReturnValueOnce(of({ data: Readable.from(chunks) }));
+
+    const written: string[] = [];
+    const mockRes: any = {
+      status: jest.fn().mockReturnThis(),
+      setHeader: jest.fn(),
+      flushHeaders: jest.fn(),
+      write: jest.fn().mockImplementation((chunk: string) => written.push(chunk)),
+      end: jest.fn(),
+      on: jest.fn(),
+      destroyed: false,
+      writableEnded: false,
+    };
+
+    await service.streamChatbot({ message: 'Rekomendasi pantai di Pesawaran' }, mockRes);
+
+    expect(mockRes.setHeader).toHaveBeenCalledWith('Content-Type', 'text/event-stream; charset=utf-8');
+    expect(mockRes.flushHeaders).toHaveBeenCalled();
+    expect(written.some((w) => w.includes('event: token') && w.includes('Halo '))).toBe(true);
+    expect(written.some((w) => w.includes('event: token') && w.includes('Lampung!'))).toBe(true);
+    expect(written.some((w) => w.includes('event: done'))).toBe(true);
+    expect(mockRes.end).toHaveBeenCalled();
   });
 
   it('should inherit regency from history for follow-up queries without explicit location', async () => {

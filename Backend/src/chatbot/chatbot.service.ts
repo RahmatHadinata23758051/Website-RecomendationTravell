@@ -1,4 +1,6 @@
 ﻿import { Injectable, Logger, Optional, ServiceUnavailableException } from '@nestjs/common';
+import { Readable } from 'node:stream';
+import { Response } from 'express';
 import { PrismaService } from '../prisma/prisma.service';
 import { ConfigService } from '@nestjs/config';
 import { HttpService } from '@nestjs/axios';
@@ -75,7 +77,7 @@ export class ChatbotService {
     return Number.isFinite(raw) && raw > 0 ? raw : 60000;
   }
 
-  async askChatbot(dto: AskChatbotDto) {
+  async askChatbot(dto: AskChatbotDto, onToken?: (token: string) => void) {
     const { message, history, category, regency } = dto;
     const isAuthenticated = Boolean(dto.userId || dto.userContext);
     const personalContext = isAuthenticated ? await this.resolvePersonalContext(dto) : '';
@@ -108,12 +110,14 @@ export class ChatbotService {
     const isPureGreeting = greetingWords.includes(cleanMsg) || (cleanMsg.length <= 15 && (cleanMsg.startsWith('halo') || cleanMsg.startsWith('hallo') || cleanMsg.startsWith('hai') || cleanMsg.startsWith('hi')));
 
     if (isPureGreeting && !cleanMsg.includes('wisata') && !cleanMsg.includes('pantai') && !cleanMsg.includes('kuliner') && !cleanMsg.includes('rekomendasi')) {
+      const reply =
+        'Tabik Pun! Halo! Saya asisten wisata KelanaLampung, panduan resmi pariwisata Provinsi Lampung.\n\nAda yang bisa saya bantu untuk rencana perjalanan Anda hari ini? Anda bisa menanyakan rekomendasi destinasi alam, pantai, kuliner khas, rute, atau tips liburan di 15 Kabupaten/Kota se-Lampung.';
+      if (onToken) onToken(reply);
       return {
         status: 'success',
         bot_name: 'Asisten KelanaLampung',
         data: {
-          reply:
-            'Tabik Pun! Halo! Saya asisten wisata KelanaLampung, panduan resmi pariwisata Provinsi Lampung.\n\nAda yang bisa saya bantu untuk rencana perjalanan Anda hari ini? Anda bisa menanyakan rekomendasi destinasi alam, pantai, kuliner khas, rute, atau tips liburan di 15 Kabupaten/Kota se-Lampung.',
+          reply,
           suggested_queries: [
             'Rekomendasi pantai di Pesawaran',
             'Tempat makan Seruit khas Lampung',
@@ -141,12 +145,14 @@ export class ChatbotService {
 
     const isOutOfScope = outOfScopeKeywords.some((kw) => lowerMessage.includes(kw));
     if (isOutOfScope) {
+      const reply =
+        'Tabik Pun! Saya asisten wisata KelanaLampung. Mohon maaf, saya khusus membantu seputar informasi pariwisata, kuliner, dan panduan liburan di Provinsi Lampung. Ada destinasi wisata atau kuliner yang ingin Anda tanyakan?';
+      if (onToken) onToken(reply);
       return {
         status: 'success',
         bot_name: 'Asisten KelanaLampung',
         data: {
-          reply:
-            'Tabik Pun! Saya asisten wisata KelanaLampung. Mohon maaf, saya khusus membantu seputar informasi pariwisata, kuliner, dan panduan liburan di Provinsi Lampung. Ada destinasi wisata atau kuliner yang ingin Anda tanyakan?',
+          reply,
           suggested_queries: [
             'Rekomendasi pantai di Pesawaran',
             'Tempat makan Seruit khas Lampung',
@@ -158,12 +164,14 @@ export class ChatbotService {
 
     // Identity query
     if (lowerMessage.includes('siapa') || lowerMessage.includes('kamu siapa') || lowerMessage.includes('siapa anda')) {
+      const reply =
+        'Tabik Pun! Halo! Saya asisten wisata resmi KelanaLampung.\n\nSaya bertugas membantu merencanakan liburan Anda di Provinsi Lampung, mulai dari rekomendasi pantai, wisata alam, kuliner tradisional seperti Seruit, estimasi rute, hingga informasi destinasi di seluruh 15 Kabupaten/Kota se-Lampung. Ada yang bisa saya bantu hari ini?';
+      if (onToken) onToken(reply);
       return {
         status: 'success',
         bot_name: 'Asisten KelanaLampung',
         data: {
-          reply:
-            'Tabik Pun! Halo! Saya asisten wisata resmi KelanaLampung.\n\nSaya bertugas membantu merencanakan liburan Anda di Provinsi Lampung, mulai dari rekomendasi pantai, wisata alam, kuliner tradisional seperti Seruit, estimasi rute, hingga informasi destinasi di seluruh 15 Kabupaten/Kota se-Lampung. Ada yang bisa saya bantu hari ini?',
+          reply,
           suggested_queries: [
             'Rekomendasi pantai di Pesawaran',
             'Tempat makan Seruit khas Lampung',
@@ -230,26 +238,28 @@ ${personalContext ? `\n${personalContext}` : ''}
         temperature: 0.7,
         max_tokens: 800,
         // 9Router default-nya streaming SSE; pakai stream:false agar balik single JSON
-        stream: false,
+        stream: Boolean(onToken),
+      };
+      const requestOptions = {
+        headers: {
+          Accept: onToken ? 'text/event-stream' : 'application/json',
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${nineRouterKey}`,
+        },
+        responseType: onToken ? 'stream' as const : 'json' as const,
+        timeout: this.getLlmTimeoutMs(),
       };
 
-      const res = await firstValueFrom(
-        this.httpService.post(endpoint, payload, {
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${nineRouterKey}`,
-          },
-          // Reasoning model + prompt RAG lengkap bisa memakan >15 detik
-          timeout: this.getLlmTimeoutMs(),
-        }),
-      );
-
-      const replyText = res.data?.choices?.[0]?.message?.content;
-      if (!replyText) {
-        throw new Error('9Router returned an empty completion');
+      const res = await firstValueFrom(this.httpService.post(endpoint, payload, requestOptions));
+      let replyText: string;
+      if (onToken) {
+        replyText = await this.readCompletionStream(res.data as Readable, onToken);
+      } else {
+        replyText = res.data?.choices?.[0]?.message?.content || '';
       }
+      if (!replyText) throw new Error('9Router returned an empty completion');
 
-      this.logger.log(`[9ROUTER GATEWAY SUCCESS] Received LLM response via 9Router.`);
+      this.logger.log('[9ROUTER GATEWAY SUCCESS] Received LLM response via 9Router.');
       return {
         status: 'success',
         bot_name: 'Asisten KelanaLampung',
@@ -267,6 +277,64 @@ ${personalContext ? `\n${personalContext}` : ''}
       this.logger.warn(`[9ROUTER GATEWAY FAILURE] ${err.message}`);
       throw this.llmUnavailable();
     }
+  }
+
+  async streamChatbot(dto: AskChatbotDto, response: Response) {
+    response.status(200);
+    response.setHeader('Content-Type', 'text/event-stream; charset=utf-8');
+    response.setHeader('Cache-Control', 'no-cache, no-transform');
+    response.setHeader('Connection', 'keep-alive');
+    response.flushHeaders();
+
+    const send = (event: string, data: unknown) => {
+      if (!response.destroyed && !response.writableEnded) {
+        response.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`);
+      }
+    };
+    const heartbeat = setInterval(() => {
+      if (!response.destroyed && !response.writableEnded) response.write(': keep-alive\n\n');
+    }, 15000);
+    response.on('close', () => clearInterval(heartbeat));
+
+    try {
+      const result = await this.askChatbot(dto, (token) => send('token', { token }));
+      send('done', { reply: result.data.reply, suggested_queries: result.data.suggested_queries });
+    } catch (error) {
+      send('error', { message: 'Layanan Asisten KelanaLampung sedang tidak tersedia. Silakan coba lagi.' });
+      this.logger.warn(`[CHATBOT STREAM FAILURE] ${error.message}`);
+    } finally {
+      clearInterval(heartbeat);
+      if (!response.destroyed && !response.writableEnded) response.end();
+    }
+  }
+
+  private async readCompletionStream(stream: Readable, onToken: (token: string) => void): Promise<string> {
+    let buffer = '';
+    let reply = '';
+    try {
+      for await (const chunk of stream) {
+        buffer += Buffer.isBuffer(chunk) ? chunk.toString('utf8') : String(chunk);
+        let boundary: number;
+        while ((boundary = buffer.indexOf('\n\n')) >= 0) {
+          const frame = buffer.slice(0, boundary);
+          buffer = buffer.slice(boundary + 2);
+          for (const line of frame.split(/\r?\n/)) {
+            if (!line.startsWith('data:')) continue;
+            const data = line.slice(5).trim();
+            if (!data || data === '[DONE]') continue;
+            const parsed = JSON.parse(data);
+            const token = parsed.choices?.[0]?.delta?.content;
+            if (typeof token === 'string' && token) {
+              reply += token;
+              onToken(token);
+            }
+          }
+        }
+      }
+    } finally {
+      stream.destroy();
+    }
+    return this.cleanFormattingAndEmojis(reply);
   }
 
   private llmUnavailable() {

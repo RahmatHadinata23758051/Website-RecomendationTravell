@@ -12,7 +12,7 @@ import {
   AlertTriangle,
 } from 'lucide-react';
 import {
-  askRadenGajahChatbot,
+  streamRadenGajahChatbot,
   ChatHistoryItem,
 } from '../services/chatbotApi';
 import { useAuth } from '../context/AuthContext';
@@ -106,22 +106,26 @@ export const RadenGajahChatWidget: React.FC = () => {
       text: m.text,
     }));
 
+    const botMsgId = `bot-${Date.now()}`;
+    setMessages((prev) => [...prev, {
+      id: botMsgId,
+      sender: 'bot',
+      text: '',
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+    }]);
+
     try {
-      const responseData = await askRadenGajahChatbot({
+      await streamRadenGajahChatbot({
         message: query,
         history,
         mode: isAuthenticated ? 'authenticated' : 'public',
+      }, (text) => {
+        setMessages((prev) => prev.map((message) =>
+          message.id === botMsgId ? { ...message, text } : message,
+        ));
       });
-
-      const botMsg: ChatMessage = {
-        id: `bot-${Date.now()}`,
-        sender: 'bot',
-        text: responseData.reply,
-        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      };
-
-      setMessages((prev) => [...prev, botMsg]);
     } catch (err) {
+      setMessages((prev) => prev.filter((message) => message.id !== botMsgId || message.text.length > 0));
       setErrorMessage(
         getApiErrorMessage(err, 'Layanan asisten wisata sedang tidak tersedia. Silakan coba lagi.'),
       );
@@ -233,7 +237,7 @@ export const RadenGajahChatWidget: React.FC = () => {
                       : 'rounded-tl-none border border-[#E2D6BE] bg-white text-slate-800'
                   }`}
                 >
-                  <div className="whitespace-pre-line">{msg.text}</div>
+                  <div className="whitespace-pre-line" aria-live={msg.sender === 'bot' && isLoading ? 'polite' : undefined}>{msg.text || (msg.sender === 'bot' && isLoading ? 'Menyiapkan informasi wisata...' : '')}</div>
 
 
                   <div className="mt-1 text-[9px] font-medium text-slate-400 text-right">

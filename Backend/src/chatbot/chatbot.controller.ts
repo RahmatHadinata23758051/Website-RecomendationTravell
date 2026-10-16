@@ -1,13 +1,14 @@
 import {
   Controller,
   Post,
+  Res,
   Body,
   HttpCode,
   HttpStatus,
   Req,
   UseGuards,
 } from '@nestjs/common';
-import { Request } from 'express';
+import { Request, Response } from 'express';
 import { JwtAuthGuard, OptionalJwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
@@ -31,6 +32,17 @@ export class ChatbotController {
   refreshIndex() {
     const pool = this.ragRetriever.refreshIndex();
     return { status: 'success', data: { indexedDestinations: pool.length } };
+  }
+
+  @Post('chat/stream')
+  @UseGuards(OptionalJwtAuthGuard)
+  async streamChat(@Body() dto: AskChatbotDto, @Req() req: Request, @Res() res: Response) {
+    const user = (req as Request & { user?: { id?: string } }).user;
+    return this.chatbotService.streamChatbot({
+      ...dto,
+      userId: user?.id || dto.userId,
+      mode: user?.id || dto.userId ? 'authenticated' : dto.mode || 'public',
+    }, res);
   }
 
   @Post('chat')
